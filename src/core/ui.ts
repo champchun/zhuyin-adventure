@@ -216,7 +216,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
       if (a === 'zt') {
         const c = el.dataset.c!, w = el.dataset.w!;
         const logEl = document.getElementById('ztlog')!;
-        if (testMode === 'sym') { audio.speak(c); logEl.textContent = `① 叫語音念「${c}」（可能念錯，請用耳朵判斷）`; }
+        if (testMode === 'sym') { audio.speakRaw(c); logEl.textContent = `① 叫語音念「${c}」（可能念錯，請用耳朵判斷）`; }
         else if (testMode === 'word') { audio.speak(w); logEl.textContent = `② 念例字「${w}」（開頭音是 ${c}）`; }
         else if (testMode === 'hudu') {
           const h = HUDU[c];

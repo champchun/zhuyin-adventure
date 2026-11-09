@@ -1,6 +1,8 @@
 // AudioManager：分開管理 ① 劇情 TTS ② 注音單音檔 ③ 背景音樂 ④ 音效。
 import { ZHUYIN_AUDIO } from '../data/audioMap';
 import { G } from './save';
+import { isSpeakable, splitZhuyin } from './speech';
+import type { Segment } from './speech';
 
 export type VoiceStatus = 'checking' | 'ok' | 'approx' | 'none' | 'unsupported';
 export type Sfx = 'tap' | 'correct' | 'wrong' | 'hit' | 'blast' | 'wind' | 'peck' | 'chest' | 'levelup' | 'hatch' | 'rock' | 'win' | 'hint';
@@ -37,6 +39,8 @@ class AudioManager {
   private voiceSrc?: AudioBufferSourceNode;
   private voiceBufs = new Map<string, AudioBuffer>();
   private speakToken = 0;
+  /** 最近一次拆段朗讀的執行記錄（除錯與測試用） */
+  trace: string[] = [];
 
   constructor() {
     if ('speechSynthesis' in window) {
@@ -132,15 +136,11 @@ class AudioManager {
         this.voiceBufs.set(file, buf);
       }
       if (token !== this.speakToken) return; // 已經換成新的一句
-      const src = this.ctx!.createBufferSource();
-      src.buffer = buf;
-      src.connect(this.voiceGain!);
-      this.voiceSrc = src;
       this.speaking = true; this.duck(true);
-      src.onended = () => { if (this.voiceSrc === src) { this.voiceSrc = undefined; this.speaking = false; this.duck(false); } };
-      src.start();
+      await this.playBuffer(buf);
+      if (token === this.speakToken) { this.speaking = false; this.duck(false); }
     } catch {
-      if (token === this.speakToken) this.speakTts(this.lastSpoken); // 檔案壞了就退回語音合成
+      if (token === this.speakToken) this.speakPlain(this.lastSpoken, token); // 檔案壞了就退回語音合成
     }
   }
   speak(text: string) {
@@ -150,7 +150,72 @@ class AudioManager {
     if (!G.settings.voiceOn) return;
     const file = this.voiceFiles[text];
     if (file && this.ctx && this.voiceGain) { void this.playFile(file, token); return; }
-    this.speakTts(text);
+    this.speakPlain(text, token);
+  }
+  /** 沒有整句預錄檔時：含注音符號就拆段（文字用語音合成、符號播注音音檔），否則整句語音合成 */
+  private speakPlain(text: string, token: number) {
+    const segs = splitZhuyin(text);
+    if (segs.some((x) => x.t === 'sym')) void this.runSegments(segs, token);
+    else this.speakTts(text);
+  }
+  /** 依序播放：文字段用語音合成，符號段播 audio/zhuyin 的音檔。沒有音檔的符號直接略過（不讓語音引擎亂念）。 */
+  private async runSegments(segs: Segment[], token: number) {
+    this.trace = [];
+    this.speaking = true; this.duck(true);
+    try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch { /* ignore */ }
+    try {
+      for (const sg of segs) {
+        if (token !== this.speakToken) return;
+        if (sg.t === 'sym') {
+          const buf = this.buffers[sg.v];
+          if (buf && this.ctx && this.voiceGain) { this.trace.push('sym:' + sg.v); await this.playBuffer(buf); }
+          else if (G.settings.experimentalSymbolTts) { this.trace.push('tts:' + sg.v); await this.ttsAsync(sg.v); }
+          else this.trace.push('skip:' + sg.v);
+        } else if (isSpeakable(sg.v)) { this.trace.push('tts:' + sg.v); await this.ttsAsync(sg.v); }
+      }
+    } finally {
+      if (token === this.speakToken) { this.speaking = false; this.duck(false); }
+    }
+  }
+  private playBuffer(buf: AudioBuffer): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.ctx || !this.voiceGain) return resolve();
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(this.voiceGain);
+      this.voiceSrc = src;
+      src.onended = () => { if (this.voiceSrc === src) this.voiceSrc = undefined; resolve(); };
+      src.start();
+    });
+  }
+  private ttsAsync(text: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!('speechSynthesis' in window) || this.status === 'none') return resolve();
+      try {
+        const u = this.makeUtterance(text);
+        let done = false;
+        const fin = () => { if (!done) { done = true; resolve(); } };
+        u.onend = fin; u.onerror = fin;
+        setTimeout(fin, 4000 + (text.length * 500) / G.settings.rate); // 保險：語音引擎沒回報結束也不卡住
+        speechSynthesis.speak(u);
+      } catch { resolve(); }
+    });
+  }
+  private makeUtterance(text: string) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW';
+    const v = this.chosen() ?? this.voice;
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.rate = G.settings.rate;
+    u.pitch = 1.1;
+    return u;
+  }
+  /** 直接交給語音合成，不拆段、不播注音音檔（僅供家長設定的「符號本身」發音測試） */
+  speakRaw(text: string) {
+    this.lastSpoken = text;
+    this.speakToken++;
+    this.stopFile();
+    if (G.settings.voiceOn) this.speakTts(text);
   }
   private stopFile() {
     try { this.voiceSrc?.stop(); } catch { /* ignore */ }
@@ -160,12 +225,7 @@ class AudioManager {
     if (!('speechSynthesis' in window) || this.status === 'none') return;
     try {
       speechSynthesis.cancel(); // 避免舊語音堆積
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'zh-TW';
-      const v = this.chosen() ?? this.voice;
-      if (v) { u.voice = v; u.lang = v.lang; }
-      u.rate = G.settings.rate;
-      u.pitch = 1.1;
+      const u = this.makeUtterance(text);
       u.onstart = () => { this.speaking = true; this.duck(true); };
       const end = () => { this.speaking = false; this.duck(false); };
       u.onend = end;
