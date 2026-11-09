@@ -37,8 +37,8 @@ node tests/e2e/play.mjs   # 端對端：開啟 dev server 後，用真實點擊�
 
 ## 語音與音檔（重要）
 - 劇情／提示：瀏覽器 `speechSynthesis`，優先 zh-TW，處理 `voiceschanged`；按「開始」時於使用者手勢內暖機（iOS Safari 要求）。找不到中文語音時保留文字、不卡關。
-- **注音單音：目前專案沒有附任何音檔。** 不會用 TTS 冒充標準發音，所以現在「聽音選符號」會自動降級成「看符號配對」，並在畫面與家長設定中明示。
-  - 要啟用：把可靠且授權可用的音檔放進 `public/audio/zhuyin/`，檔名對照見 `src/data/audioMap.ts`（b/p/m/f/d/t/n.mp3）。7 個都齊才會出聽音題。
+- **注音單音**：`public/audio/zhuyin/` 內的 37 個 mp3 是 Azure 語音合成產生的，**不是真人標準音**，需親耳確認；可用真人錄音同檔名覆蓋。音檔不齊（遊戲用到的 7 個缺任何一個）時，「聽音選符號」會自動降級成「看符號配對」，並在畫面與家長設定中明示。
+  - 換音檔：放進 `public/audio/zhuyin/`，檔名對照見 `src/data/audioMap.ts`。
   - 家長設定內有「實驗：用 TTS 念單一符號」，發音未經驗證，預設關閉。
 - 背景音樂與音效以 WebAudio 即時合成（原創簡單旋律），可關閉。
 
@@ -52,11 +52,12 @@ $env:AZURE_SPEECH_KEY = "你的金鑰"; $env:AZURE_SPEECH_REGION = "eastasia"
 npm run gen:voice -- --dry            # 只列出句子與字元數（不連線）
 npm run gen:voice -- --only 你好      # 先產生含「你好」的句子，試聽語音是否滿意
 npm run gen:voice                     # 產生全部（約 80 句、1,100 字元），輸出到 public/audio/voice/
-npm run gen:voice -- --zhuyin         # 另外產生 7 個注音的「呼讀音」到 public/audio/zhuyin/
+npm run gen:voice -- --zhuyin-only    # 只產生 7 個注音的「呼讀音」到 public/audio/zhuyin/（不動劇情語音）
+npm run gen:voice -- --zhuyin         # 劇情語音之外，另外產生 7 個注音
 ```
 - 換語音：`AZURE_SPEECH_VOICE`（預設 `zh-TW-HsiaoChenNeural`）、語速 `AZURE_SPEECH_RATE`（預設 `-10%`）。
 - 改了劇情文字後重跑即可，只會產生有變動的句子。含動態數字的句子（寶箱星星數、升級等級）無法預錄，仍用語音合成。
-- 注音呼讀音是語音合成，**不是真人標準音**，產生後請親耳確認。ㄅㄆㄇㄈ 若教材採「ㄜ」呼讀，標準國語沒有對應字；可設 `AZURE_USE_IPA=1` 讓腳本改用 IPA 音標（`src/data/symbols.ts` 的 `HUDU`），效果需試聽驗證。
+- 注音呼讀音是語音合成，**不是真人標準音**，產生後請親耳確認。ㄅㄆㄇㄈ 若教材採「ㄜ」呼讀，標準國語沒有對應字；預設直接把符號「ㄅ」丟給 Azure 念；可用 `AZURE_ZHUYIN_MODE=char`（念呼讀用字）或 `ipa`（音標，實測 Azure 台灣語音會回 400）切換，效果都需試聽驗證。
 - 輸出的音檔會一併提交到 git；公開儲存庫等於公開散布，請先確認 Azure 條款（建議使用付費層）。
 
 ## iPad Safari 實機驗證清單（尚未在實機驗證）

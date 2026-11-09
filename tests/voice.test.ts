@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allVoiceLines, PROMPT_LINES } from '../src/data/voiceLines';
 import { STORY, BATTLES } from '../src/data/levels';
-import { HUDU } from '../src/data/symbols';
+import { HUDU, ZHUYIN_TEST } from '../src/data/symbols';
 import { ZHUYIN_AUDIO } from '../src/data/audioMap';
 
 describe('預錄語音句子清單', () => {
@@ -13,5 +13,12 @@ describe('預錄語音句子清單', () => {
     expect(new Set(lines).size).toBe(lines.length);
   });
   it('固定句子不含動態變數', () => { lines.forEach((t) => expect(t).not.toMatch(/\$\{|undefined|NaN/)); });
-  it('audioMap 內每個符號都有呼讀對照', () => { Object.keys(ZHUYIN_AUDIO).forEach((s) => expect(HUDU[s], s).toBeDefined()); });
+  it('audioMap 涵蓋全部 37 個注音、檔名不重複', () => {
+    const all = ZHUYIN_TEST.flatMap((g) => g.list.map(([c]) => c));
+    expect(all.length).toBe(37);
+    all.forEach((c) => expect(ZHUYIN_AUDIO[c], c).toBeDefined());
+    const files = Object.values(ZHUYIN_AUDIO);
+    expect(new Set(files).size).toBe(files.length);
+  });
+  it('呼讀對照只列有效符號', () => { Object.keys(HUDU).forEach((s) => expect(ZHUYIN_AUDIO[s], s).toBeDefined()); });
 });

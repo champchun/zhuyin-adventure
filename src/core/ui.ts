@@ -2,8 +2,7 @@
 import { audio } from './audio';
 import { G, PARTY_MAX, expNeeded, flag, hasAbility, hasSave, maxHp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
 import { SPECIES } from '../data/monsters';
-import { ALL_SYMBOLS, HUDU, SYMBOLS, ZHUYIN_TEST } from '../data/symbols';
-import { ZHUYIN_AUDIO } from '../data/audioMap';
+import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
 import { PROMPT_LINES } from '../data/voiceLines';
 
@@ -182,7 +181,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
       ${vs.map((v) => `<div class="row"><button class="btn small ${s.voiceURI === v.voiceURI ? 'primary' : ''}" data-a="voice" data-uri="${v.voiceURI}">${v.name}</button><span class="note">${v.lang}${v.localService ? '' : '・線上'}${v.default ? '・預設' : ''}</span></div>`).join('')}`;
     })()}
     <h3>注音單音檔</h3>
-    <div class="note">已就緒 ${sum.ready} / ${sum.total}。${sum.ready < sum.total ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
+    <div class="note">已就緒 ${sum.ready} / ${sum.total}（遊戲目前用到 ㄅㄆㄇㄈㄉㄊㄋ 這 7 個）。${!audio.audioReadyFor(ALL_SYMBOLS) ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
     <div class="row">實驗：用語音合成念單一符號（發音未經驗證，不建議） ${sw('experimentalSymbolTts', s.experimentalSymbolTts)}</div>
     <h3>注音發音測試</h3>
     <div class="note">按符號聽聽看。語音引擎念單一符號常常不準，請用耳朵判斷，不要當作標準發音。</div>
@@ -278,7 +277,7 @@ export function showTitle(): Promise<'new' | 'continue'> {
           <button class="btn ${hasSave() ? '' : 'primary'}" data-a="new">新的冒險</button>
           <button class="btn small" data-a="settings">⚙ 家長設定</button>
         </div>
-        <div class="stat">${audio.statusText()}<br>${sum.ready < sum.total ? '注音音檔：尚未安裝（目前使用「看符號配對」）' : '注音音檔：已就緒'}</div>`;
+        <div class="stat">${audio.statusText()}<br>${audio.audioReadyFor(ALL_SYMBOLS) ? '注音音檔：已就緒（共 ' + sum.ready + ' 個）' : '注音音檔：尚未安裝完整（目前使用「看符號配對」）'}</div>`;
       sc.querySelectorAll<HTMLElement>('[data-k]').forEach((s) => s.replaceWith(thumb(s.dataset.k!, 112)));
     };
     render();
@@ -317,4 +316,3 @@ export function setupHud(handlers: { party: () => void; settings: () => void; ti
 }
 export function setHudInfo(text: string) { $('hudname').textContent = text; }
 export { flag };
-void SYMBOLS; void ZHUYIN_AUDIO;

@@ -9,7 +9,6 @@ import type { BattleDef } from '../data/levels';
 import { audio } from '../core/audio';
 import { bui, sleep } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
-import { MAPS } from '../data/maps';
 import { PROMPT_LINES } from '../data/voiceLines';
 
 export type BattleOutcome = 'win' | 'lose' | 'run';
@@ -253,4 +252,3 @@ export class BattleScene extends Phaser.Scene {
     return 'win';
   }
 }
-void MAPS;

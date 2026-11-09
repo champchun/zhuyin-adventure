@@ -1,17 +1,7 @@
-# 注音單音檔放置處
+# 注音單音檔
 
-把「可靠、授權可用」的注音單音檔放在這個資料夾，檔名需與 `src/data/audioMap.ts` 一致：
+檔名與符號的對照在 `src/data/audioMap.ts`（37 個：b p m f d t n l g k h j q x zh ch sh r z c s i u v a o e eh ai ei ao ou an en ang eng er）。
 
-| 符號 | 檔名 |
-|---|---|
-| ㄅ | b.mp3 |
-| ㄆ | p.mp3 |
-| ㄇ | m.mp3 |
-| ㄈ | f.mp3 |
-| ㄉ | d.mp3 |
-| ㄊ | t.mp3 |
-| ㄋ | n.mp3 |
-
-目前**沒有**附任何音檔。遊戲啟動時會偵測這些檔案；缺檔時自動進入「看符號配對」模式，
-不會用未驗證的 TTS 假裝是標準發音。換副檔名（例如 .m4a / .ogg）只需改 audioMap.ts。
-iPad Safari 對 .mp3 / .m4a 支援最穩。
+目前這裡的檔案是用 Azure AI Speech 以 `npm run gen:voice -- --zhuyin-only` 產生的**語音合成**，不是真人標準音。
+家長設定 →「注音發音測試 → ④ 音檔」可逐一試聽；覺得念得不對，可以直接用真人錄音（mp3）同檔名覆蓋。
+遊戲啟動時偵測這些檔案；出題用到的符號（目前 ㄅㄆㄇㄈㄉㄊㄋ）音檔都在，才會出「聽音選符號」，否則退回「看符號配對」。

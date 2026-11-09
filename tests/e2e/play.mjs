@@ -71,11 +71,9 @@ const visibleTile = (x, y) => ev(([x, y]) => {
 }, [x, y]);
 /** 點擊目標；若目標不在畫面內，先沿路徑點擊畫面內最遠的一格（和真人一樣得先走近） */
 const doTap = async (x, y, label) => {
-  const T0 = Date.now(); process.env.DBG && log('  ...', label);
   for (let i = 0; i < 10; i++) {
     if (await visibleTile(x, y)) {
       await tapTile(x, y); await sleep(250); await pump(idle, label);
-      if (process.env.DBG) log('  tap', label, JSON.stringify(await ev(() => { const w = window.__game.world(); return { tx: w.tx, ty: w.ty, busy: w.busy, moving: w.moving, blocking: window.__game.ui.blocking, ready: w.ready, active: w.scene.isActive(), zoom: w.cameras.main.zoom }; })));
       return;
     }
     const mid = await ev(([x, y]) => {
