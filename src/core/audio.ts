@@ -154,9 +154,17 @@ class AudioManager {
   }
   /** 沒有整句預錄檔時：含注音符號就拆段（文字用語音合成、符號播注音音檔），否則整句語音合成 */
   private speakPlain(text: string, token: number) {
-    const segs = splitZhuyin(text);
-    if (segs.some((x) => x.t === 'sym')) void this.runSegments(segs, token);
-    else this.speakTts(text);
+    // 預設：注音符號一律不唸（避免語音引擎亂念），只念其餘文字
+    const clean = splitZhuyin(text).filter((x) => x.t === 'text').map((x) => x.v).join('').replace(/[「『]\s*[」』]/g, '');
+    if (isSpeakable(clean)) this.speakTts(clean);
+  }
+  /** 比較用：拆段播放（文字 TTS、符號播注音音檔） */
+  speakSegmented(text: string) {
+    this.lastSpoken = text;
+    const token = ++this.speakToken;
+    this.stopFile();
+    if (!G.settings.voiceOn) return;
+    void this.runSegments(splitZhuyin(text), token);
   }
   /** 依序播放：文字段用語音合成，符號段播 audio/zhuyin 的音檔。沒有音檔的符號直接略過（不讓語音引擎亂念）。 */
   private async runSegments(segs: Segment[], token: number) {

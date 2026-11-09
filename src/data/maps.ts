@@ -1,5 +1,5 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'egg' | 'monster' | 'exit' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'egg' | 'monster' | 'exit' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog';
 
 export interface MapObj {
   id: string;
@@ -69,9 +69,11 @@ const village = (() => {
   g.rect('#', 21, 2, 5, 1).set(21, 3, '#').set(25, 3, '#').rect('#', 21, 4, 2, 1).rect('#', 24, 4, 2, 1);
   // 零星樹木
   g.many('#', [[8, 14], [10, 14], [19, 9], [2, 11], [20, 12], [6, 13]]);
+  // 迷霧小屋（吹霧後才進得去）：x 8..12, y 1..4，缺口在 (10,4)
+  g.rect('#', 8, 1, 5, 1).rect('#', 8, 2, 1, 2).rect('#', 12, 2, 1, 2).rect('#', 8, 4, 2, 1).rect('#', 11, 4, 2, 1);
   return g;
 })();
-const GATE_LEVELS = ['b', 'p', 'm', 'f', 'd', 't', 'n'];
+const GATE_LEVELS = ['b', 'p', 'd', 'g'];
 const villageGates: MapObj[] = GATE_LEVELS.map((lv, i) => ({
   id: 'gate_' + lv, kind: 'gate' as const, x: 4 + 3 * i, y: 17, level: lv,
 }));
@@ -81,13 +83,17 @@ export const MAPS: Record<string, MapDef> = {
     id: 'village', name: '起始村', w: 28, h: 20, tiles: village.rows(), theme: 'village',
     start: { x: 4, y: 7 }, respawn: { x: 13, y: 9 },
     objects: [
-      { id: 'guide', kind: 'npc', x: 12, y: 8, sprite: 'npc_guide', label: '小精靈' },
+      { id: 'guide', kind: 'npc', x: 12, y: 8, sprite: 'npc_guide', label: '嘟嘟博士' },
       { id: 'chest_t', kind: 'chest', x: 8, y: 10 },
       { id: 'egg', kind: 'egg', x: 15, y: 9, showIf: 'tutorialDone', hideIf: 'eggHatched' },
       { id: 'dummy', kind: 'monster', x: 16, y: 11, battle: 'practice', showIf: 'eggHatched', hideIf: 'practiceDone' },
-      { id: 'sign1', kind: 'sign', x: 10, y: 15, text: ['下面的圓門，每一扇都有一個注音符號。', '亮著的門可以進去冒險，灰色的門還在迷霧裡。'] },
+      { id: 'sign1', kind: 'sign', x: 10, y: 15, text: ['下面的圓門，每一扇都有一個注音符號。', '亮著的門可以進去冒險，灰色的門還在迷霧裡。', '門上的字是這一關要學的注音。'] },
       { id: 'rock_a', kind: 'rock', x: 23, y: 4 },
       { id: 'chest_hidden', kind: 'chest', x: 23, y: 3 },
+      { id: 'bell', kind: 'bell', x: 21, y: 7 },
+      { id: 'chest_bell', kind: 'chest', x: 22, y: 8, showIf: 'bellRung' },
+      { id: 'fog_a', kind: 'fog', x: 10, y: 4 },
+      { id: 'chest_fog', kind: 'chest', x: 10, y: 2 },
       ...villageGates,
     ],
   },
@@ -103,7 +109,7 @@ const valley = (() => {
   return g;
 })();
 MAPS.b = {
-  id: 'b', name: 'ㄅ關：岩石山谷', w: 28, h: 20, tiles: valley.rows(), theme: 'valley',
+  id: 'b', name: '村外小徑（ㄇㄈ）', w: 28, h: 20, tiles: valley.rows(), theme: 'valley',
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
   objects: [
     { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 4, y: 15 }, label: '回村' },
@@ -134,7 +140,7 @@ const meadow = (() => {
   return g;
 })();
 MAPS.p = {
-  id: 'p', name: 'ㄆ關：風車草原', w: 28, h: 20, tiles: meadow.rows(), theme: 'meadow',
+  id: 'p', name: '風車草原（畢業）', w: 28, h: 20, tiles: meadow.rows(), theme: 'meadow',
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
   objects: [
     { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 7, y: 15 }, label: '回村' },

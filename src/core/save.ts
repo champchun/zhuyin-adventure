@@ -56,7 +56,7 @@ export const defaultSettings = (): Settings => ({
   bgmOn: true,
   sfxOn: true,
   reduceMotion: typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches,
-  allowed: [...ALL_SYMBOLS],
+  allowed: ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'],
   tier: 'auto',
   optionCount: 'auto',
   experimentalSymbolTts: false,
@@ -84,7 +84,9 @@ export function loadSettings() {
     try { Object.assign(G.settings, JSON.parse(raw)); } catch { /* ignore */ }
   }
   G.settings.allowed = G.settings.allowed.filter((s) => ALL_SYMBOLS.includes(s));
-  if (G.settings.allowed.length < 2) G.settings.allowed = [...ALL_SYMBOLS];
+  // 舊版預設是開放全部 7 個符號；現在第 0 關只教唇音，舊的「全開」設定改回新預設（家長自己勾過的不動）
+  if (G.settings.allowed.length === ALL_SYMBOLS.length) G.settings.allowed = defaultSettings().allowed;
+  if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));
 export const hasSave = () => !!safeGet(SAVE_KEY);

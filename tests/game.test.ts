@@ -47,9 +47,9 @@ describe('maps', () => {
     it(`${m.id}: 起點能走到所有一般物件旁`, () => {
       const solid = new Set(m.objects.map((o) => `${o.x},${o.y}`));
       const seen = reach(m.id, m.start, solid);
-      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind']);
+      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog']);
       for (const o of m.objects) {
-        if (['rock', 'woodgate', 'leaves'].includes(o.kind) || sealed.has(o.id)) continue;
+        if (['rock', 'woodgate', 'leaves', 'fog'].includes(o.kind) || sealed.has(o.id)) continue;
         expect(adjReach(seen, o), `${m.id}/${o.id} 無法抵達`).toBe(true);
       }
     });
@@ -65,6 +65,7 @@ describe('maps', () => {
     check('p', [], 'chest_leaf', false); check('p', ['leaves_a'], 'chest_leaf', true);
     check('p', [], 'chest_wind', false); check('p', ['woodgate'], 'chest_wind', true);
     check('village', [], 'chest_hidden', false); check('village', ['rock_a'], 'chest_hidden', true);
+    check('village', [], 'chest_fog', false); check('village', ['fog_a'], 'chest_fog', true);
   });
 });
 
@@ -73,7 +74,7 @@ describe('levels', () => {
     for (const L of Object.values(LEVELS)) {
       if (L.open) expect(MAPS[L.mapId!]).toBeDefined(); else expect(L.mapId).toBeUndefined();
     }
-    expect(Object.keys(LEVELS)).toEqual(['b', 'p', 'm', 'f', 'd', 't', 'n']);
+    expect(Object.keys(LEVELS)).toEqual(['b', 'p', 'd', 'g']);
   });
 });
 

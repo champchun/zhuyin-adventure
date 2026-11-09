@@ -123,6 +123,17 @@ export class BattleScene extends Phaser.Scene {
         if (!G.settings.reduceMotion) this.cameras.main.shake(180, 0.004);
         break;
       }
+      case 'hum': {
+        audio.sfx('hint');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(from.x + 20, from.y, 6, 0xffffff, 0).setStrokeStyle(3, 0xff9db8).setDepth(40);
+          this.tweens.add({ targets: ring, x: to.x, radius: 26, alpha: 0, duration: 420, delay: i * 130, onComplete: () => ring.destroy() });
+        }
+        await sleep(620);
+        this.burst(to.x, to.y, 'spark', 6, 28, 400);
+        break;
+      }
+      case 'fog':
       case 'wind': {
         audio.sfx('wind');
         for (let i = 0; i < 6; i++) {

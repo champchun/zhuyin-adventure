@@ -134,6 +134,7 @@ export class WorldScene extends Phaser.Scene {
     if (o.kind === 'monster' && flag(`m:${m}:${o.id}`)) return false;
     if (o.kind === 'rock' && flag(`r:${m}:${o.id}`)) return false;
     if (o.kind === 'leaves' && flag(`l:${m}:${o.id}`)) return false;
+    if (o.kind === 'fog' && flag(`f:${m}:${o.id}`)) return false;
     return true;
   }
   private gateOpen(lv: string): boolean {
@@ -165,6 +166,8 @@ export class WorldScene extends Phaser.Scene {
         case 'chest': spr = this.add.image(px, py, flag(`c:${m.id}:${def.id}`) ? 'chest_open' : 'chest').setOrigin(0).setDepth(depth); break;
         case 'rock': spr = this.add.image(px, py, 'rock').setOrigin(0).setDepth(depth); break;
         case 'leaves': spr = this.add.image(px, py, 'leaves').setOrigin(0).setDepth(depth); break;
+        case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
+        case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
         case 'sign': spr = this.add.image(px, py, 'sign').setOrigin(0).setDepth(depth); break;
         case 'exit': spr = this.add.image(px, py, 'exit_tile').setOrigin(0).setDepth(depth); break;
@@ -183,7 +186,7 @@ export class WorldScene extends Phaser.Scene {
           const open = this.gateOpen(def.level!);
           spr = this.add.image(px, py, open ? 'gate_on' : 'gate_off').setOrigin(0).setDepth(depth);
           const t = this.add.text(px + 8, py + 10, LEVELS[def.level!].symbol, {
-            fontFamily: '"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif', fontStyle: 'bold', fontSize: '9px',
+            fontFamily: '"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif', fontStyle: 'bold', fontSize: LEVELS[def.level!].symbol.length > 1 ? '6px' : '9px',
             color: open ? '#2b2140' : '#e6e6f0', resolution: view.zoom,
           }).setOrigin(0.5).setDepth(depth + 1);
           extra.push(t); this.labels.push(t);
@@ -359,16 +362,30 @@ export class WorldScene extends Phaser.Scene {
         setFlag('windmillOn'); this.refreshObjects();
         audio.sfx('chest');
         return say(STORY.windOn);
+      case 'bell':
+        if (flag('bellRung')) return say(STORY.bellDone);
+        if (!hasAbility('hum')) return say(STORY.bellLocked);
+        audio.sfx('chest');
+        await this.ripple(o.spr.x + 8, o.spr.y + 8);
+        setFlag('bellRung'); this.refreshObjects();
+        return say(STORY.bellRing);
+      case 'fog':
+        if (!hasAbility('fog')) return say(STORY.fogLocked);
+        audio.sfx('wind');
+        await this.windPuff(o.spr.x + 8, o.spr.y + 8, 0xffffff);
+        setFlag(`f:${m}:${d.id}`); this.refreshObjects();
+        return say(STORY.fogBlow);
       case 'woodgate': return say(STORY.woodLocked);
     }
   }
 
   private async talkGuide() {
-    const who = '小精靈';
+    const who = '嘟嘟博士';
     const say2 = (ls: string[]) => say(ls.map((text) => ({ who, text })));
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
     else if (!flag(`c:village:chest_t`)) await say2(STORY.guideNeedChest);
     else if (!flag('tutorialDone')) { await say2(STORY.guide2); setFlag('tutorialDone'); this.refreshObjects(); }
+    else if (flag('boss_p')) await say2(STORY.guideEnd);
     else await say2(STORY.guideAfter);
     saveGame();
   }
@@ -418,6 +435,13 @@ export class WorldScene extends Phaser.Scene {
     }
     if (!G.settings.reduceMotion) this.cameras.main.shake(160, 0.003);
     await new Promise((r) => this.time.delayedCall(550, r));
+  }
+  private async ripple(x: number, y: number) {
+    for (let i = 0; i < 3; i++) {
+      const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xffd84a).setDepth(9999);
+      this.tweens.add({ targets: c, radius: 22, alpha: 0, duration: 600, delay: i * 160, onComplete: () => c.destroy() });
+    }
+    await new Promise((r) => this.time.delayedCall(900, r));
   }
   private async windPuff(x: number, y: number, tint: number) {
     for (let i = 0; i < 8; i++) {
@@ -506,7 +530,7 @@ export class WorldScene extends Phaser.Scene {
     if (ups) { audio.sfx('levelup'); lines.push(`${SPECIES[me.species].name}升級了！現在是 Lv.${me.level}！`); }
     if (!claimed) {
       if (rw.grow) { const g = G.save.party.find((p) => p.species === rw.grow); if (g) { g.stage = 1; g.level += 1; } }
-      if (rw.ability && !hasAbility(rw.ability)) G.save.abilities.push(rw.ability);
+      for (const a of rw.abilities ?? []) if (!hasAbility(a)) G.save.abilities.push(a);
       if (rw.join && !G.save.party.some((p) => p.species === rw.join)) {
         if (!giveMonster(rw.join)) lines.push('隊伍滿了，新夥伴先在村子裡等你。');
       }

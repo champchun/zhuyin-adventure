@@ -213,6 +213,15 @@ export function generateTextures(scene: Phaser.Scene) {
     for (let x = 4; x < 16; x += 4) px(c, '#8b5a3c', x, 3, 1, 11);
     px(c, '#8b5a3c', 1, 5, 14, 2); px(c, '#8b5a3c', 1, 10, 14, 2); px(c, '#ffd84a', 12, 8, 2, 2);
   });
+  make('bell', 16, 16, (c) => {
+    px(c, '#2b2140', 7, 1, 2, 3); px(c, '#2b2140', 4, 3, 8, 9); px(c, '#2b2140', 3, 10, 10, 3);
+    px(c, '#ffd84a', 5, 4, 6, 8); px(c, '#ffd84a', 4, 10, 8, 2); px(c, '#fff3b0', 5, 5, 2, 5);
+    px(c, '#2b2140', 7, 13, 2, 2); px(c, '#c9921a', 9, 5, 2, 6);
+  });
+  make('fog_patch', 16, 16, (c) => {
+    const blob = (x: number, y: number, w: number, h: number, col: string) => { px(c, col, x + 1, y, w - 2, h); px(c, col, x, y + 1, w, h - 2); };
+    blob(0, 4, 10, 8, '#b9a8d8'); blob(5, 1, 11, 9, '#cfc2e6'); blob(2, 8, 12, 7, '#d9cfee'); blob(7, 6, 7, 5, '#ece6f8');
+  });
   make('sign', 16, 16, (c) => {
     px(c, '#2b2140', 7, 9, 2, 6); px(c, '#8b5a3c', 7, 9, 2, 6);
     px(c, '#2b2140', 2, 2, 12, 8); px(c, '#e8c88a', 3, 3, 10, 6); px(c, '#8b5a3c', 4, 5, 8, 1); px(c, '#8b5a3c', 4, 7, 6, 1);

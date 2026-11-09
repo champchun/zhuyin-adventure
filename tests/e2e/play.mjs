@@ -1,4 +1,4 @@
-// 端對端實測：用真實點擊從頭玩到尾（起始村 → ㄅ關 → 返回村莊用能力 → ㄆ關 → 成果）。
+// 端對端實測：用真實點擊從頭玩到尾（起始村 → 小關A → 小關B → 返回村莊用能力 → 畢業戰 → 成果）。
 // 用法：先 `npm run dev`，再 `node tests/e2e/play.mjs [網址] [截圖資料夾]`
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
@@ -7,7 +7,7 @@ const URL = process.argv[2] ?? 'http://127.0.0.1:5173/';
 const OUT = process.argv[3] ?? './e2e-shots';
 fs.mkdirSync(OUT, { recursive: true });
 const exe = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find((p) => fs.existsSync(p));
-const browser = await chromium.launch({ executablePath: exe, headless: true });
+const browser = await chromium.launch({ executablePath: exe, headless: true, args: ['--disable-gpu', '--disable-dev-shm-usage', '--js-flags=--max-old-space-size=1024'] });
 const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: false });
 const page = await ctx.newPage();
 const errors = [];
@@ -35,7 +35,7 @@ async function tapTile(x, y) {
 }
 
 /** 處理畫面上的對話／戰鬥／彈窗，直到 cond() 成立 */
-async function pump(cond, label, maxMs = 300000) {
+async function pump(cond, label, maxMs = 900000) {
   const t0 = Date.now();
   let lastBattle = '';
   while (Date.now() - t0 < maxMs) {
@@ -53,7 +53,7 @@ async function pump(cond, label, maxMs = 300000) {
     });
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
-    else if (st.move) { await page.click('#battleui [data-a=move] >> nth=-1').catch(() => {}); }
+    else if (st.move) { await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
       const answer = st.big && st.big !== '🔊' ? st.big : st.glow;
@@ -100,7 +100,7 @@ await snap('village-start');
 log('✓ 新的冒險、開場');
 
 // ───── 第 0 關 ─────
-await doTap(12, 8, '小精靈'); await doTap(8, 10, '教學寶箱'); await doTap(12, 8, '小精靈2');
+await doTap(12, 8, '博士'); await doTap(8, 10, '教學寶箱'); await doTap(12, 8, '博士2');
 let f = await flags();
 if (!f.guideMet || !f['c:village:chest_t'] || !f.tutorialDone) throw new Error('教學流程旗標不對 ' + JSON.stringify(f));
 await snap('egg-appeared');
@@ -108,48 +108,54 @@ await doTap(15, 9, '神祕蛋');
 let s = await save();
 if (!s.party.length || !s.flags.eggHatched) throw new Error('蛋沒有孵化');
 await snap('hatched');
-log('✓ 蛋孵化，ㄅ寶加入隊伍:', s.party.map((m) => m.species).join());
+log('✓ 蛋孵化，波波加入隊伍:', s.party.map((m) => m.species).join());
 await doTap(16, 11, '練習戰');
 f = await flags();
 if (!f.practiceDone) throw new Error('練習戰沒有完成');
 await snap('practice-done');
-log('✓ 練習戰完成並存檔');
+if (!(await save()).abilities.includes('blast') || !(await save()).abilities.includes('gust')) throw new Error('練習戰後沒有爆破拳／噴風');
+log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
+await doTap(23, 4, '村裡裂石'); await doTap(23, 3, '隱藏寶箱');
+f = await flags();
+if (!f['r:village:rock_a'] || !f['c:village:chest_hidden']) throw new Error('村裡裂石／隱藏寶箱失敗');
+log('✓ 村莊裂石與隱藏寶箱（爆破拳）');
 
-// ───── ㄅ關 ─────
-await doTap(4, 17, 'ㄅ門');
-if ((await save()).mapId !== 'b') throw new Error('沒有進入 ㄅ 關');
+// ───── 小關B：村外小徑（ㄇㄈ）─────
+await doTap(4, 17, 'ㄇㄈ門');
+if ((await save()).mapId !== 'b') throw new Error('沒有進入村外小徑');
 await snap('valley');
 for (const [x, y, n] of [[9, 15, '寶箱1'], [11, 16, '小怪1'], [15, 12, '小怪2'], [18, 10, '寶箱2'], [16, 6, '小怪3']]) await doTap(x, y, n);
 await doTap(22, 4, '頭目');
 s = await save();
-if (!s.abilities.includes('blast') || !s.flags.boss_b) throw new Error('頭目後沒有爆破拳');
-if (s.party[0].stage !== 1) throw new Error('ㄅ寶沒有成長');
+if (!s.abilities.includes('hum') || !s.abilities.includes('fog') || !s.flags.boss_b) throw new Error('頭目後沒有哼哼波／吹霧');
+if (s.party[0].stage !== 1) throw new Error('波波沒有成長');
 await snap('boss-b-done');
-log('✓ ㄅ關頭目完成，爆破拳解鎖，ㄅ寶成長 → Lv.' + s.party[0].level);
+log('✓ 小關B頭目完成，哼哼波與吹霧解鎖，波波成長 → Lv.' + s.party[0].level);
 await doTap(10, 11, '裂石（爆破拳）'); await doTap(3, 9, '裂石後寶箱');
 f = await flags();
-if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('山谷裂石／寶箱失敗');
-log('✓ 用爆破拳打碎山谷裂石並取得寶箱');
+if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('小徑裂石／寶箱失敗');
+log('✓ 用爆破拳打碎小徑裂石並取得寶箱');
 await doTap(4, 18, '回村');
 if ((await save()).mapId !== 'village') throw new Error('沒有回村');
-await doTap(23, 4, '村裡裂石'); await doTap(23, 3, '隱藏寶箱');
+await doTap(21, 7, '鈴鐺（哼哼波）'); await doTap(22, 8, '鈴鐺寶箱');
+await doTap(10, 4, '迷霧（吹霧）'); await doTap(10, 2, '霧後寶箱');
 f = await flags();
-if (!f['r:village:rock_a'] || !f['c:village:chest_hidden']) throw new Error('村裡裂石／隱藏寶箱失敗');
-await snap('village-hidden-chest');
-log('✓ 村莊裂石與隱藏寶箱');
+if (!f.bellRung || !f['c:village:chest_bell'] || !f['f:village:fog_a'] || !f['c:village:chest_fog']) throw new Error('鈴鐺／迷霧互動失敗 ' + JSON.stringify(f));
+await snap('village-new-chests');
+log('✓ 哼哼波搖響鈴鐺、吹霧進入迷霧小屋，各取得寶箱');
 
 // ───── ㄆ關 ─────
-await doTap(7, 17, 'ㄆ門');
+await doTap(7, 17, '風車草原門');
 if ((await save()).mapId !== 'p') throw new Error('沒有進入 ㄆ 關');
 await snap('meadow');
 for (const [x, y, n] of [[7, 14, '葉蟲1'], [6, 11, '寶箱'], [11, 13, '葉蟲2']]) await doTap(x, y, n);
 // 橋在 (14..15,15)，路徑尋找會自動經過
 for (const [x, y, n] of [[18, 11, '葉蟲3'], [20, 9, '寶箱']]) await doTap(x, y, n);
-await doTap(22, 4, '風車怪王');
+await doTap(22, 4, '霧影');
 s = await save();
-if (!s.party.some((m) => m.species === 'pipi') || !s.abilities.includes('gust')) throw new Error('ㄆ翼鳥或噴風沒有取得');
+if (!s.flags.boss_p) throw new Error('霧影沒有打贏');
 await snap('after-boss-p');
-log('✓ ㄆ關完成，ㄆ翼鳥加入，噴風解鎖，隊伍：', s.party.map((m) => m.species + ' Lv' + m.level).join());
+log('✓ 畢業戰完成，隊伍：', s.party.map((m) => m.species + ' Lv' + m.level).join());
 await doTap(11, 9, '風車'); await doTap(5, 7, '落葉'); await doTap(5, 4, '落葉後寶箱'); await doTap(22, 14, '木門(已開)').catch(() => {});
 await doTap(23, 17, '木門後寶箱');
 f = await flags();

@@ -191,12 +191,12 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="note" id="ztlog">（按上面的符號開始）</div>
     <h3>對話朗讀比較</h3>
     <div class="note">比較同一句話的兩種念法。可以改成別的句子（含注音符號的句子最能聽出差別）。</div>
-    <div class="row"><input id="cmptext" type="text" value="這是ㄅ寶" style="flex:1;min-width:180px;font-size:22px;padding:8px;border:3px solid var(--ink);border-radius:10px;font-family:var(--font)"></div>
+    <div class="row"><input id="cmptext" type="text" value="這是橘寶" style="flex:1;min-width:180px;font-size:22px;padding:8px;border:3px solid var(--ink);border-radius:10px;font-family:var(--font)"></div>
     <div class="row">
       <button class="btn small" data-a="cmp-tts">🔊 全部用語音合成</button>
-      <button class="btn small primary" data-a="cmp-seg">🔊 目前方式（符號改播音檔）</button>
+      <button class="btn small primary" data-a="cmp-seg">🔊 實驗：符號改播音檔</button>
     </div>
-    <div class="note">全部用語音合成：整句交給裝置語音，注音符號可能念錯。目前方式：文字用裝置語音，句中的注音符號改播注音音檔。</div>
+    <div class="note">全部用語音合成：整句交給裝置語音，注音符號可能念錯。實驗方式：文字用裝置語音，句中的注音符號改播注音音檔。</div>
     <h3>開放的注音（至少 2 個）</h3>
     <div class="chips">${ALL_SYMBOLS.map((ch) => `<button class="chip ${s.allowed.includes(ch) ? 'on' : ''}" data-a="sym" data-ch="${ch}">${ch}</button>`).join('')}</div>
     <div class="note">題目與選項只會使用開放的注音。</div>
@@ -237,7 +237,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
       }
       if (a === 'cmp-tts' || a === 'cmp-seg') {
         const t = (document.getElementById('cmptext') as HTMLInputElement).value.trim();
-        if (t) { if (a === 'cmp-tts') audio.speakRaw(t); else audio.speak(t); }
+        if (t) { if (a === 'cmp-tts') audio.speakRaw(t); else audio.speakSegmented(t); }
         return;
       }
       if (a === 'ztmode') { testMode = el.dataset.m as typeof testMode; }
@@ -266,10 +266,10 @@ export function openResults(): Promise<'continue' | 'replay'> {
     const firsts = Object.values(G.save.stats).reduce((a, s) => a + s.first, 0);
     const m = openModal(`<div class="big-results"><h2>🎉 冒險成果 🎉</h2>
       <div class="em">夥伴：${G.save.party.map((p) => SPECIES[p.species].name + ' Lv.' + p.level).join('、')}<br>
-      新能力：${G.save.abilities.map((a) => (a === 'blast' ? '爆破拳' : a === 'gust' ? '噴風' : a)).join('、') || '無'}<br>
+      新能力：${G.save.abilities.map((a) => (({ blast: '爆破拳', gust: '噴風', hum: '哼哼波', fog: '吹霧' } as Record<string, string>)[a] ?? a)).join('、') || '無'}<br>
       ⭐ 星星：${G.save.stars}　獨立答對：${firsts} 次<br>
-      已完成：ㄅ 岩石山谷、ㄆ 風車草原</div>
-      <p class="note">村莊裡還有被風封住的新道路，等著你再回來探險！<br>其餘 ㄇㄈㄉㄊㄋ 的關卡還在迷霧中（尚未開放）。</p>
+      已完成：第0關 唇音（ㄅㄆㄇㄈ）</div>
+      <p class="note">村莊裡還有鈴鐺和迷霧小屋，等著你再回來探險！<br>舌尖中音島、舌根音島還在迷霧中（尚未開放）。</p>
       <div class="foot" style="justify-content:center"><button class="btn green" data-a="go">繼續探索</button>
       <button class="btn small" data-a="replay">重玩草原</button></div></div>`);
     delegate(m, (a) => { closeModal(); resolve(a === 'replay' ? 'replay' : 'continue'); });
@@ -284,7 +284,7 @@ export function showTitle(): Promise<'new' | 'continue'> {
       const sum = audio.zhuyinSummary();
       sc.className = 'on';
       sc.innerHTML = `<div class="sub">迷霧島冒險</div><div class="logo">注音夥伴</div>
-        <div class="deco-row" style="display:flex;gap:12px;justify-content:center"><span data-k="mon_bobo"></span><span data-k="mon_pipi"></span><span data-k="egg"></span></div>
+        <div class="deco-row" style="display:flex;gap:12px;justify-content:center"><span data-k="mon_bobo"></span><span data-k="mon_bobo2"></span><span data-k="egg"></span></div>
         <div class="menu">
           ${hasSave() ? '<button class="btn primary" data-a="continue">繼續冒險</button>' : ''}
           <button class="btn ${hasSave() ? '' : 'primary'}" data-a="new">新的冒險</button>

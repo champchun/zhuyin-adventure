@@ -12,12 +12,12 @@ const r = await p.evaluate(async () => {
   out.symbolsReady = a.zhuyinSummary();
   a.speak('找找看，哪一個和蛋上的「ㄅ」一樣？'); await wait(16000);
   out.sentence = [...a.trace];
-  a.speak('ㄆ翼鳥加入了你的隊伍！'); await wait(3000);
+  a.speak('風翼鳥加入了你的隊伍！'); await wait(3000);
   out.name = [...a.trace];
   const saved = a.buffers['ㄅ']; delete a.buffers['ㄅ'];
   a.speak('先去 ㄅ 的山谷'); await wait(3000);
   out.missing = [...a.trace]; a.buffers['ㄅ'] = saved;
-  a.speak('ㄅ寶閃閃發光，長大了！'); await wait(100); a.stopSpeech(); await wait(3000);
+  a.speak('橘寶閃閃發光，長大了！'); await wait(100); a.stopSpeech(); await wait(3000);
   out.stoppedEarly = [...a.trace];
   return out;
 });
