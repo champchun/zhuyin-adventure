@@ -3,7 +3,7 @@ import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import { BATTLES, LEVELS } from '../src/data/levels';
 import { ALL_SYMBOLS } from '../src/data/symbols';
 import { QuestionRun, makeQuestion } from '../src/core/learning';
-import { emptyStat } from '../src/core/save';
+import { G, activeSymbols, emptyStat } from '../src/core/save';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 function reach(mapId: string, from: { x: number; y: number }, extraBlocked: Set<string>) {
@@ -139,5 +139,15 @@ describe('learning', () => {
     let d = 0, m = 0;
     for (let i = 0; i < 1500; i++) { const q = makeQuestion(ctx({ stats: st, focus: [], review: ['ㄇ', 'ㄉ'] })); if (q.target === 'ㄉ') d++; else m++; }
     expect(d).toBeGreaterThan(m);
+  });
+});
+
+describe('已教過的符號', () => {
+  it('練習戰完成前只出 ㄅㄆ，之後才加入 ㄇㄈ', () => {
+    G.save.flags = {};
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ']);
+    G.save.flags.practiceDone = true;
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ']);
+    G.save.flags = {};
   });
 });

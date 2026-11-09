@@ -108,6 +108,12 @@ export function startNewGame() { G.save = newSave(); saveGame(); }
 
 export const flag = (k: string) => !!G.save.flags[k];
 export const setFlag = (k: string, v = true) => { G.save.flags[k] = v; };
+/** 目前「已經教過」的符號：ㄅㄆ 一開始就有，ㄇㄈ 要到村裡練習戰完成、進入小徑後才教。再與家長開放的符號取交集。 */
+export const activeSymbols = (): string[] => {
+  const learned = ['ㄅ', 'ㄆ', ...(flag('practiceDone') ? ['ㄇ', 'ㄈ'] : [])];
+  const a = G.settings.allowed.filter((s) => learned.includes(s));
+  return a.length >= 2 ? a : learned;
+};
 export const hasAbility = (a: string) => G.save.abilities.includes(a);
 
 // ───── 怪獸數值 ─────

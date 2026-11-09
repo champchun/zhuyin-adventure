@@ -6,7 +6,7 @@ import { BATTLES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
 import { ENEMIES, SPECIES } from '../data/monsters';
 import {
-  G, addExp, flag, giveMonster, hasAbility, saveGame, setFlag, spriteOf,
+  G, activeSymbols, addExp, flag, giveMonster, hasAbility, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
 import { openParty, openResults, openSettings, say, setHudInfo, toast, ui } from '../core/ui';
@@ -461,7 +461,7 @@ export class WorldScene extends Phaser.Scene {
     await say(STORY.eggPrompt.map((text) => ({ who: '旁白', text })));
     // 第 0 關：全程有視覺提示（符號卡一直顯示），兩個選項
     bui.show(false);
-    const others = G.settings.allowed.filter((s) => s !== 'ㄅ');
+    const others = activeSymbols().filter((s) => s !== 'ㄅ');
     const q = { type: 'match' as const, target: 'ㄅ', options: shuffle(['ㄅ', others[Math.floor(Math.random() * others.length)] ?? 'ㄆ']), fallback: false };
     const run = new QuestionRun(q, G.save.stats);
     await bui.ask(run, { speakPrompt: false });

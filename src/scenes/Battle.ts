@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
-import { G, maxHp, powerBonus, spriteOf } from '../core/save';
+import { G, activeSymbols, maxHp, powerBonus, spriteOf } from '../core/save';
 import type { MonsterInst } from '../core/save';
 import { ENEMIES, SPECIES } from '../data/monsters';
 import type { MoveDef } from '../data/monsters';
@@ -190,7 +190,7 @@ export class BattleScene extends Phaser.Scene {
     bui.setHp('enemy', enemy.name, enemy.hp, enemy.hp);
     for (const line of def.intro) await bui.note(line);
 
-    const targets = [...new Set([...def.focus, ...def.review])].filter((s) => G.settings.allowed.includes(s));
+    const targets = [...new Set([...def.focus, ...def.review])].filter((s) => activeSymbols().includes(s));
     let prevTarget: string | undefined;
     let mode: Mode = 'look';
     let asked = 0;
@@ -218,7 +218,7 @@ export class BattleScene extends Phaser.Scene {
         if (act.type === 'move') mode = act.mode;
         const tier = def.guided ? 1 : tierSetting !== 'auto' ? tierSetting : choosable ? (mode === 'listen' ? 2 : 1) : 1;
         const q = makeQuestion({
-          focus: def.focus, review: def.review, allowed: G.settings.allowed, tier,
+          focus: def.focus, review: def.review, allowed: activeSymbols(), tier,
           audioReady: audio.audioReadyFor(targets) || (G.settings.experimentalSymbolTts && targets.length > 0),
           optionCount: effectiveOptionCount(G.settings.optionCount, G.save.stats),
           prevTarget, stats: G.save.stats,
