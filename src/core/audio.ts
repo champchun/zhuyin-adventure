@@ -53,6 +53,16 @@ class AudioManager {
     this.status = tw ? 'ok' : zh ? 'approx' : 'none';
     this.onStatus.forEach((f) => f());
   }
+  /** 這台裝置的網頁實際拿得到的中文語音（用於家長設定的語音清單） */
+  zhVoices(): SpeechSynthesisVoice[] {
+    if (!('speechSynthesis' in window)) return [];
+    return speechSynthesis.getVoices().filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith('zh'));
+  }
+  allVoiceCount(): number { return 'speechSynthesis' in window ? speechSynthesis.getVoices().length : 0; }
+  private chosen(): SpeechSynthesisVoice | undefined {
+    const uri = G.settings.voiceURI;
+    return uri ? speechSynthesis.getVoices().find((v) => v.voiceURI === uri) : undefined;
+  }
   statusText(): string {
     switch (this.status) {
       case 'ok': return `語音：已找到 zh-TW（${this.voice?.name ?? ''}）`;
@@ -100,7 +110,8 @@ class AudioManager {
       speechSynthesis.cancel(); // 避免舊語音堆積
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'zh-TW';
-      if (this.voice) u.voice = this.voice;
+      const v = this.chosen() ?? this.voice;
+      if (v) { u.voice = v; u.lang = v.lang; }
       u.rate = G.settings.rate;
       u.pitch = 1.1;
       u.onstart = () => { this.speaking = true; this.duck(true); };

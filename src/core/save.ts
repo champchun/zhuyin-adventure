@@ -12,6 +12,8 @@ export interface Settings {
   optionCount: 'auto' | 2 | 3;
   /** 實驗：用 TTS 念單一符號（發音未經驗證，預設關閉） */
   experimentalSymbolTts: boolean;
+  /** 家長手動選的語音（voiceURI）；空字串＝自動 */
+  voiceURI: string;
 }
 export interface SymStat {
   /** 獨立（無提示、無答錯）首次答對次數 */
@@ -58,6 +60,7 @@ export const defaultSettings = (): Settings => ({
   tier: 'auto',
   optionCount: 'auto',
   experimentalSymbolTts: false,
+  voiceURI: '',
 });
 export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assisted: 0, conf: {} });
 

@@ -171,6 +171,14 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="row">背景音樂 ${sw('bgmOn', s.bgmOn)}</div>
     <div class="row">遊戲音效 ${sw('sfxOn', s.sfxOn)}</div>
     <div class="row">減少動態效果（減少晃動與閃光） ${sw('reduceMotion', s.reduceMotion)}</div>
+    <h3>語音清單（這台裝置可用的中文語音）</h3>
+    ${(() => {
+      const vs = audio.zhVoices();
+      if (!vs.length) return `<div class="note">沒有找到中文語音（裝置共 ${audio.allVoiceCount()} 個語音）。若剛開啟頁面，請稍等幾秒再重開這個畫面。</div>`;
+      return `<div class="note">共 ${vs.length} 個。點一個選用並試聽；「自動」會優先用 zh-TW。</div>
+      <div class="row"><button class="btn small ${s.voiceURI ? '' : 'primary'}" data-a="voice" data-uri="">自動</button></div>
+      ${vs.map((v) => `<div class="row"><button class="btn small ${s.voiceURI === v.voiceURI ? 'primary' : ''}" data-a="voice" data-uri="${v.voiceURI}">${v.name}</button><span class="note">${v.lang}${v.localService ? '' : '・線上'}${v.default ? '・預設' : ''}</span></div>`).join('')}`;
+    })()}
     <h3>注音單音檔</h3>
     <div class="note">已就緒 ${sum.ready} / ${sum.total}。${sum.ready < sum.total ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
     <div class="row">實驗：用語音合成念單一符號（發音未經驗證，不建議） ${sw('experimentalSymbolTts', s.experimentalSymbolTts)}</div>
@@ -198,6 +206,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
         if (s.allowed.includes(ch)) { if (s.allowed.length <= 2) { toast('至少要開放 2 個注音'); return; } s.allowed = s.allowed.filter((x) => x !== ch); }
         else s.allowed = ALL_SYMBOLS.filter((x) => x === ch || s.allowed.includes(x));
       }
+      if (a === 'voice') { s.voiceURI = el.dataset.uri ?? ''; saveSettings(); audio.speak('你好，我是注音夥伴。'); }
       if (a === 'testvoice') { audio.speak('你好，我是注音夥伴。'); return; }
       if (a === 'reset') {
         if (confirm('確定要清除冒險存檔嗎？學習設定會保留。')) { closeModal(); startNewGame(); onReset?.(); }
