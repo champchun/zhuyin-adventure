@@ -2,7 +2,7 @@
 import { audio } from './audio';
 import { G, PARTY_MAX, expNeeded, flag, hasAbility, hasSave, maxHp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
 import { SPECIES } from '../data/monsters';
-import { ALL_SYMBOLS, SYMBOLS } from '../data/symbols';
+import { ALL_SYMBOLS, SYMBOLS, ZHUYIN_TEST } from '../data/symbols';
 import { ZHUYIN_AUDIO } from '../data/audioMap';
 import { statOf } from './learning';
 
@@ -150,6 +150,7 @@ function parentGate(): Promise<boolean> {
     });
   });
 }
+let testMode: 'sym' | 'word' | 'file' = 'sym';
 export async function openSettings(onReset?: () => void): Promise<void> {
   if (!(await parentGate())) return;
   const s = G.settings;
@@ -182,6 +183,12 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <h3>注音單音檔</h3>
     <div class="note">已就緒 ${sum.ready} / ${sum.total}。${sum.ready < sum.total ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
     <div class="row">實驗：用語音合成念單一符號（發音未經驗證，不建議） ${sw('experimentalSymbolTts', s.experimentalSymbolTts)}</div>
+    <h3>注音發音測試</h3>
+    <div class="note">按符號聽聽看。語音引擎念單一符號常常不準，請用耳朵判斷，不要當作標準發音。</div>
+    <div class="row"><span class="seg">${([['sym', '① 符號本身'], ['word', '② 例字'], ['file', '③ 音檔']] as const).map(([m, t]) => `<button class="${testMode === m ? 'on' : ''}" data-a="ztmode" data-m="${m}">${t}</button>`).join('')}</span></div>
+    <div class="note">① 叫語音念符號；② 念例字（如「爸」，會連韻母一起念）；③ 播放 public/audio/zhuyin/ 的音檔（目前只定義 ㄅㄆㄇㄈㄉㄊㄋ，缺檔會提示）。</div>
+    ${ZHUYIN_TEST.map((g) => `<div class="note"><b>${g.group}</b></div><div class="chips">${g.list.map(([c, w]) => `<button class="chip on" style="background:#fff;font-size:26px" data-a="zt" data-c="${c}" data-w="${w}" aria-label="${c}">${c}<small style="display:block;font-size:12px;font-weight:600">${w}</small></button>`).join('')}</div>`).join('')}
+    <div class="note" id="ztlog">（按上面的符號開始）</div>
     <h3>開放的注音（至少 2 個）</h3>
     <div class="chips">${ALL_SYMBOLS.map((ch) => `<button class="chip ${s.allowed.includes(ch) ? 'on' : ''}" data-a="sym" data-ch="${ch}">${ch}</button>`).join('')}</div>
     <div class="note">題目與選項只會使用開放的注音。</div>
@@ -206,6 +213,16 @@ export async function openSettings(onReset?: () => void): Promise<void> {
         if (s.allowed.includes(ch)) { if (s.allowed.length <= 2) { toast('至少要開放 2 個注音'); return; } s.allowed = s.allowed.filter((x) => x !== ch); }
         else s.allowed = ALL_SYMBOLS.filter((x) => x === ch || s.allowed.includes(x));
       }
+      if (a === 'zt') {
+        const c = el.dataset.c!, w = el.dataset.w!;
+        const logEl = document.getElementById('ztlog')!;
+        if (testMode === 'sym') { audio.speak(c); logEl.textContent = `① 叫語音念「${c}」（可能念錯，請用耳朵判斷）`; }
+        else if (testMode === 'word') { audio.speak(w); logEl.textContent = `② 念例字「${w}」（開頭音是 ${c}）`; }
+        else if (audio.hasSymbolAudio(c) && audio.playSymbol(c)) logEl.textContent = `③ 播放「${c}」的音檔`;
+        else logEl.textContent = `③ 沒有「${c}」的音檔（請放進 public/audio/zhuyin/ 並對照 audioMap.ts）`;
+        return;
+      }
+      if (a === 'ztmode') { testMode = el.dataset.m as typeof testMode; }
       if (a === 'voice') { s.voiceURI = el.dataset.uri ?? ''; saveSettings(); audio.speak('你好，我是注音夥伴。'); }
       if (a === 'testvoice') { audio.speak('你好，我是注音夥伴。'); return; }
       if (a === 'reset') {
