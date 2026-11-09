@@ -189,6 +189,14 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="note">① 叫語音念符號；② 念例字（如「爸」，會連韻母一起念）；③ 念呼讀用字（如 ㄅ→波；ㄅㄆㄇㄈ 為近似音，標準國語沒有 ㄅㄜ 這個字）；④ 播放 public/audio/zhuyin/ 的音檔（目前只定義 ㄅㄆㄇㄈㄉㄊㄋ，缺檔會提示）。</div>
     ${ZHUYIN_TEST.map((g) => `<div class="note"><b>${g.group}</b></div><div class="chips">${g.list.map(([c, w]) => `<button class="chip on" style="background:#fff;font-size:26px" data-a="zt" data-c="${c}" data-w="${w}" aria-label="${c}">${c}<small style="display:block;font-size:12px;font-weight:600">${w}</small></button>`).join('')}</div>`).join('')}
     <div class="note" id="ztlog">（按上面的符號開始）</div>
+    <h3>對話朗讀比較</h3>
+    <div class="note">比較同一句話的兩種念法。可以改成別的句子（含注音符號的句子最能聽出差別）。</div>
+    <div class="row"><input id="cmptext" type="text" value="這是ㄅ寶" style="flex:1;min-width:180px;font-size:22px;padding:8px;border:3px solid var(--ink);border-radius:10px;font-family:var(--font)"></div>
+    <div class="row">
+      <button class="btn small" data-a="cmp-tts">🔊 全部用語音合成</button>
+      <button class="btn small primary" data-a="cmp-seg">🔊 目前方式（符號改播音檔）</button>
+    </div>
+    <div class="note">全部用語音合成：整句交給裝置語音，注音符號可能念錯。目前方式：文字用裝置語音，句中的注音符號改播注音音檔。</div>
     <h3>開放的注音（至少 2 個）</h3>
     <div class="chips">${ALL_SYMBOLS.map((ch) => `<button class="chip ${s.allowed.includes(ch) ? 'on' : ''}" data-a="sym" data-ch="${ch}">${ch}</button>`).join('')}</div>
     <div class="note">題目與選項只會使用開放的注音。</div>
@@ -225,6 +233,11 @@ export async function openSettings(onReset?: () => void): Promise<void> {
         }
         else if (audio.hasSymbolAudio(c) && audio.playSymbol(c)) logEl.textContent = `④ 播放「${c}」的音檔`;
         else logEl.textContent = `④ 沒有「${c}」的音檔（請放進 public/audio/zhuyin/ 並對照 audioMap.ts）`;
+        return;
+      }
+      if (a === 'cmp-tts' || a === 'cmp-seg') {
+        const t = (document.getElementById('cmptext') as HTMLInputElement).value.trim();
+        if (t) { if (a === 'cmp-tts') audio.speakRaw(t); else audio.speak(t); }
         return;
       }
       if (a === 'ztmode') { testMode = el.dataset.m as typeof testMode; }
