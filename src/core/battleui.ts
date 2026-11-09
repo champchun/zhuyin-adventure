@@ -9,7 +9,8 @@ import { symbolDef } from '../data/symbols';
 import { PROMPT_LINES } from '../data/voiceLines';
 
 const $ = (id: string) => document.getElementById(id)!;
-export type Action = { type: 'move'; move: MoveDef } | { type: 'switch' } | { type: 'run' };
+export type Mode = 'look' | 'listen';
+export type Action = { type: 'move'; move: MoveDef; mode: Mode } | { type: 'switch' } | { type: 'run' };
 
 let root: HTMLElement;
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, G.settings.reduceMotion ? ms * 0.6 : ms));
@@ -51,21 +52,25 @@ export const bui = {
       };
     });
   },
-  menu(me: MonsterInst, canSwitch: boolean): Promise<Action> {
+  /** modes.avail＝可選「聽」招式；cur 是目前選的招式種類（看／聽），結果會隨 Action 回傳 */
+  menu(me: MonsterInst, canSwitch: boolean, modes: { avail: boolean; cur: Mode }): Promise<Action> {
     return new Promise((resolve) => {
+      let mode: Mode = modes.avail ? modes.cur : 'look';
       this.msg(`${SPECIES[me.species].name}要怎麼做？`);
       const moves = SPECIES[me.species].moves.filter((m) => !m.needAbility || hasAbility(m.needAbility));
       const body = root.querySelector<HTMLElement>('.body')!;
-      body.innerHTML = `<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${m.name}<small>${m.desc}</small></button>`).join('')}
+      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look">👀 看的招式</button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen">👂 聽的招式（更強）</button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${m.name}<small>${m.desc}</small></button>`).join('')}
         ${canSwitch ? '<button class="btn" data-a="switch">🔄 換夥伴</button>' : ''}
-        <button class="btn" data-a="run">🏃 離開</button></div>`;
+        <button class="btn" data-a="run">🏃 離開</button></div>`; };
+      render();
       body.onclick = (e) => {
         const el = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null;
         if (!el) return;
         audio.sfx('tap');
-        body.onclick = null;
         const a = el.dataset.a;
-        if (a === 'move') resolve({ type: 'move', move: moves[+el.dataset.i!] });
+        if (a === 'mode') { mode = el.dataset.m as Mode; render(); return; }
+        body.onclick = null;
+        if (a === 'move') resolve({ type: 'move', move: moves[+el.dataset.i!], mode });
         else resolve({ type: a as 'switch' | 'run' });
       };
     });
@@ -78,6 +83,7 @@ export const bui = {
       const prompt = q.type === 'listen' ? PROMPT_LINES.listen : PROMPT_LINES.match;
       const hasSnd = audio.hasSymbolAudio(q.target) || G.settings.experimentalSymbolTts;
       this.msg(prompt);
+      const t0 = performance.now();
       body.innerHTML = `<div class="qhead"><span></span><span style="display:flex;gap:8px">
           <button class="btn small" data-a="re">🔊 重聽</button><button class="btn small" data-a="hint">💡 提示</button><button class="btn small" data-a="back">↩ 返回</button></span></div>
         <div class="qcard"><div class="big" data-a="re">${q.type === 'match' ? q.target : '🔊'}</div></div>
@@ -116,6 +122,7 @@ export const bui = {
         if (a === 'opt') {
           const r = run.pick(el.dataset.ch!);
           if (r === 'correct') {
+            run.ms = performance.now() - t0;
             this.lock(true);
             el.classList.add('good');
             audio.sfx('correct');

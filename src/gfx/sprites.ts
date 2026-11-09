@@ -39,9 +39,22 @@ const PLAYER_SIDE: Rows = [
   '...kbbbbbbsbk...', '....kbbwwbbk....', '....kBBBBBk.....', '....kBk.kBk.....', '...kkk..kkk.....',
 ];
 const NPC_GUIDE: Rows = [
-  '', '.......kk.......', '......kyyk......', '.......kk.......', '....kkkkkkkk....', '...kuuuuuuuuk...',
-  '..kuuuuuuuuuuk..', '..kuukuuuukuuk..', '..kuukuuuukuuk..', '..kupuuuuuupuk..', '..kuuuukkuuuuk..',
-  '...kuuuuuuuuk...', '....kkuuuukk....', '....kwk..kwk....', '.....k....k.....',
+  '................',
+  '.....kkkkkk.....',
+  '....kwwwwwwk....',
+  '...kwwwwwwwwk...',
+  '...kssssssssk...',
+  '...klllsslllk...',
+  '...klklsslklk...',
+  '...kpsssssspk...',
+  '...ksssppsssk...',
+  '....kssrrssk....',
+  '..kwwwwwwwwwwk..',
+  '..kwwwwbbwwwwk..',
+  '..kwwwwbbwwwwk..',
+  '..kwwwwwwwwwwk..',
+  '....kbbk..kbbk..',
+  '....kkkk..kkkk..',
 ];
 const EGG: Rows = [
   '', '', '.....kkkkkk.....', '....kwwwwwwk....', '...kwwwwoowwk...', '...kwwwooowwk...', '..kwwwwwwwwwwk..',
@@ -49,14 +62,40 @@ const EGG: Rows = [
   '....kwwwwwwk....', '.....kkkkkk.....',
 ];
 const BOBO: Rows = [
-  '', 'kyyk', 'kkoooooookk', 'koooooooooook', 'koowwoooowwook', 'koowkoooookwok', 'kopoooooooopok',
-  'kooooookkooook', 'krrkoooooooookrrk'.slice(0, 16), 'krrrkoooooookrrrk'.slice(0, 16), 'krrrkooyyookrrrk',
-  'kkrkkooyyookkrkk', 'kooooooooook', 'kOOOk..kOOOk', 'kkkkk..kkkkk',
+  '......kkkk......',
+  '.....kllllk.....',
+  '.....klwllk.....',
+  '......kkkk......',
+  '....kkkkkkkk....',
+  '...kPPPPPPPPk...',
+  '..kPPPPPPPPPPk..',
+  '..kPPkwPPPkwPk..',
+  '..kPPkkPPPkkPk..',
+  '..kHHPPPPPPHHk..',
+  '..kPPrrrrrrPPk..',
+  '..kPPrRRRRrPPk..',
+  '...kPrRppRrPk...',
+  '....kPrrrrPk....',
+  '....kQQQQQQk....',
+  '.....kkkkkk.....'
 ];
 const BOBO2: Rows = [
-  'kyk.kyk.kyk', 'kyyyyyyyyk', 'kkoooooookk', 'koooooooooook', 'koowwoooowwook', 'koowkoooookwok', 'kopoooooooopok',
-  'kooooookkooook', 'krrkoooooooookrrk'.slice(0, 16), 'krrrkoooooookrrrk'.slice(0, 16), 'krrrkooyyookrrrk',
-  'kkrkkooyyookkrkk', 'kooooooooook', 'kOOOk..kOOOk', 'kkkkk..kkkkk',
+  '.kkk..kkkk..kkk.',
+  '.klk.kllllk.klk.',
+  '.kkk.klwllk.kkk.',
+  '......kkkk......',
+  '....kkkkkkkk....',
+  '...kPPPPPPPPk...',
+  '..kPPPPPPPPPPk..',
+  '..kPPkwPPPkwPk..',
+  '..kPPkkPPPkkPk..',
+  '..kHHPPPPPPHHk..',
+  '..kPPrrrrrrPPk..',
+  '..kPPrRRRRrPPk..',
+  '...kPrRppRrPk...',
+  '....kPrrrrPk....',
+  '....kQQQQQQk....',
+  '.....kkkkkk.....'
 ];
 const PIPI: Rows = [
   '', 'kcck', 'kkbbbbbbkk', 'kbbbbbbbbbbk', 'kbbwkbbbbkwbbk', 'kbbbbyyyybbbbk', 'kBbbbbyybbbbBk',
@@ -123,8 +162,9 @@ export function generateTextures(scene: Phaser.Scene) {
   // 角色
   grid('player_down', PLAYER_DOWN); grid('player_up', PLAYER_UP); grid('player_side', PLAYER_SIDE);
   grid('npc_guide', NPC_GUIDE); grid('egg', EGG);
-  grid('mon_bobo', BOBO);
-  grid('mon_bobo2', BOBO2, { ...PAL, o: '#ff8a2a', O: '#c9581a', y: '#ffe98a', r: '#ff4a6a' });
+  const BOBO_PAL = { ...PAL, P: '#ffb3a0', Q: '#f08a78', H: '#ff7f9a', R: '#8a1f3a', r: '#e8514a', l: '#bfe9ff' };
+  grid('mon_bobo', BOBO, BOBO_PAL);
+  grid('mon_bobo2', BOBO2, { ...BOBO_PAL, P: '#ffa27c', Q: '#e8745a' });
   grid('mon_pipi', PIPI);
   grid('en_pebble', PEBBLE); grid('en_dummy', DUMMY); grid('en_golem', GOLEM); grid('en_leafy', LEAFY); grid('en_windking', WINDKING);
 

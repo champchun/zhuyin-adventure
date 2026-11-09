@@ -191,7 +191,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="note" id="ztlog">（按上面的符號開始）</div>
     <h3>對話朗讀比較</h3>
     <div class="note">比較同一句話的兩種念法。可以改成別的句子（含注音符號的句子最能聽出差別）。</div>
-    <div class="row"><input id="cmptext" type="text" value="這是橘寶" style="flex:1;min-width:180px;font-size:22px;padding:8px;border:3px solid var(--ink);border-radius:10px;font-family:var(--font)"></div>
+    <div class="row"><input id="cmptext" type="text" value="波波會ㄅ的招式" style="flex:1;min-width:180px;font-size:22px;padding:8px;border:3px solid var(--ink);border-radius:10px;font-family:var(--font)"></div>
     <div class="row">
       <button class="btn small" data-a="cmp-tts">🔊 全部用語音合成</button>
       <button class="btn small primary" data-a="cmp-seg">🔊 實驗：符號改播音檔</button>
@@ -203,6 +203,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <h3>提示層級</h3>
     <div class="row">${seg('tier', ['auto', 1, 2, 3], s.tier, ['依關卡', '1 看符號', '2 聽音', '3 混合'])}</div>
     <div class="note">1＝看符號找一樣的（搭配聲音）；2＝聽聲音選符號（可要提示）；3＝混合複習。「依關卡」會隨冒險進度逐漸提高。</div>
+    <div class="row">答得越快、攻擊越強（不顯示倒數，只有加成） ${sw('speedBonus', s.speedBonus)}</div>
     <div class="row">選項數量 ${seg('optionCount', ['auto', 2, 3], s.optionCount, ['自動', '2 個', '3 個'])}</div>
     <h3>學習紀錄</h3>
     <table class="stats"><tr><th>符號</th><th>獨立答對</th><th>協助後完成</th><th>答錯</th><th>提示</th></tr>${rows}</table>

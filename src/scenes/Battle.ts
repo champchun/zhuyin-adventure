@@ -8,6 +8,7 @@ import { BATTLES } from '../data/levels';
 import type { BattleDef } from '../data/levels';
 import { audio } from '../core/audio';
 import { bui, sleep } from '../core/battleui';
+import type { Mode } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
 import { PROMPT_LINES } from '../data/voiceLines';
 
@@ -191,6 +192,7 @@ export class BattleScene extends Phaser.Scene {
 
     const targets = [...new Set([...def.focus, ...def.review])].filter((s) => G.settings.allowed.includes(s));
     let prevTarget: string | undefined;
+    let mode: Mode = 'look';
     let asked = 0;
     for (let phase = 1; phase <= def.phases; phase++) {
       let ehp = enemy.hp;
@@ -203,7 +205,9 @@ export class BattleScene extends Phaser.Scene {
         await bui.note(`第 ${phase} 個小回合！（共 ${def.phases} 個）`);
       }
       while (ehp > 0) {
-        const act = await bui.menu(me, party.length > 1);
+        const tierSetting = G.settings.tier;
+        const choosable = tierSetting === 'auto' && !def.guided && (audio.audioReadyFor(targets) || (G.settings.experimentalSymbolTts && targets.length > 0));
+        const act = await bui.menu(me, party.length > 1, { avail: choosable, cur: mode });
         if (act.type === 'run') { bui.msg(PROMPT_LINES.runAway, true); await sleep(900); return 'run'; }
         if (act.type === 'switch') {
           const i = await bui.chooseMon(party, party.indexOf(me));
@@ -211,8 +215,8 @@ export class BattleScene extends Phaser.Scene {
           continue;
         }
         // 選招式 → 播放題目 → 選符號
-        const tierSetting = G.settings.tier;
-        const tier = def.guided ? 1 : tierSetting === 'auto' ? def.tier : tierSetting;
+        if (act.type === 'move') mode = act.mode;
+        const tier = def.guided ? 1 : tierSetting !== 'auto' ? tierSetting : choosable ? (mode === 'listen' ? 2 : 1) : 1;
         const q = makeQuestion({
           focus: def.focus, review: def.review, allowed: G.settings.allowed, tier,
           audioReady: audio.audioReadyFor(targets) || (G.settings.experimentalSymbolTts && targets.length > 0),
@@ -225,8 +229,12 @@ export class BattleScene extends Phaser.Scene {
         prevTarget = q.target;
         // 出招（動畫期間介面已鎖定）
         bui.lock(true);
-        const dmg = act.move.power + powerBonus(me);
-        bui.msg(`${SPECIES[me.species].name}使出了${act.move.name}！`);
+        const clean = run.wrong === 0 && run.hints === 0 && !run.guidedAssist;
+        const listenBonus = q.type === 'listen' ? 1 : 0; // 聽的招式比較難，威力加成
+        const sec = run.ms / 1000;
+        const speed = G.settings.speedBonus && clean ? (sec <= 4 ? 2 : sec <= 8 ? 1 : 0) : 0;
+        const dmg = act.move.power + powerBonus(me) + listenBonus + speed;
+        bui.msg(`${SPECIES[me.species].name}使出了${act.move.name}！${speed >= 2 ? '⚡好快！威力大增！' : speed === 1 ? '⚡不錯！威力增加！' : ''}`);
         await this.playerAttack(act.move);
         ehp = Math.max(0, ehp - dmg);
         this.num(this.en.x, this.en.y - 30, `-${dmg}`, '#ffd84a');

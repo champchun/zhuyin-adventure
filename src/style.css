@@ -103,6 +103,8 @@ input[type=range] { width: 200px; height: 36px; }
 #bpanel .box { pointer-events: auto; width: min(900px, 100%); background: var(--panel); border: 4px solid var(--ink); border-radius: 14px; padding: 12px 14px; box-shadow: 0 6px 0 rgba(0,0,0,.35); }
 #bpanel .box[data-lock="1"] { pointer-events: none; opacity: .92; }
 #bpanel .msg { font-size: clamp(18px, 2.8vmin, 26px); font-weight: 800; min-height: 1.6em; line-height: 1.4; }
+.modes { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.modes .btn { flex: 1; min-width: 140px; }
 .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 8px; }
 .moves .btn { min-height: 68px; font-size: 22px; }
 .moves .btn small { display: block; font-size: 13px; font-weight: 600; }

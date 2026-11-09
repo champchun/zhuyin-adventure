@@ -86,6 +86,8 @@ export class QuestionRun {
   guidedAssist = false;
   hidden = new Set<string>();
   done = false;
+  /** 從題目出現到答對的毫秒數（battleui 填入；有協助時不採計加成） */
+  ms = 0;
   constructor(public q: Question, private stats: Record<string, SymStat>, guided = false) {
     if (guided) { this.revealed = true; this.guidedAssist = true; }
   }
