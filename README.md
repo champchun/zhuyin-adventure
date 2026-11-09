@@ -42,6 +42,23 @@ node tests/e2e/play.mjs   # 端對端：開啟 dev server 後，用真實點擊�
   - 家長設定內有「實驗：用 TTS 念單一符號」，發音未經驗證，預設關閉。
 - 背景音樂與音效以 WebAudio 即時合成（原創簡單旋律），可關閉。
 
+## 預先產生自然語音（Azure AI Speech）
+瀏覽器內建語音（iPad 的「美佳」）偏機械，網頁也拿不到加強版語音。解法是預先用 Azure 產生 mp3，放進專案；遊戲有預錄檔就播檔，沒有就退回語音合成。
+
+```bash
+# 1. 在 Azure 建立 Speech 資源（建議付費層 S0），取得金鑰與區域
+# 2. 金鑰只放環境變數，不要寫進檔案或 commit（PowerShell 範例）
+$env:AZURE_SPEECH_KEY = "你的金鑰"; $env:AZURE_SPEECH_REGION = "eastasia"
+npm run gen:voice -- --dry            # 只列出句子與字元數（不連線）
+npm run gen:voice -- --only 你好      # 先產生含「你好」的句子，試聽語音是否滿意
+npm run gen:voice                     # 產生全部（約 80 句、1,100 字元），輸出到 public/audio/voice/
+npm run gen:voice -- --zhuyin         # 另外產生 7 個注音的「呼讀音」到 public/audio/zhuyin/
+```
+- 換語音：`AZURE_SPEECH_VOICE`（預設 `zh-TW-HsiaoChenNeural`）、語速 `AZURE_SPEECH_RATE`（預設 `-10%`）。
+- 改了劇情文字後重跑即可，只會產生有變動的句子。含動態數字的句子（寶箱星星數、升級等級）無法預錄，仍用語音合成。
+- 注音呼讀音是語音合成，**不是真人標準音**，產生後請親耳確認。ㄅㄆㄇㄈ 若教材採「ㄜ」呼讀，標準國語沒有對應字；可設 `AZURE_USE_IPA=1` 讓腳本改用 IPA 音標（`src/data/symbols.ts` 的 `HUDU`），效果需試聽驗證。
+- 輸出的音檔會一併提交到 git；公開儲存庫等於公開散布，請先確認 Azure 條款（建議使用付費層）。
+
 ## iPad Safari 實機驗證清單（尚未在實機驗證）
 開發環境沒有 iPad，以下需在實機確認（用區網 IP 開 `npm run dev`，或部署 dist/ 到 https）：
 1. 點「新的冒險」後第一句劇情是否有聲音；無聲時看家長設定的語音狀態文字。

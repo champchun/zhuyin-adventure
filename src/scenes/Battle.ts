@@ -10,6 +10,7 @@ import { audio } from '../core/audio';
 import { bui, sleep } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
 import { MAPS } from '../data/maps';
+import { PROMPT_LINES } from '../data/voiceLines';
 
 export type BattleOutcome = 'win' | 'lose' | 'run';
 export interface BattleInit { battleId: string; mapTheme: string; done: (r: BattleOutcome) => void }
@@ -193,7 +194,7 @@ export class BattleScene extends Phaser.Scene {
       }
       while (ehp > 0) {
         const act = await bui.menu(me, party.length > 1);
-        if (act.type === 'run') { bui.msg('下次再來挑戰吧！', true); await sleep(900); return 'run'; }
+        if (act.type === 'run') { bui.msg(PROMPT_LINES.runAway, true); await sleep(900); return 'run'; }
         if (act.type === 'switch') {
           const i = await bui.chooseMon(party, party.indexOf(me));
           if (party[i] !== me) { G.save.active = i; setMe(party[i]); this.startIdle(); }
@@ -246,7 +247,7 @@ export class BattleScene extends Phaser.Scene {
     audio.sfx('win');
     this.idle.forEach((t) => t.stop());
     await this.tw({ targets: this.en, alpha: 0, y: this.en.y + 10, duration: 600 });
-    bui.msg('贏了！太棒了！', true);
+    bui.msg(PROMPT_LINES.win, true);
     await this.tw({ targets: this.pl, y: this.pl.y - 8, duration: 160, yoyo: true, repeat: 1 });
     await sleep(700);
     return 'win';

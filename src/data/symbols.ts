@@ -18,5 +18,20 @@ export const ZHUYIN_TEST: { group: string; list: [string, string][] }[] = [
   { group: '聲母', list: [['ㄅ','爸'],['ㄆ','怕'],['ㄇ','媽'],['ㄈ','發'],['ㄉ','弟'],['ㄊ','他'],['ㄋ','你'],['ㄌ','拉'],['ㄍ','哥'],['ㄎ','可'],['ㄏ','喝'],['ㄐ','雞'],['ㄑ','七'],['ㄒ','西'],['ㄓ','知'],['ㄔ','吃'],['ㄕ','獅'],['ㄖ','日'],['ㄗ','資'],['ㄘ','詞'],['ㄙ','四']] },
   { group: '韻母', list: [['ㄧ','衣'],['ㄨ','屋'],['ㄩ','魚'],['ㄚ','啊'],['ㄛ','喔'],['ㄜ','鵝'],['ㄝ','耶'],['ㄞ','愛'],['ㄟ','欸'],['ㄠ','凹'],['ㄡ','歐'],['ㄢ','安'],['ㄣ','恩'],['ㄤ','昂'],['ㄥ','鞥'],['ㄦ','兒']] },
 ];
+/**
+ * 呼讀音（單一聲母的教學念法）對照：char＝語音引擎可念的真實字；approx＝該字只是近似音。
+ * ipa＝預先產生 Azure 語音時可用 SSML phoneme 指定的音標（未經實際試聽驗證，需試聽後確認）。
+ * ㄅㄆㄇㄈ 若教材採「ㄜ」呼讀，標準國語沒有對應的字，只能靠 ipa 或真人音檔。
+ */
+export const HUDU: Record<string, { char: string; approx?: boolean; ipa?: string }> = {
+  'ㄅ': { char: '波', approx: true, ipa: 'pɤ˥' }, 'ㄆ': { char: '坡', approx: true, ipa: 'pʰɤ˥' },
+  'ㄇ': { char: '摸', approx: true, ipa: 'mɤ˥' }, 'ㄈ': { char: '佛', approx: true, ipa: 'fɤ˥' },
+  'ㄉ': { char: '德' }, 'ㄊ': { char: '特' }, 'ㄋ': { char: '訥' }, 'ㄌ': { char: '勒' },
+  'ㄍ': { char: '哥' }, 'ㄎ': { char: '科' }, 'ㄏ': { char: '呵' },
+  'ㄐ': { char: '基' }, 'ㄑ': { char: '欺' }, 'ㄒ': { char: '希' },
+  'ㄓ': { char: '知' }, 'ㄔ': { char: '吃' }, 'ㄕ': { char: '詩' }, 'ㄖ': { char: '日' },
+  'ㄗ': { char: '資' }, 'ㄘ': { char: '疵' }, 'ㄙ': { char: '思' },
+};
+
 export const ALL_SYMBOLS = SYMBOLS.map((s) => s.ch);
 export const symbolDef = (ch: string) => SYMBOLS.find((s) => s.ch === ch)!;

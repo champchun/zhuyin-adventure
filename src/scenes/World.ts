@@ -13,6 +13,7 @@ import { openParty, openResults, openSettings, say, setHudInfo, toast, ui } from
 import { bui } from '../core/battleui';
 import { QuestionRun, shuffle } from '../core/learning';
 import type { BattleOutcome } from './Battle';
+import { PROMPT_LINES } from '../data/voiceLines';
 
 const T = 16;
 const STEP_MS = 140;
@@ -351,7 +352,7 @@ export class WorldScene extends Phaser.Scene {
         setFlag(`l:${m}:${d.id}`); this.refreshObjects();
         return say(STORY.leavesBlow);
       case 'windmill':
-        if (flag('windmillOn')) return say(['風車呼呼轉，轉得好開心！']);
+        if (flag('windmillOn')) return say([PROMPT_LINES.windmillOn]);
         if (!hasAbility('gust')) return say(STORY.windLocked);
         audio.sfx('wind');
         await this.windPuff(o.spr.x + 8, o.spr.y - 12, 0xffffff);
@@ -388,7 +389,7 @@ export class WorldScene extends Phaser.Scene {
   private async useGate(d: MapObj) {
     const L = LEVELS[d.level!];
     if (!L.open) {
-      await say([{ who: `${L.symbol} 關：${L.name}`, text: '這一關還在迷霧中，尚未開放。' }, ...STORY.lockedGate.map((t) => ({ text: t }))]);
+      await say([{ who: `${L.symbol} 關：${L.name}`, text: PROMPT_LINES.gateClosed }, ...STORY.lockedGate.map((t) => ({ text: t }))]);
       return;
     }
     if (!this.gateOpen(L.id)) { await say(L.id === 'b' ? STORY.needPractice : STORY.needBoss); return; }
@@ -474,7 +475,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private async startBattle(o: Obj) {
-    if (!G.save.party.length) { await say(['先找到夥伴才能戰鬥喔！']); return; }
+    if (!G.save.party.length) { await say([PROMPT_LINES.noPartner]); return; }
     const def = BATTLES[o.def.battle!];
     const res = await this.runBattle(def.id);
     if (res === 'lose') {

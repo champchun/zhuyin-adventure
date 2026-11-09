@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen:voice": "vite-node tools/gen-voice.ts"
   },
   "dependencies": {
     "phaser": "^3.80.1"

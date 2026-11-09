@@ -18,6 +18,7 @@ class BootScene extends Phaser.Scene {
 }
 
 loadSettings();
+audio.loadVoiceManifest();
 view.zoom = computeZoom();
 const game = new Phaser.Game({
   type: Phaser.AUTO,

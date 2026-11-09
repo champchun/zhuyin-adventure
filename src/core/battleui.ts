@@ -6,6 +6,7 @@ import { SPECIES } from '../data/monsters';
 import type { MoveDef } from '../data/monsters';
 import { QuestionRun } from './learning';
 import { symbolDef } from '../data/symbols';
+import { PROMPT_LINES } from '../data/voiceLines';
 
 const $ = (id: string) => document.getElementById(id)!;
 export type Action = { type: 'move'; move: MoveDef } | { type: 'switch' } | { type: 'run' };
@@ -74,7 +75,7 @@ export const bui = {
     return new Promise((resolve) => {
       const q = run.q;
       const body = root.querySelector<HTMLElement>('.body')!;
-      const prompt = q.type === 'listen' ? '聽聽看，是哪一個符號？' : '找出一樣的符號！';
+      const prompt = q.type === 'listen' ? PROMPT_LINES.listen : PROMPT_LINES.match;
       const hasSnd = audio.hasSymbolAudio(q.target) || G.settings.experimentalSymbolTts;
       this.msg(prompt);
       body.innerHTML = `<div class="qhead"><span></span><span style="display:flex;gap:8px">

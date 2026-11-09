@@ -31,6 +31,12 @@ class AudioManager {
   private speaking = false;
   private onStatus: Array<() => void> = [];
   lastSpoken = '';
+  /** 預先產生的語音檔：文字 → 檔名（public/audio/voice/manifest.json） */
+  voiceFiles: Record<string, string> = {};
+  private voiceGain?: GainNode;
+  private voiceSrc?: AudioBufferSourceNode;
+  private voiceBufs = new Map<string, AudioBuffer>();
+  private speakToken = 0;
 
   constructor() {
     if ('speechSynthesis' in window) {
@@ -83,6 +89,8 @@ class AudioManager {
         this.master.connect(this.ctx.destination);
         this.bgmGain = this.ctx.createGain();
         this.sfxGain = this.ctx.createGain();
+        this.voiceGain = this.ctx.createGain();
+        this.voiceGain.connect(this.master);
         this.bgmGain.connect(this.master);
         this.sfxGain.connect(this.master);
         this.applySettings();
@@ -103,9 +111,53 @@ class AudioManager {
   }
 
   // ───── ① 劇情 TTS ─────
+  /** 載入預錄語音清單；沒有清單（沒產生過）就全部使用瀏覽器語音合成。 */
+  async loadVoiceManifest() {
+    try {
+      const res = await fetch('audio/voice/manifest.json');
+      if (!res.ok || !/json/i.test(res.headers.get('content-type') ?? '')) return;
+      const m = await res.json();
+      this.voiceFiles = m.lines ?? {};
+      this.onStatus.forEach((f) => f());
+    } catch { /* 沒有清單：正常 */ }
+  }
+  prerecordedCount() { return Object.keys(this.voiceFiles).length; }
+  private async playFile(file: string, token: number) {
+    try {
+      let buf = this.voiceBufs.get(file);
+      if (!buf) {
+        const res = await fetch('audio/voice/' + file);
+        if (!res.ok) throw new Error('missing');
+        buf = await this.ctx!.decodeAudioData(await res.arrayBuffer());
+        this.voiceBufs.set(file, buf);
+      }
+      if (token !== this.speakToken) return; // 已經換成新的一句
+      const src = this.ctx!.createBufferSource();
+      src.buffer = buf;
+      src.connect(this.voiceGain!);
+      this.voiceSrc = src;
+      this.speaking = true; this.duck(true);
+      src.onended = () => { if (this.voiceSrc === src) { this.voiceSrc = undefined; this.speaking = false; this.duck(false); } };
+      src.start();
+    } catch {
+      if (token === this.speakToken) this.speakTts(this.lastSpoken); // 檔案壞了就退回語音合成
+    }
+  }
   speak(text: string) {
     this.lastSpoken = text;
-    if (!G.settings.voiceOn || !('speechSynthesis' in window) || this.status === 'none') return;
+    const token = ++this.speakToken;
+    this.stopFile();
+    if (!G.settings.voiceOn) return;
+    const file = this.voiceFiles[text];
+    if (file && this.ctx && this.voiceGain) { void this.playFile(file, token); return; }
+    this.speakTts(text);
+  }
+  private stopFile() {
+    try { this.voiceSrc?.stop(); } catch { /* ignore */ }
+    this.voiceSrc = undefined;
+  }
+  private speakTts(text: string) {
+    if (!('speechSynthesis' in window) || this.status === 'none') return;
     try {
       speechSynthesis.cancel(); // 避免舊語音堆積
       const u = new SpeechSynthesisUtterance(text);
@@ -122,6 +174,8 @@ class AudioManager {
     } catch { /* 語音失敗不應卡住遊戲 */ }
   }
   stopSpeech() {
+    this.speakToken++;
+    this.stopFile();
     try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch { /* ignore */ }
     this.speaking = false;
     this.duck(false);
@@ -176,6 +230,7 @@ class AudioManager {
     if (!this.bgmGain || !this.sfxGain) return;
     this.bgmGain.gain.value = G.settings.bgmOn ? (this.speaking ? 0.25 : 1) : 0;
     this.sfxGain.gain.value = G.settings.sfxOn ? 1 : 0;
+    if (this.voiceGain) this.voiceGain.gain.value = G.settings.voiceOn ? 1 : 0;
     this.master!.gain.value = 0.5;
   }
   playBgm(theme: string) {
