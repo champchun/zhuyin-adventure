@@ -26,7 +26,7 @@ export const bui = {
       <div id="bpanel"><div class="box" data-lock="0"><div class="msg"></div><div class="body"></div></div></div>`;
     if (!bars) root.querySelectorAll('.hpbar').forEach((e) => e.remove());
     this.fit();
-    if (!fitBound) { fitBound = true; window.addEventListener('resize', () => bui.fit()); }
+    if (!fitBound) { fitBound = true; window.addEventListener('resize', () => bui.fit()); window.addEventListener('fitchange', () => bui.fit()); }
   },
   /** 讓血條對齊遊戲畫面（canvas）而不是整個視窗，避免兩隻怪獸與血條對不上 */
   fit() {

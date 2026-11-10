@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import './style.css';
-import { VIEW_H, VIEW_W, computeZoom, view } from './core/view';
+import { VIEW_H, VIEW_W, computeFit, computeZoom, view } from './core/view';
 import { G, hasSave, loadGame, loadSettings, saveGame, startNewGame } from './core/save';
 import { audio } from './core/audio';
 import { applyBodyClasses, hooks, openSettings, setupHud, showHud, showTitle, ui } from './core/ui';
@@ -35,14 +35,30 @@ const game = new Phaser.Game({
   scene: [BootScene, WorldScene, BattleScene],
 });
 
+// 以 CSS 把畫布貼合視窗；整數倍率時用最近鄰保持像素銳利，小數倍率改用平滑縮放避免像素粗細不均。
+const applyFit = () => {
+  const f = computeFit();
+  view.fit = f;
+  const cv = game.canvas;
+  if (!cv) return;
+  cv.style.width = Math.floor(VIEW_W * f) + 'px';
+  cv.style.height = Math.floor(VIEW_H * f) + 'px';
+  cv.style.imageRendering = Number.isInteger(f) ? 'pixelated' : 'auto';
+  game.scale.refresh();
+};
+applyFit();
+
 let resizeT: number | undefined;
 const onResize = () => {
   clearTimeout(resizeT);
   resizeT = window.setTimeout(() => {
     const z = computeZoom();
-    if (z === view.zoom && game.scale.width === VIEW_W * z) return;
-    view.zoom = z;
-    game.scale.resize(VIEW_W * z, VIEW_H * z);
+    if (z !== view.zoom || game.scale.width !== VIEW_W * z) {
+      view.zoom = z;
+      game.scale.resize(VIEW_W * z, VIEW_H * z);
+    }
+    applyFit();
+    window.dispatchEvent(new Event('fitchange'));
   }, 80);
 };
 window.addEventListener('resize', onResize);
