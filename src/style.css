@@ -78,6 +78,7 @@ input[type=range] { width: 200px; height: 36px; }
 .bar { height: 10px; border: 2px solid var(--ink); border-radius: 6px; background: #ddd; overflow: hidden; margin: 3px 0; }
 .bar > i { display: block; height: 100%; background: var(--ok); }
 .bar.exp > i { background: var(--sky); }
+.bar.mp > i { background: #9a6ad8; }
 
 /* ───── 標題畫面 ───── */
 #screen { position: absolute; inset: 0; z-index: 15; display: none; }
@@ -94,9 +95,17 @@ input[type=range] { width: 200px; height: 36px; }
 /* ───── 戰鬥介面 ───── */
 #battleui { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 #battleui > * { pointer-events: auto; }
-.hpbar { position: absolute; top: max(8px, env(safe-area-inset-top)); background: var(--panel); border: 3px solid var(--ink); border-radius: 10px; padding: 6px 10px; min-width: 170px; font-weight: 800; font-size: 17px; }
-.hpbar.enemy { left: 8px; } .hpbar.me { right: 8px; }
-.hpbar .hp { height: 14px; border: 2px solid var(--ink); border-radius: 7px; background: #ddd; overflow: hidden; margin-top: 4px; }
+/* 血條以遊戲畫面為基準（--cx/--cy/--cr/--ch 由 battleui.fit() 設定）：敵方在畫面左上，我方在畫面右側偏下，仿初代寶可夢 */
+.hpbar { position: absolute; background: var(--panel); border: 3px solid var(--ink); border-radius: 10px; padding: 6px 12px; min-width: 190px; font-weight: 800; font-size: 17px; }
+.hpbar.enemy { left: calc(var(--cx, 0px) + 10px); top: calc(var(--cy, 0px) + 10px); }
+.hpbar.me { right: calc(var(--cr, 0px) + 10px); top: calc(var(--cy, 0px) + var(--ch, 600px) * 0.34); }
+.hpbar .hprow { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.hpbar .hprow b { font-size: 13px; color: #e0742c; }
+.hpbar .hprow .hp { flex: 1; }
+.hpbar .num { text-align: right; font-size: 15px; margin-top: 2px; }
+.hpbar .hprow b.mpl { color: #7a4ad0; }
+.hpbar .hp.mp i { background: #9a6ad8; }
+.hpbar .hp { height: 14px; border: 2px solid var(--ink); border-radius: 7px; background: #ddd; overflow: hidden; }
 .hpbar .hp i { display: block; height: 100%; background: var(--ok); transition: width .4s; }
 .hpbar .hp i.low { background: #f2b84a; }
 #bpanel { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px max(12px, env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none; }

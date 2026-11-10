@@ -1,6 +1,7 @@
 // 程式繪製的原創像素素材。所有素材以字串 key 對應貼圖；日後要換成正式圖檔，
 // 只要在 Boot 階段改成 load.image / load.spritesheet 並維持相同 key 即可。
 import Phaser from 'phaser';
+import { MONSTER_ART, monsterRows } from './monsterArt';
 
 export const TILE = 16;
 
@@ -61,69 +62,11 @@ const EGG: Rows = [
   '..kwoowwwwwwwk..', '..kwoowwwwoowk..', '..kwwwwwwwoowk..', '..kwwwoowwwwwk..', '...kwwoowwwwk...',
   '....kwwwwwwk....', '.....kkkkkk.....',
 ];
-const BOBO: Rows = [
-  '................',
-  '.......kk.......',
-  '......kPPk......',
-  '......kPPk......',
-  '.....kPPPPk.....',
-  '....kPwPPPPk....',
-  '...kPwPPPPPPk...',
-  '..kPPPPPPPPPPk..',
-  '..kPPkwPPkwPPk..',
-  '..kPPkkPPkkPPk..',
-  '..kPHPPPPPPHPk..',
-  '..kPPrRRRRrPPk..',
-  '..kPPPrrrrPPPk..',
-  '..kQQQQQQQQQQk..',
-  '...kkkkkkkkkk...',
-  '................'
-];
-const BOBO2: Rows = [
-  '.kkk........kkk.',
-  '.klk...kk...klk.',
-  '.kkk..kPPk..kkk.',
-  '......kPPk......',
-  '.....kPPPPk.....',
-  '....kPwPPPPk....',
-  '...kPwPPPPPPk...',
-  '..kPPPPPPPPPPk..',
-  '..kPPkwPPkwPPk..',
-  '..kPPkkPPkkPPk..',
-  '..kPHPPPPPPHPk..',
-  '..kPPrRRRRrPPk..',
-  '..kPPPrrrrPPPk..',
-  '..kQQQQQQQQQQk..',
-  '...kkkkkkkkkk...',
-  '................'
-];
 const PIPI: Rows = [
   '', 'kcck', 'kkbbbbbbkk', 'kbbbbbbbbbbk', 'kbbwkbbbbkwbbk', 'kbbbbyyyybbbbk', 'kBbbbbyybbbbBk',
   'kBBbbllllllbbBBk', 'kBBBbllllllbBBBk', 'kkBBbllllbBBkk', 'kkbbllllbbkk', 'kbbbbbbbbbbk', 'kkkbbbbkkk',
   'kyyk..kyyk', 'kkkk..kkkk',
 ];
-const PEBBLE: Rows = [
-  '', '', '', 'kkkkkk', 'kkeeeeeekk', 'keeeeeeeeeek', 'keeewkeeeewkek'.slice(0, 14), 'keeeeeeeeeeeek',
-  'keEeeeeeeeeEek', 'keeeeekkeeeeek', 'keeeeeeeeeeeek', 'kEEEeeeeeeEEEk', 'kkkkkkkkkkkkkk',
-];
-const DUMMY: Rows = [
-  '', 'kkkkkk', 'kNNNNNNk', 'kkkkkkkkkkkk', 'kttttttttttk', 'kttkttttkttk', 'kttttrrttttk', 'kkttttttttkk',
-  'ttkrrrrrrktt', 'tkkrrrrrrkkt', 'kkkrrrrrrkkk', 'kkkNNkkk', 'kNNk', 'kNNk', 'kkkkkk',
-];
-const GOLEM: Rows = [
-  'kkkkkkkkkk', 'kEEEEEEEEEEk', 'kEeeeeeeeeeeEk', 'kEeyyeeeeeeyyeEk', 'kEeeeeeeeeeeeeEk', 'kEeeekkkkkkeeeEk',
-  'kEEeeggeeeeeeEEk', 'kEEEEeeeeeeEEEEk', 'kEEEkkEEEEkkEEEk', 'kkk..kkkk..kkk',
-];
-const LEAFY: Rows = [
-  '', '', 'kg....gk', 'kgk..kgk', 'kkggggggkk', 'kggggggggggk', 'kggwkggggkwggk', 'kggggggggggggk',
-  'kgGgggkkgggGgk', 'kggggggggggggk', 'kGGggggggggGGk', 'kkgkkkkkkgkk',
-];
-const WINDKING: Rows = [
-  'kwwk........kwwk', '.kwwk......kwwk.', '..kwwk....kwwk..', '...kwwkkkkwwk...', 'kkcccccccckk', 'kcccccccccccck',
-  'kccwkcccckwcck', 'kcccccccccccck', 'kcuuuuuuuuuuck', 'kuuuuukkuuuuuk', 'kkuuuuuuuuuukk', 'kkkkuuuuuukkkk',
-  'kwk....kwk',
-];
-
 function drawRows(tex: Phaser.Textures.CanvasTexture, rows: Rows, pal: Record<string, string>) {
   const ctx = tex.getContext();
   ctx.clearRect(0, 0, 16, 16);
@@ -162,11 +105,19 @@ export function generateTextures(scene: Phaser.Scene) {
   // 角色
   grid('player_down', PLAYER_DOWN); grid('player_up', PLAYER_UP); grid('player_side', PLAYER_SIDE);
   grid('npc_guide', NPC_GUIDE); grid('egg', EGG);
-  const BOBO_PAL = { ...PAL, P: '#ffb3a0', Q: '#f08a78', H: '#ff7f9a', R: '#8a1f3a', r: '#e8514a', l: '#bfe9ff' };
-  grid('mon_bobo', BOBO, BOBO_PAL);
-  grid('mon_bobo2', BOBO2, { ...BOBO_PAL, P: '#ffa27c', Q: '#e8745a' });
+  // 三隻初始夥伴是 32×32（見 monsterArt.ts）；地圖上縮成 0.5 倍跟著玩家走，戰鬥時放大
+  for (const key of Object.keys(MONSTER_ART)) {
+    const { rows, pal } = monsterRows(key);
+    make(key, 32, 32, (c) => rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] !== '.') px(c, pal[row[x]] ?? '#ff00ff', x, y); }));
+  }
   grid('mon_pipi', PIPI);
-  grid('en_pebble', PEBBLE); grid('en_dummy', DUMMY); grid('en_golem', GOLEM); grid('en_leafy', LEAFY); grid('en_windking', WINDKING);
+  // 村民：同一套身體換髮色與衣服
+  const npc = (key: string, hair: string, shirt: string, pants: string) => grid(key, PLAYER_DOWN, { ...PAL, N: hair, b: shirt, B: pants });
+  npc('npc_mom', '#c86a2a', '#ff9db8', '#8b5a3c');
+  npc('npc_kid', '#ffd84a', '#5ccf5c', '#2f6fc0');
+  npc('npc_elder', '#e6e6f0', '#9a6ad8', '#5c3a24');
+  npc('npc_girl', '#7a4a2a', '#ffd84a', '#e8514a');
+  npc('npc_clerk', '#4a3a6a', '#5ccf5c', '#2f6fc0');
 
   // ───── 地形圖塊 ─────
   const grass = (c: CanvasRenderingContext2D, seed: number) => {
@@ -224,6 +175,36 @@ export function generateTextures(scene: Phaser.Scene) {
   make('t_cliff', 16, 16, (c) => {
     px(c, '#8a8aa3', 0, 0, 16, 16); px(c, '#a6a6bd', 0, 0, 16, 5); px(c, '#6a6a84', 0, 11, 16, 5);
     px(c, '#55556e', 3, 6, 5, 1); px(c, '#55556e', 9, 9, 5, 1); px(c, '#55556e', 6, 2, 1, 4); px(c, '#c4c4d8', 11, 1, 3, 1);
+  });
+
+  // ───── 室內圖塊 ─────
+  make('t_wood', 16, 16, (c) => {
+    px(c, '#e0b678', 0, 0, 16, 16);
+    for (let y = 0; y < 16; y += 8) { px(c, '#c99a5c', 0, y + 7, 16, 1); px(c, '#c99a5c', (y / 8) % 2 ? 4 : 11, y, 1, 7); }
+  });
+  make('t_rug', 16, 16, (c) => {
+    px(c, '#e0b678', 0, 0, 16, 16); px(c, '#e8514a', 0, 0, 16, 16); px(c, '#ffd84a', 1, 1, 14, 1); px(c, '#ffd84a', 1, 14, 14, 1);
+    px(c, '#ffd84a', 1, 1, 1, 14); px(c, '#ffd84a', 14, 1, 1, 14); px(c, '#ff8a80', 6, 6, 4, 4);
+  });
+  make('t_iwall', 16, 16, (c) => {
+    px(c, '#fff0c8', 0, 0, 16, 16); px(c, '#e8d29a', 0, 0, 16, 1);
+    for (let x = 0; x < 16; x += 4) px(c, '#f2e0b0', x, 1, 1, 15);
+    px(c, '#8b5a3c', 0, 13, 16, 3); px(c, '#5c3a24', 0, 15, 16, 1);
+  });
+  make('t_table', 16, 16, (c) => {
+    px(c, '#2b2140', 0, 2, 16, 12); px(c, '#b9824f', 0, 3, 16, 9); px(c, '#d9a26a', 0, 3, 16, 2); px(c, '#8b5a3c', 0, 12, 16, 2);
+  });
+  make('t_shelf', 16, 16, (c) => {
+    px(c, '#2b2140', 0, 0, 16, 16); px(c, '#8b5a3c', 1, 1, 14, 14); px(c, '#5c3a24', 1, 7, 14, 1);
+    [['#e8514a', 2], ['#4aa8f0', 5], ['#ffd84a', 8], ['#5ccf5c', 11]].forEach(([col, x]) => { px(c, col as string, x as number, 2, 3, 5); px(c, col as string, (x as number) + 1, 9, 3, 5); });
+  });
+  make('bed', 16, 16, (c) => {
+    px(c, '#2b2140', 1, 1, 14, 15); px(c, '#8b5a3c', 2, 2, 12, 13); px(c, '#ffffff', 3, 3, 10, 4); px(c, '#9fdcff', 3, 7, 10, 7);
+    px(c, '#6fb8e8', 3, 10, 10, 1); px(c, '#ffffff', 4, 4, 3, 2);
+  });
+  make('desk', 16, 16, (c) => {
+    px(c, '#2b2140', 1, 4, 14, 11); px(c, '#b9824f', 2, 5, 12, 8); px(c, '#8b5a3c', 2, 12, 12, 2);
+    px(c, '#ffffff', 4, 6, 5, 4); px(c, '#4aa8f0', 5, 7, 3, 1); px(c, '#ffd84a', 11, 6, 2, 3);
   });
 
   // ───── 物件 ─────

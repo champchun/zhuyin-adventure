@@ -1,5 +1,6 @@
 import { ALL_SYMBOLS } from '../data/symbols';
-import { SPECIES } from '../data/monsters';
+import { ITEMS, SPECIES } from '../data/monsters';
+import { MAPS } from '../data/maps';
 
 export interface Settings {
   voiceOn: boolean;
@@ -32,6 +33,9 @@ export interface MonsterInst {
   stage: number;
   level: number;
   exp: number;
+  /** 目前 HP／MP（跨戰鬥保留，睡覺或用道具回復）；舊存檔沒有時視為全滿 */
+  hp?: number;
+  mp?: number;
 }
 export interface SaveData {
   v: 1;
@@ -42,6 +46,10 @@ export interface SaveData {
   active: number;
   flags: Record<string, boolean>;
   abilities: string[];
+  /** 道具數量 */
+  items: Record<string, number>;
+  /** 金幣：打贏怪物獲得，在商店買道具 */
+  coins: number;
   stats: Record<string, SymStat>;
   stars: number;
   cleared: string[];
@@ -68,7 +76,7 @@ export const defaultSettings = (): Settings => ({
 export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assisted: 0, conf: {} });
 
 export const newSave = (): SaveData => ({
-  v: 1, mapId: 'village', x: 4, y: 7, party: [], active: 0, flags: {}, abilities: [],
+  v: 1, mapId: 'room', x: 2, y: 3, party: [], active: 0, flags: {}, abilities: [], items: {}, coins: 0,
   stats: Object.fromEntries(ALL_SYMBOLS.map((s) => [s, emptyStat()])), stars: 0, cleared: [], playSeconds: 0,
 });
 
@@ -99,7 +107,11 @@ export function loadGame(): boolean {
   try {
     const d = JSON.parse(raw) as SaveData;
     const base = newSave();
-    G.save = { ...base, ...d, stats: { ...base.stats, ...d.stats } };
+    G.save = { ...base, ...d, items: { ...base.items, ...d.items }, stats: { ...base.stats, ...d.stats } };
+    // 舊存檔（還沒有房間／研究所劇情）：已經有夥伴就視為選過初始夥伴、見過博士
+    if (G.save.party.length) { G.save.flags.starterChosen = true; G.save.flags.guideMet = true; }
+    if (!MAPS[G.save.mapId]) { G.save.mapId = 'village'; G.save.x = 4; G.save.y = 7; }
+    G.save.party.forEach(ensureVitals);
     return true;
   } catch { return false; }
 }
@@ -118,7 +130,42 @@ export const hasAbility = (a: string) => G.save.abilities.includes(a);
 
 // ───── 怪獸數值 ─────
 export const maxHp = (m: MonsterInst) => SPECIES[m.species].baseHp + (m.level - 1) * 2 + m.stage * 4;
-export const powerBonus = (m: MonsterInst) => Math.floor((m.level - 1) / 2) + m.stage;
+export const maxMp = (m: MonsterInst) => SPECIES[m.species].baseMp + Math.floor((m.level - 1) / 2) + m.stage * 2;
+export const powerBonus = (m: MonsterInst) => Math.floor((m.level - 1) / 2) + m.stage + SPECIES[m.species].atk;
+/** 舊存檔或剛加入隊伍：HP／MP 補滿 */
+export function ensureVitals(m: MonsterInst) {
+  if (m.hp === undefined) m.hp = maxHp(m);
+  if (m.mp === undefined) m.mp = maxMp(m);
+  m.hp = Math.min(m.hp, maxHp(m));
+  m.mp = Math.min(m.mp, maxMp(m));
+}
+export const healAll = () => G.save.party.forEach((m) => { m.hp = maxHp(m); m.mp = maxMp(m); });
+export const itemCount = (id: string) => G.save.items[id] ?? 0;
+export const addCoins = (n: number) => { G.save.coins = Math.max(0, (G.save.coins ?? 0) + n); };
+/** 商店購買：回傳結果，成功才會扣錢加道具 */
+export function buyItem(id: string): 'ok' | 'poor' | 'locked' | 'none' {
+  const it = ITEMS[id];
+  if (!it || it.price === undefined) return 'none';
+  if (it.need && !flag(it.need)) return 'locked';
+  if ((G.save.coins ?? 0) < it.price) return 'poor';
+  addCoins(-it.price);
+  addItem(id);
+  return 'ok';
+}
+export const addItem = (id: string, n = 1) => { if (ITEMS[id]) G.save.items[id] = itemCount(id) + n; };
+/** 對夥伴使用道具；沒有效果（已經滿了）或沒有庫存時回傳 false，不消耗 */
+export function useItem(id: string, m: MonsterInst): boolean {
+  const it = ITEMS[id];
+  if (!it || itemCount(id) <= 0) return false;
+  ensureVitals(m);
+  const needHp = !!it.hp && m.hp! < maxHp(m);
+  const needMp = !!it.mp && m.mp! < maxMp(m);
+  if (!needHp && !needMp) return false;
+  if (it.hp) m.hp = Math.min(maxHp(m), m.hp! + it.hp);
+  if (it.mp) m.mp = Math.min(maxMp(m), m.mp! + it.mp);
+  G.save.items[id]--;
+  return true;
+}
 export const expNeeded = (m: MonsterInst) => 8 * m.level;
 export const spriteOf = (m: MonsterInst) => {
   const s = SPECIES[m.species].sprites;
@@ -127,6 +174,7 @@ export const spriteOf = (m: MonsterInst) => {
 export function giveMonster(species: string): MonsterInst | null {
   if (G.save.party.length >= PARTY_MAX) return null;
   const m: MonsterInst = { uid: species + Date.now().toString(36), species, stage: 0, level: 1, exp: 0 };
+  ensureVitals(m);
   G.save.party.push(m);
   return m;
 }
@@ -135,5 +183,6 @@ export function addExp(m: MonsterInst, n: number): number {
   m.exp += n;
   let ups = 0;
   while (m.exp >= expNeeded(m)) { m.exp -= expNeeded(m); m.level++; ups++; }
+  if (ups) { ensureVitals(m); m.hp = Math.min(maxHp(m), m.hp! + 2 * ups); m.mp = Math.min(maxMp(m), m.mp! + ups); }
   return ups;
 }

@@ -49,8 +49,10 @@ async function pump(cond, label, maxMs = 900000) {
       const big = document.querySelector('#battleui .qcard .big')?.textContent ?? '';
       const glow = document.querySelector('#battleui .opt.glow');
       const results = document.querySelector('#modal [data-a=go]');
-      return { dlg, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
+      return { dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
+    if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.move) { await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
@@ -96,19 +98,44 @@ await snap('title');
 await page.click('#screen [data-a=new]');
 await page.waitForFunction(() => !document.querySelector('#screen .menu'));
 await pump(idle, 'intro');
+await snap('room-start');
+if ((await save()).mapId !== 'room') throw new Error('新遊戲沒有從房間開始');
+log('✓ 新的冒險、在房間醒來');
+
+// ───── 房間：媽媽、出門被擋、床 ─────
+await doTap(5, 7, '門（還不能出）');
+if ((await save()).mapId !== 'room') throw new Error('沒跟媽媽說話就出門了');
+await doTap(7, 4, '媽媽');
+if (!(await flags()).momTalked) throw new Error('媽媽的旗標沒設');
+await doTap(8, 2, '書桌紙條');
+await doTap(5, 7, '出門');
+if ((await save()).mapId !== 'village') throw new Error('沒有走到村子');
 await snap('village-start');
-log('✓ 新的冒險、開場');
+log('✓ 媽媽、書桌、出門到村子');
+
+// ───── 村民指路、研究所選怪 ─────
+await doTap(7, 6, '小皮');
+await doTap(18, 8, '村長爺爺');
+await doTap(14, 3, '研究所門');
+if ((await save()).mapId !== 'lab') throw new Error('沒有進入研究所');
+await snap('lab');
+await doTap(5, 3, '還沒見博士就點史萊姆');
+if ((await save()).party.length) throw new Error('還沒跟博士說話就選到夥伴');
+await doTap(9, 5, '博士');
+const STARTER = process.env.STARTER ?? 'momo';
+await doTap({ bobo: 3, momo: 5, popo: 7 }[STARTER], 3, '選 ' + STARTER);
+let s = await save();
+let f = await flags();
+if (s.party.length !== 1 || s.party[0].species !== STARTER || !f.starterChosen || !f.giftGiven) throw new Error('選夥伴流程不對 ' + JSON.stringify({ party: s.party, f }));
+if (!s.items.potion || !s.items.berry) throw new Error('博士沒有給道具 ' + JSON.stringify(s.items));
+await snap('starter-picked');
+log('✓ 研究所選了', STARTER, '，拿到道具', JSON.stringify(s.items));
+await doTap(5, 8, '離開研究所');
+if ((await save()).mapId !== 'village') throw new Error('沒有回到村子');
 
 // ───── 第 0 關 ─────
-await doTap(12, 8, '博士'); await doTap(8, 10, '教學寶箱'); await doTap(12, 8, '博士2');
-let f = await flags();
-if (!f.guideMet || !f['c:village:chest_t'] || !f.tutorialDone) throw new Error('教學流程旗標不對 ' + JSON.stringify(f));
-await snap('egg-appeared');
-await doTap(15, 9, '神祕蛋');
-let s = await save();
-if (!s.party.length || !s.flags.eggHatched) throw new Error('蛋沒有孵化');
-await snap('hatched');
-log('✓ 蛋孵化，波波加入隊伍:', s.party.map((m) => m.species).join());
+await doTap(8, 10, '村裡寶箱（小藥水）');
+if ((await save()).items.potion < 4) throw new Error('寶箱沒給小藥水');
 await doTap(16, 11, '練習戰');
 f = await flags();
 if (!f.practiceDone) throw new Error('練習戰沒有完成');
@@ -128,9 +155,12 @@ for (const [x, y, n] of [[9, 15, '寶箱1'], [11, 16, '小怪1'], [15, 12, '小�
 await doTap(22, 4, '頭目');
 s = await save();
 if (!s.abilities.includes('hum') || !s.abilities.includes('fog') || !s.flags.boss_b) throw new Error('頭目後沒有哼哼波／吹霧');
-if (s.party[0].stage !== 1) throw new Error('波波沒有成長');
+if (s.party[0].stage !== 1) throw new Error('夥伴沒有成長');
 await snap('boss-b-done');
-log('✓ 小關B頭目完成，哼哼波與吹霧解鎖，波波成長 → Lv.' + s.party[0].level);
+log('✓ 小關B頭目完成，哼哼波與吹霧解鎖，夥伴成長 → Lv.' + s.party[0].level);
+// HP 是跨戰鬥保留的：打完之後不一定是滿的；回家睡一覺要回滿
+const vit = await ev(() => { const m = window.__game.G.save.party[0]; return { hp: m.hp, mp: m.mp }; });
+log('  頭目戰後 HP/MP:', JSON.stringify(vit));
 await doTap(10, 11, '裂石（爆破拳）'); await doTap(3, 9, '裂石後寶箱');
 f = await flags();
 if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('小徑裂石／寶箱失敗');
@@ -162,6 +192,50 @@ f = await flags();
 if (!f.windmillOn || !f['l:p:leaves_a'] || !f['c:p:chest_leaf'] || !f['c:p:chest_wind']) throw new Error('噴風互動失敗 ' + JSON.stringify(f));
 await snap('meadow-gust');
 log('✓ 噴風：風車、落葉、木門皆可用');
+
+// ───── 回村、逛道具店：打怪賺到的金幣買藥水 ─────
+await doTap(4, 18, '回村');
+const coins0 = (await save()).coins;
+if (!(coins0 > 0)) throw new Error('打完怪沒有金幣 ' + coins0);
+await doTap(19, 14, '商店門');
+if ((await save()).mapId !== 'shop') throw new Error('沒有進入商店');
+await snap('shop-inside');
+await tapTile(6, 3); await sleep(250); // 先是店員的對話，按掉之後才會開商店視窗（開著時 busy 不會結束，所以不能用 doTap）
+await pump(() => ev(() => !!document.querySelector('#modal [data-a=buy]')), '店員對話');
+await snap('shop-menu');
+const potions0 = (await save()).items.potion ?? 0;
+await page.click('#modal [data-a=buy][data-id=potion]');
+await page.waitForSelector('#modal [data-a=buy]');
+const afterBuy = await save();
+if ((afterBuy.items.potion ?? 0) !== potions0 + 1 || afterBuy.coins !== coins0 - 15) throw new Error('購買結果不對 ' + JSON.stringify({ items: afterBuy.items, coins: afterBuy.coins, coins0 }));
+await page.click('#modal [data-a=close]');
+await pump(idle, '離開商店');
+log('✓ 打怪賺到', coins0, '枚金幣，在商店買了 1 瓶小藥水，剩', afterBuy.coins);
+await doTap(4, 7, '離開商店');
+if ((await save()).mapId !== 'village') throw new Error('沒有走出商店');
+
+// ───── 怪物重生：離開地圖再回來，野生怪回來、頭目不會 ─────
+const beforeRe = await flags();
+if (!beforeRe['m:b:m1'] || !beforeRe['m:b:boss']) throw new Error('測試前提不對：小徑的怪應該都打完了');
+await doTap(4, 17, '再進小徑');
+if ((await save()).mapId !== 'b') throw new Error('沒有再進小徑');
+const afterRe = await flags();
+if (afterRe['m:b:m1'] || afterRe['m:b:m2'] || afterRe['m:b:m3']) throw new Error('野生怪沒有重生 ' + JSON.stringify(afterRe));
+if (!afterRe['m:b:boss'] || !afterRe.boss_b) throw new Error('頭目不該重生');
+const monstersShown = await ev(() => [...window.__game.world().objs.values()].filter((o) => o.def.kind === 'monster').map((o) => o.def.id));
+if (!['m1', 'm2', 'm3'].every((id) => monstersShown.includes(id)) || monstersShown.includes('boss')) throw new Error('畫面上的怪物不對 ' + monstersShown);
+await snap('valley-respawned');
+log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭目沒有');
+await doTap(4, 18, '回村');
+
+// ───── 回家睡覺：HP／魔力回滿 ─────
+await ev(() => { const m = window.__game.G.save.party[0]; m.hp = 1; m.mp = 0; });
+await doTap(5, 3, '回家');
+if ((await save()).mapId !== 'room') throw new Error('沒有回到房間');
+await doTap(1, 2, '床');
+const rested = await ev(() => { const G = window.__game.G; const m = G.save.party[0]; return { hp: m.hp, mp: m.mp }; });
+if (rested.hp <= 1 || rested.mp <= 0) throw new Error('睡覺後沒有回復 ' + JSON.stringify(rested));
+log('✓ 睡一覺後 HP/MP 回復', JSON.stringify(rested));
 
 // ───── 存檔 / 繼續 ─────
 const final = await save();

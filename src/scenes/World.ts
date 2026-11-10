@@ -4,12 +4,12 @@ import { BLOCKED_TILES, MAPS, TILE_KEY } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
 import { BATTLES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
-import { ENEMIES, SPECIES } from '../data/monsters';
+import { ENEMIES, ITEMS, SPECIES } from '../data/monsters';
 import {
-  G, activeSymbols, addExp, flag, giveMonster, hasAbility, saveGame, setFlag, spriteOf,
+  G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
-import { openParty, openResults, openSettings, say, setHudInfo, toast, ui } from '../core/ui';
+import { choose, openParty, openResults, openSettings, openShop, say, setHudInfo, toast, ui } from '../core/ui';
 import { bui } from '../core/battleui';
 import { QuestionRun, shuffle } from '../core/learning';
 import type { BattleOutcome } from './Battle';
@@ -72,7 +72,9 @@ export class WorldScene extends Phaser.Scene {
     const c = this.cameras.main;
     c.setZoom(view.zoom);
     if (this.map) {
-      c.setBounds(0, 0, this.map.w * T, this.map.h * T);
+      // 房間、研究所比畫面小時，讓地圖置中（bounds 比視窗小時 Phaser 會貼左上）
+      const mw = this.map.w * T, mh = this.map.h * T;
+      c.setBounds(Math.min(0, (mw - VIEW_W) / 2), Math.min(0, (mh - VIEW_H) / 2), Math.max(mw, VIEW_W), Math.max(mh, VIEW_H));
       if (this.player) c.centerOn(this.player.x, this.player.y);
     } else c.centerOn(VIEW_W / 2, VIEW_H / 2);
   }
@@ -113,7 +115,7 @@ export class WorldScene extends Phaser.Scene {
     const order = party.length ? [party[G.save.active] ?? party[0], ...party.filter((_, i) => i !== G.save.active)] : [];
     order.forEach((m) => {
       const sh = this.add.image(0, 0, 'shadow').setDepth(1).setScale(0.8);
-      const spr = this.add.image(this.tx * T + 8, this.ty * T + 16, spriteOf(m)).setOrigin(0.5, 1);
+      const spr = this.add.image(this.tx * T + 8, this.ty * T + 16, spriteOf(m)).setOrigin(0.5, 1).setScale(0.5); // 32×32 縮成一格大小
       this.followers.push({ spr, sh });
     });
     this.placeFollowers(false);
@@ -169,11 +171,12 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
-        case 'sign': spr = this.add.image(px, py, 'sign').setOrigin(0).setDepth(depth); break;
+        case 'sign': spr = this.add.image(px, py, def.sprite ?? 'sign').setOrigin(0).setDepth(depth); break;
         case 'exit': spr = this.add.image(px, py, 'exit_tile').setOrigin(0).setDepth(depth); break;
-        case 'egg':
-          shadow(); spr = this.add.image(px + 8, py + 16, 'egg').setOrigin(0.5, 1).setDepth(depth);
-          if (!G.settings.reduceMotion) this.tweens.add({ targets: spr, angle: { from: -6, to: 6 }, duration: 260, yoyo: true, repeat: -1, hold: 900, repeatDelay: 900 });
+        case 'door': spr = this.add.image(px, py, 't_door').setOrigin(0).setDepth(depth); break;
+        case 'bed': spr = this.add.image(px, py, 'bed').setOrigin(0).setDepth(depth); break;
+        case 'starter':
+          shadow(); spr = this.add.image(px + 8, py + 16, SPECIES[def.species!].sprites[0]).setOrigin(0.5, 1).setScale(0.75).setDepth(depth); bob(spr, 2, 450);
           break;
         case 'windmill': {
           spr = this.add.image(px, py + T, 'windmill').setOrigin(0, 1).setDepth(depth);
@@ -194,9 +197,9 @@ export class WorldScene extends Phaser.Scene {
         }
         case 'monster': {
           const en = ENEMIES[BATTLES[def.battle!].enemy];
-          const big = en.scale >= 5;
+          const big = en.scale >= 2.5; // 敵人圖是 32×32，縮成 0.5～0.75 倍放在地圖上
           shadow(big ? 1.8 : 1);
-          spr = this.add.image(px + 8, py + 16, en.sprite).setOrigin(0.5, 1).setScale(big ? 2 : 1).setDepth(depth);
+          spr = this.add.image(px + 8, py + 16, en.sprite).setOrigin(0.5, 1).setScale(big ? 0.75 : 0.5).setDepth(depth);
           bob(spr, 2, 500);
           break;
         }
@@ -336,12 +339,16 @@ export class WorldScene extends Phaser.Scene {
     const d = o.def;
     const m = this.map.id;
     switch (d.kind) {
-      case 'npc': return this.talkGuide();
-      case 'sign': return say((d.text ?? []).map((t) => ({ who: '告示牌', text: t })));
+      case 'npc': return d.id === 'doctor' ? this.talkGuide() : d.id === 'clerk' ? this.talkClerk(d) : this.talkNpc(d);
+      case 'sign': return say((d.text ?? []).map((t) => ({ who: d.sprite === 'desk' ? '書桌' : '告示牌', text: t })));
       case 'chest': return this.openChest(o);
-      case 'egg': return this.hatchEgg();
+      case 'bed': return this.sleepInBed();
+      case 'starter': return this.pickStarter(o);
       case 'monster': return this.startBattle(o);
       case 'exit': await this.travel(d.to!.map, d.to!.x, d.to!.y); return;
+      case 'door':
+        if (d.needFlag && !flag(d.needFlag)) return say((d.lockText ?? []).map((text) => ({ text })));
+        await this.travel(d.to!.map, d.to!.x, d.to!.y); return;
       case 'gate': return this.useGate(d);
       case 'rock':
         if (!hasAbility('blast')) return say(STORY.rockLocked);
@@ -383,11 +390,45 @@ export class WorldScene extends Phaser.Scene {
     const who = '嘟嘟博士';
     const say2 = (ls: string[]) => say(ls.map((text) => ({ who, text })));
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
-    else if (!flag(`c:village:chest_t`)) await say2(STORY.guideNeedChest);
-    else if (!flag('tutorialDone')) { await say2(STORY.guide2); setFlag('tutorialDone'); this.refreshObjects(); }
+    else if (!flag('starterChosen')) await say2(STORY.guideChoose);
+    else if (!flag('giftGiven')) await this.starterTest();
     else if (flag('boss_p')) await say2(STORY.guideEnd);
     else await say2(STORY.guideAfter);
     saveGame();
+  }
+
+  /** 村民：依進度說不同的話 */
+  private async talkNpc(d: MapObj) {
+    const v = (d.talk ?? []).find((t) => (!t.if || flag(t.if)) && (!t.not || !flag(t.not)));
+    if (!v) return;
+    await say(v.lines.map((text) => ({ who: d.label, text })));
+    if (v.set) { setFlag(v.set); saveGame(); }
+  }
+
+  /** 店員：打招呼後開商店 */
+  private async talkClerk(d: MapObj) {
+    const who = d.label;
+    await say(STORY.shopHello.map((text) => ({ who, text })));
+    await openShop();
+    await say(STORY.shopBye.map((text) => ({ who, text })));
+  }
+
+  /** 在房間睡覺：夥伴的 HP／魔力全部回滿 */
+  private async sleepInBed() {
+    const i = await choose('要睡一覺嗎？', '睡醒後，夥伴的 HP 和魔力都會全部恢復。', ['睡覺 💤', '先不要']);
+    if (i !== 0) return;
+    await this.rest();
+    await say(STORY.sleep.map((text) => ({ text })));
+  }
+  private async rest() {
+    const cam = this.cameras.main;
+    cam.fadeOut(500, 0, 0, 0);
+    await new Promise((r) => this.time.delayedCall(650, r));
+    healAll();
+    saveGame();
+    audio.sfx('levelup');
+    cam.fadeIn(500, 0, 0, 0);
+    await new Promise((r) => this.time.delayedCall(500, r));
   }
 
   private async openChest(o: Obj) {
@@ -400,7 +441,12 @@ export class WorldScene extends Phaser.Scene {
     G.save.stars += n;
     const star = this.add.image(o.spr.x + 8, o.spr.y, 'star').setDepth(9999);
     this.tweens.add({ targets: star, y: star.y - 20, duration: 700, onComplete: () => star.destroy() });
-    await say([`打開寶箱！得到 ${n} 顆 ⭐ 星星碎片！（共 ${G.save.stars} 顆）`], { speak: true });
+    const lines = [`打開寶箱！得到 ${n} 顆 ⭐ 星星碎片！（共 ${G.save.stars} 顆）`];
+    if (o.def.item) {
+      addItem(o.def.item);
+      lines.push(`還有 ${ITEMS[o.def.item].icon} ${ITEMS[o.def.item].name}！戰鬥時可以用。`);
+    }
+    await say(lines, { speak: true });
   }
 
   private async useGate(d: MapObj) {
@@ -419,9 +465,18 @@ export class WorldScene extends Phaser.Scene {
     cam.fadeOut(200, 0, 0, 0);
     await new Promise((r) => this.time.delayedCall(220, r));
     this.queue = [];
+    this.respawnWild(map);
     this.loadMap(map, x, y);
     saveGame();
     cam.fadeIn(200, 0, 0, 0);
+  }
+
+  /** 進入地圖時，把已經打倒的野生怪獸重新放回來（頭目、練習布偶不會） */
+  private respawnWild(mapId: string) {
+    for (const o of MAPS[mapId].objects) {
+      if (o.kind !== 'monster' || !BATTLES[o.battle!]?.respawn) continue;
+      delete G.save.flags[`m:${mapId}:${o.id}`];
+    }
   }
 
   // ───── 特效 ─────
@@ -451,14 +506,32 @@ export class WorldScene extends Phaser.Scene {
     await new Promise((r) => this.time.delayedCall(700, r));
   }
 
-  // ───── 神祕蛋 ─────
-  private async hatchEgg() {
-    const o = this.objs.get('egg')!;
-    await say(STORY.eggFound.map((text) => ({ who: '旁白', text })));
+  // ───── 博士桌上的三隻初始夥伴 ─────
+  private async pickStarter(o: Obj) {
+    if (flag('starterChosen')) return;
+    if (!flag('guideMet')) { await say([{ who: '嘟嘟博士', text: '先過來跟我打個招呼吧！' }]); return; }
+    const sp = SPECIES[o.def.species!];
+    await say([{ who: `${sp.name}（${sp.role}）`, text: sp.desc }]);
+    const strong = (n: number, hi: string) => (n > 0 ? hi : '普通');
+    const i = await choose(`要選「${sp.name}」嗎？`, `${sp.role}。HP ${sp.baseHp}，魔力 ${sp.baseMp}，攻擊${strong(sp.atk, '較強')}，防禦${strong(sp.guard, '較強')}。`, ['就選你了！', '再看看']);
+    if (i !== 0) return;
+    giveMonster(sp.id);
+    setFlag('starterChosen');
+    audio.sfx('hatch');
+    this.burstSpark(o.spr.x, o.spr.y - 8);
+    this.refreshObjects();
+    this.buildFollowers();
+    saveGame();
+    await say([`${sp.name}${STORY.starterPicked[0]}`]);
+    await this.starterTest();
+  }
+
+  /** 博士的第一題：找出和「ㄅ」一樣的符號，順便教怎麼作答；通過後送道具 */
+  private async starterTest() {
+    const who = '嘟嘟博士';
+    await say(STORY.guideTest.map((text) => ({ who, text })));
     // 播放注音發音；沒有可靠音檔時，明確改成看符號並提示
-    const played = audio.playSymbol('ㄅ');
-    if (!played) await say(STORY.eggNoAudio.map((text) => ({ who: '旁白', text })));
-    await say(STORY.eggPrompt.map((text) => ({ who: '旁白', text })));
+    if (!audio.playSymbol('ㄅ')) await say(STORY.guideNoAudio.map((text) => ({ who: '旁白', text })));
     // 第 0 關：全程有視覺提示（符號卡一直顯示），兩個選項
     bui.show(false);
     const others = activeSymbols().filter((s) => s !== 'ㄅ');
@@ -466,18 +539,12 @@ export class WorldScene extends Phaser.Scene {
     const run = new QuestionRun(q, G.save.stats);
     await bui.ask(run, { speakPrompt: false });
     bui.hide();
-    audio.sfx('hatch');
-    if (!G.settings.reduceMotion) this.tweens.add({ targets: o.spr, angle: { from: -12, to: 12 }, duration: 90, yoyo: true, repeat: 5 });
-    await new Promise((r) => this.time.delayedCall(700, r));
-    o.spr.setTexture('mon_bobo');
-    this.burstSpark(o.spr.x, o.spr.y - 8);
-    const mon = giveMonster('bobo');
-    setFlag('eggHatched');
-    this.refreshObjects();
-    this.buildFollowers();
-    void mon;
-    await say(STORY.eggHatch.map((text) => ({ who: '旁白', text })));
+    audio.sfx('levelup');
+    addItem('potion', 3); addItem('berry', 1);
+    setFlag('giftGiven');
     saveGame();
+    await say(STORY.guideGift.map((text) => ({ who, text })));
+    await say([`得到 ${ITEMS.potion.icon} ${ITEMS.potion.name} ×3、${ITEMS.berry.icon} ${ITEMS.berry.name} ×1！`], { speak: true });
   }
   private burstSpark(x: number, y: number) {
     for (let i = 0; i < 8; i++) {
@@ -503,14 +570,11 @@ export class WorldScene extends Phaser.Scene {
     const def = BATTLES[o.def.battle!];
     const res = await this.runBattle(def.id);
     if (res === 'lose') {
+      // 被打倒不算失敗：送回自己的房間睡一覺，HP／魔力全部恢復
       await say(STORY.defeat);
-      const r = this.map.respawn;
       this.queue = []; this.pending = undefined;
-      this.tx = r.x; this.ty = r.y; this.trail = [];
-      this.player.setPosition(r.x * T + 8, r.y * T + 16);
-      this.placeFollowers(false);
-      G.save.x = r.x; G.save.y = r.y;
-      this.cameras.main.centerOn(this.player.x, this.player.y);
+      await this.travel('room', 2, 3);
+      healAll();
       saveGame();
       return;
     }
@@ -529,20 +593,23 @@ export class WorldScene extends Phaser.Scene {
     const ups = addExp(me, rw.exp);
     if (ups) { audio.sfx('levelup'); lines.push(`${SPECIES[me.species].name}升級了！現在是 Lv.${me.level}！`); }
     if (!claimed) {
-      if (rw.grow) { const g = G.save.party.find((p) => p.species === rw.grow); if (g) { g.stage = 1; g.level += 1; } }
+      if (rw.grow) { const g = rw.grow === 'starter' ? G.save.party[0] : G.save.party.find((p) => p.species === rw.grow); if (g) { g.stage = 1; g.level += 1; } }
       for (const a of rw.abilities ?? []) if (!hasAbility(a)) G.save.abilities.push(a);
+      for (const [id, n] of Object.entries(rw.items ?? {})) { addItem(id, n); lines.push(`得到 ${ITEMS[id].icon} ${ITEMS[id].name} ×${n}！`); }
       if (rw.join && !G.save.party.some((p) => p.species === rw.join)) {
         if (!giveMonster(rw.join)) lines.push('隊伍滿了，新夥伴先在村子裡等你。');
       }
     }
     if (def.id === 'boss_b' && !G.save.cleared.includes('b')) G.save.cleared.push('b');
     if (def.id === 'boss_p' && !G.save.cleared.includes('p')) G.save.cleared.push('p');
+    if (rw.coins) addCoins(rw.coins);
     this.refreshObjects();
     this.buildFollowers();
     saveGame();
     const all = claimed ? lines : [...rw.story, ...lines];
-    if (all.length) await say(all.map((text) => ({ text })));
-    else toast(`贏了！獲得經驗 ${rw.exp}！`);
+    const coinLine = rw.coins ? [`得到 🪙 ${rw.coins} 枚金幣！（共 ${G.save.coins} 枚）`] : [];
+    if (all.length) await say([...all, ...coinLine].map((text) => ({ text })));
+    else toast(`贏了！獲得經驗 ${rw.exp}${rw.coins ? `、🪙 ${rw.coins} 枚金幣` : ''}！`);
     if (rw.results) {
       const r = await openResults();
       if (r === 'replay') this.resetLevel('p');

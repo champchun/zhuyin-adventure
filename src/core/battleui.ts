@@ -1,8 +1,8 @@
 // 戰鬥的 DOM 介面：招式選單、注音題目、大型觸控按鈕。
 import { audio } from './audio';
-import { G, hasAbility, powerBonus } from './save';
+import { G, hasAbility, itemCount } from './save';
 import type { MonsterInst } from './save';
-import { SPECIES } from '../data/monsters';
+import { ITEMS, SPECIES } from '../data/monsters';
 import type { MoveDef } from '../data/monsters';
 import { QuestionRun } from './learning';
 import { symbolDef } from '../data/symbols';
@@ -10,27 +10,65 @@ import { PROMPT_LINES } from '../data/voiceLines';
 
 const $ = (id: string) => document.getElementById(id)!;
 export type Mode = 'look' | 'listen';
-export type Action = { type: 'move'; move: MoveDef; mode: Mode } | { type: 'switch' } | { type: 'run' };
+export type Action = { type: 'move'; move: MoveDef; mode: Mode } | { type: 'item' } | { type: 'switch' } | { type: 'run' };
 
 let root: HTMLElement;
+let fitBound = false;
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, G.settings.reduceMotion ? ms * 0.6 : ms));
 
 export const bui = {
   show(bars = true) {
     root = $('battleui');
     root.hidden = false;
-    root.innerHTML = `<div class="hpbar enemy"><span class="n"></span><div class="hp"><i></i></div></div>
-      <div class="hpbar me"><span class="n"></span><div class="hp"><i></i></div></div>
+    // 仿初代寶可夢：敵方資訊在左上、我方資訊在右側偏下（靠近自己的怪獸）
+    const bar = (side: string) => `<div class="hpbar ${side}"><div class="n"></div><div class="hprow"><b>HP</b><div class="hp"><i></i></div></div><div class="num"></div>${side === 'me' ? '<div class="hprow"><b class="mpl">MP</b><div class="hp mp"><i></i></div></div><div class="num mpnum"></div>' : ''}</div>`;
+    root.innerHTML = `${bar('enemy')}${bar('me')}
       <div id="bpanel"><div class="box" data-lock="0"><div class="msg"></div><div class="body"></div></div></div>`;
     if (!bars) root.querySelectorAll('.hpbar').forEach((e) => e.remove());
+    this.fit();
+    if (!fitBound) { fitBound = true; window.addEventListener('resize', () => bui.fit()); }
+  },
+  /** 讓血條對齊遊戲畫面（canvas）而不是整個視窗，避免兩隻怪獸與血條對不上 */
+  fit() {
+    const c = document.querySelector<HTMLCanvasElement>('#stage canvas');
+    if (!c || !root) return;
+    const r = c.getBoundingClientRect();
+    root.style.setProperty('--cx', r.left + 'px');
+    root.style.setProperty('--cy', r.top + 'px');
+    root.style.setProperty('--cr', window.innerWidth - r.right + 'px');
+    root.style.setProperty('--ch', r.height + 'px');
   },
   hide() { $('battleui').hidden = true; $('battleui').innerHTML = ''; },
   setHp(side: 'enemy' | 'me', name: string, hp: number, max: number, level?: number) {
     const bar = root.querySelector('.hpbar.' + side)!;
-    bar.querySelector('.n')!.textContent = `${name}${level ? ' Lv.' + level : ''}　HP ${Math.max(0, hp)}/${max}`;
+    bar.querySelector('.n')!.textContent = `${name}${level ? '　Lv.' + level : ''}`;
+    bar.querySelector('.num')!.textContent = `${Math.max(0, hp)} / ${max}`;
     const i = bar.querySelector<HTMLElement>('.hp i')!;
     i.style.width = Math.max(0, (hp / max) * 100) + '%';
     i.classList.toggle('low', hp / max < 0.4);
+  },
+  setMp(mp: number, max: number) {
+    const bar = root.querySelector('.hpbar.me');
+    if (!bar) return;
+    bar.querySelector('.mpnum')!.textContent = `${Math.max(0, mp)} / ${max}`;
+    bar.querySelector<HTMLElement>('.hp.mp i')!.style.width = Math.max(0, (mp / max) * 100) + '%';
+  },
+  /** 選道具：回傳道具 id；按返回回傳 null */
+  chooseItem(): Promise<string | null> {
+    return new Promise((resolve) => {
+      this.msg('要用哪一個道具？');
+      const ids = Object.keys(ITEMS).filter((id) => itemCount(id) > 0);
+      const body = root.querySelector<HTMLElement>('.body')!;
+      body.innerHTML = `<div class="moves">${ids.map((id) => `<button class="btn primary" data-a="it" data-id="${id}">${ITEMS[id].icon} ${ITEMS[id].name} ×${itemCount(id)}<small>${ITEMS[id].desc}</small></button>`).join('')}
+        <button class="btn" data-a="back">↩ 返回</button></div>`;
+      body.onclick = (e) => {
+        const el = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null;
+        if (!el) return;
+        audio.sfx('tap');
+        body.onclick = null;
+        resolve(el.dataset.a === 'it' ? el.dataset.id! : null);
+      };
+    });
   },
   lock(on: boolean) { root.querySelector<HTMLElement>('.box')!.dataset.lock = on ? '1' : '0'; },
   msg(text: string, speak = false) {
@@ -53,14 +91,17 @@ export const bui = {
     });
   },
   /** modes.avail＝可選「聽」招式；cur 是目前選的招式種類（看／聽），結果會隨 Action 回傳 */
-  menu(me: MonsterInst, canSwitch: boolean, modes: { avail: boolean; cur: Mode; only?: Mode }): Promise<Action> {
+  menu(me: MonsterInst, canSwitch: boolean, modes: { avail: boolean; cur: Mode; only?: Mode; mp: number }): Promise<Action> {
     return new Promise((resolve) => {
-      let mode: Mode = modes.only ?? (modes.avail ? modes.cur : 'look');
+      const noMp = modes.mp <= 0;
+      let mode: Mode = modes.only ?? (modes.avail && !noMp ? modes.cur : 'look');
       this.msg(`${SPECIES[me.species].name}要怎麼做？`);
       const moves = SPECIES[me.species].moves.filter((m) => !m.needAbility || hasAbility(m.needAbility));
       const body = root.querySelector<HTMLElement>('.body')!;
-      const dis = (m: Mode) => (modes.only && modes.only !== m ? 'disabled style="opacity:.35"' : '');
-      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look" ${dis('look')}>👊 普通攻擊<small>看符號</small></button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen" ${dis('listen')}>🪄 魔法攻擊<small>聽聲音（更強）</small></button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}
+      const dis = (m: Mode) => ((modes.only && modes.only !== m) || (m === 'listen' && noMp) ? 'disabled style="opacity:.35"' : '');
+      const hasItems = Object.keys(ITEMS).some((id) => itemCount(id) > 0);
+      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look" ${dis('look')}>👊 普通攻擊<small>看符號</small></button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen" ${dis('listen')}>🪄 魔法攻擊<small>${noMp ? '魔力用完了' : '聽聲音（更強），魔力 -1'}</small></button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}
+        ${hasItems ? '<button class="btn" data-a="item">🎒 道具</button>' : ''}
         ${canSwitch ? '<button class="btn" data-a="switch">🔄 換夥伴</button>' : ''}
         <button class="btn" data-a="run">🏃 離開</button></div>`; };
       render();
@@ -72,7 +113,7 @@ export const bui = {
         if (a === 'mode') { mode = el.dataset.m as Mode; render(); return; }
         body.onclick = null;
         if (a === 'move') resolve({ type: 'move', move: moves[+el.dataset.i!], mode });
-        else resolve({ type: a as 'switch' | 'run' });
+        else resolve({ type: a as 'item' | 'switch' | 'run' });
       };
     });
   },
@@ -153,4 +194,3 @@ export const bui = {
     });
   },
 };
-export { powerBonus };

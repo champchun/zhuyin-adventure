@@ -1,6 +1,8 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'egg' | 'monster' | 'exit' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog';
 
+/** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
+export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
 export interface MapObj {
   id: string;
   kind: ObjKind;
@@ -9,6 +11,15 @@ export interface MapObj {
   /** 戰鬥 id（monster） */
   battle?: string;
   text?: string[];
+  /** npc：依進度的對話 */
+  talk?: TalkVariant[];
+  /** starter：對應的怪獸種類 */
+  species?: string;
+  /** chest：打開後除了星星還會得到的道具 */
+  item?: string;
+  /** door／exit：需要此旗標才能通過，否則顯示 lockText */
+  needFlag?: string;
+  lockText?: string[];
   to?: { map: string; x: number; y: number };
   /** 注音門對應的關卡 id */
   level?: string;
@@ -33,7 +44,7 @@ export interface MapDef {
 }
 
 /** 阻擋通行的地形字元 */
-export const BLOCKED_TILES = new Set(['#', 'h', 'H', 'D', '~', 'S']);
+export const BLOCKED_TILES = new Set(['#', 'h', 'H', 'D', '~', 'S', 'W', 'T', 'L']);
 
 class Grid {
   g: string[][];
@@ -71,6 +82,31 @@ const village = (() => {
   g.many('#', [[8, 14], [10, 14], [19, 9], [2, 11], [20, 12], [6, 13]]);
   // 迷霧小屋（吹霧後才進得去）：x 8..12, y 1..4，缺口在 (10,4)
   g.rect('#', 8, 1, 5, 1).rect('#', 8, 2, 1, 2).rect('#', 12, 2, 1, 2).rect('#', 8, 4, 2, 1).rect('#', 11, 4, 2, 1);
+  // 商店：x 18..21, y 13..14，門在 (19,14)
+  g.rect('h', 18, 13, 4, 1).rect('H', 18, 14, 4, 1).set(19, 14, 'D');
+  return g;
+})();
+// ───────── 自己的房間 ─────────
+const room = (() => {
+  const g = new Grid(10, 8, 'f').rect('W', 0, 0, 10, 2).border('W');
+  g.rect('r', 3, 4, 4, 2);
+  g.many('L', [[6, 1], [7, 1]]);
+  return g;
+})();
+// ───────── 嘟嘟博士的研究所 ─────────
+const lab = (() => {
+  const g = new Grid(12, 9, 'f').rect('W', 0, 0, 12, 2).border('W');
+  g.many('L', [[1, 1], [2, 1], [3, 1], [8, 1], [9, 1], [10, 1]]);
+  g.rect('T', 2, 2, 8, 1);
+  g.rect('r', 4, 5, 4, 2);
+  return g;
+})();
+// ───────── 道具店 ─────────
+const shop = (() => {
+  const g = new Grid(10, 8, 'f').rect('W', 0, 0, 10, 2).border('W');
+  g.many('L', [[1, 1], [2, 1], [3, 1], [6, 1], [7, 1], [8, 1]]);
+  g.rect('T', 3, 3, 3, 1);
+  g.rect('r', 3, 5, 4, 2);
   return g;
 })();
 const GATE_LEVELS = ['b', 'p', 'd', 'g'];
@@ -79,17 +115,79 @@ const villageGates: MapObj[] = GATE_LEVELS.map((lv, i) => ({
 }));
 
 export const MAPS: Record<string, MapDef> = {
+  room: {
+    id: 'room', name: '我的房間', w: 10, h: 8, tiles: room.rows(), theme: 'village',
+    start: { x: 2, y: 3 }, respawn: { x: 2, y: 3 },
+    objects: [
+      { id: 'bed', kind: 'bed', x: 1, y: 2 },
+      { id: 'desk', kind: 'sign', x: 8, y: 2, sprite: 'desk', text: ['書桌上有一張紙條：', '「小訓練師，來研究所找我。——嘟嘟博士」', '研究所就在村子裡，最大的那棟房子。'] },
+      {
+        id: 'mom', kind: 'npc', x: 7, y: 4, sprite: 'npc_mom', label: '媽媽',
+        talk: [
+          { not: 'momTalked', set: 'momTalked', lines: ['早安！睡得好嗎？', '嘟嘟博士剛剛來找過你，說有重要的事。', '點一下地面，就能走路。點一下東西或人，就能跟他們互動。', '那張床可以睡覺，睡一覺，夥伴的體力和魔力就都回來了。', '準備好了就出門吧，門在下面！'] },
+          { lines: ['去找嘟嘟博士吧，他在村子裡最大的房子。', '累了就回來睡一覺，媽媽等你。'] },
+        ],
+      },
+      { id: 'door', kind: 'door', x: 5, y: 7, to: { map: 'village', x: 5, y: 4 }, needFlag: 'momTalked', lockText: ['先跟媽媽說聲早安吧！', '點一下媽媽就可以了。'] },
+    ],
+  },
+  lab: {
+    id: 'lab', name: '嘟嘟博士的研究所', w: 12, h: 9, tiles: lab.rows(), theme: 'village',
+    start: { x: 5, y: 7 }, respawn: { x: 5, y: 7 },
+    objects: [
+      { id: 'doctor', kind: 'npc', x: 9, y: 5, sprite: 'npc_guide', label: '嘟嘟博士' },
+      { id: 'st_bobo', kind: 'starter', x: 3, y: 3, species: 'bobo', hideIf: 'starterChosen' },
+      { id: 'st_momo', kind: 'starter', x: 5, y: 3, species: 'momo', hideIf: 'starterChosen' },
+      { id: 'st_popo', kind: 'starter', x: 7, y: 3, species: 'popo', hideIf: 'starterChosen' },
+      { id: 'door', kind: 'door', x: 5, y: 8, to: { map: 'village', x: 14, y: 4 }, needFlag: 'giftGiven', lockText: ['博士還有話要說，先選一位夥伴，再跟博士說話吧！'] },
+    ],
+  },
+  shop: {
+    id: 'shop', name: '小福道具店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+    start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+    objects: [
+      { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+      { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'village', x: 19, y: 15 } },
+    ],
+  },
   village: {
     id: 'village', name: '起始村', w: 28, h: 20, tiles: village.rows(), theme: 'village',
-    start: { x: 4, y: 7 }, respawn: { x: 13, y: 9 },
+    start: { x: 5, y: 4 }, respawn: { x: 5, y: 4 },
     objects: [
-      { id: 'guide', kind: 'npc', x: 12, y: 8, sprite: 'npc_guide', label: '嘟嘟博士' },
-      { id: 'chest_t', kind: 'chest', x: 8, y: 10 },
-      { id: 'egg', kind: 'egg', x: 15, y: 9, showIf: 'tutorialDone', hideIf: 'eggHatched' },
-      { id: 'dummy', kind: 'monster', x: 16, y: 11, battle: 'practice', showIf: 'eggHatched', hideIf: 'practiceDone' },
+      { id: 'door_home', kind: 'door', x: 5, y: 3, to: { map: 'room', x: 5, y: 6 } },
+      { id: 'door_lab', kind: 'door', x: 14, y: 3, to: { map: 'lab', x: 5, y: 7 } },
+      { id: 'door_shop', kind: 'door', x: 19, y: 14, to: { map: 'shop', x: 4, y: 6 } },
+      {
+        id: 'kid', kind: 'npc', x: 7, y: 6, sprite: 'npc_kid', label: '小皮',
+        talk: [
+          { not: 'starterChosen', lines: ['你就是要去見博士的人吧？', '研究所在右邊那棟大房子，門在下面，沿著小路走過去就到了！'] },
+          { not: 'practiceDone', lines: ['你有夥伴了！好羨慕～', '廣場上那個稻草布偶，可以讓你的夥伴練習拳法。'] },
+          { lines: ['我長大也要當注音訓練師！', '我聽說，路上的怪獸會問注音，答對就能打倒牠們。'] },
+        ],
+      },
+      {
+        id: 'elder', kind: 'npc', x: 18, y: 8, sprite: 'npc_elder', label: '村長爺爺',
+        talk: [
+          { not: 'starterChosen', lines: ['年輕人，博士從一早就在找你。', '他在研究所等你，快去看看吧。'] },
+          { not: 'practiceDone', lines: ['選好夥伴了呀，很好很好。', '先在廣場跟稻草布偶練習看看，會比較安心。'] },
+          { not: 'boss_b', lines: ['村外的小徑最近很不平靜，一直有迷霧飄出來。', '練習完的話，可以到下面那排圓門，去亮著的那一扇看看。'] },
+          { not: 'boss_p', lines: ['小徑通了！你看，村子裡的鈴鐺和迷霧小屋也不一樣了。', '風車好久沒轉了，聽說往風車草原走，可以找到答案。'] },
+          { lines: ['迷霧淡了，聽說遠方傳來了鼓聲。', '下一個島，大概就是舌尖中音島了吧。'] },
+        ],
+      },
+      {
+        id: 'girl', kind: 'npc', x: 21, y: 9, sprite: 'npc_girl', label: '小桃',
+        talk: [
+          { not: 'practiceDone', lines: ['聽說夥伴學會新注音，就會學到新招式！', '招式不只能打怪，還能幫村子做事呢。'] },
+          { not: 'bellRung', lines: ['東邊有一塊裂開的大石頭，好像需要很強的拳頭。', '那邊的大鈴鐺，要用嗡嗡的聲音才搖得響。'] },
+          { lines: ['夥伴的魔力和體力用完了，回家睡一覺就會恢復囉！', '打贏怪獸會得到金幣，可以去右下角那間道具店買藥水喔！'] },
+        ],
+      },
+      { id: 'chest_t', kind: 'chest', x: 8, y: 10, item: 'potion' },
+      { id: 'dummy', kind: 'monster', x: 16, y: 11, battle: 'practice', showIf: 'starterChosen', hideIf: 'practiceDone' },
       { id: 'sign1', kind: 'sign', x: 10, y: 15, text: ['下面的圓門，每一扇都有一個注音符號。', '亮著的門可以進去冒險，灰色的門還在迷霧裡。', '門上的字是這一關要學的注音。'] },
       { id: 'rock_a', kind: 'rock', x: 23, y: 4 },
-      { id: 'chest_hidden', kind: 'chest', x: 23, y: 3 },
+      { id: 'chest_hidden', kind: 'chest', x: 23, y: 3, item: 'berry' },
       { id: 'bell', kind: 'bell', x: 21, y: 7 },
       { id: 'chest_bell', kind: 'chest', x: 22, y: 8, showIf: 'bellRung' },
       { id: 'fog_a', kind: 'fog', x: 10, y: 4 },
@@ -113,10 +211,10 @@ MAPS.b = {
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
   objects: [
     { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 4, y: 15 }, label: '回村' },
-    { id: 'chest_1', kind: 'chest', x: 9, y: 15 },
+    { id: 'chest_1', kind: 'chest', x: 9, y: 15, item: 'potion' },
     { id: 'm1', kind: 'monster', x: 11, y: 16, battle: 'b1' },
     { id: 'm2', kind: 'monster', x: 15, y: 12, battle: 'b2' },
-    { id: 'chest_2', kind: 'chest', x: 18, y: 10 },
+    { id: 'chest_2', kind: 'chest', x: 18, y: 10, item: 'berry' },
     { id: 'm3', kind: 'monster', x: 16, y: 6, battle: 'b3' },
     { id: 'rock_b', kind: 'rock', x: 10, y: 11 },
     { id: 'chest_rock', kind: 'chest', x: 3, y: 9 },
@@ -145,7 +243,7 @@ MAPS.p = {
   objects: [
     { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 7, y: 15 }, label: '回村' },
     { id: 'm1', kind: 'monster', x: 7, y: 14, battle: 'p1' },
-    { id: 'chest_1', kind: 'chest', x: 6, y: 11 },
+    { id: 'chest_1', kind: 'chest', x: 6, y: 11, item: 'potion' },
     { id: 'windmill', kind: 'windmill', x: 11, y: 9 },
     { id: 'm2', kind: 'monster', x: 11, y: 13, battle: 'p2' },
     { id: 'm3', kind: 'monster', x: 18, y: 11, battle: 'p3' },
@@ -154,11 +252,12 @@ MAPS.p = {
     { id: 'leaves_a', kind: 'leaves', x: 5, y: 7 },
     { id: 'chest_leaf', kind: 'chest', x: 5, y: 4 },
     { id: 'woodgate', kind: 'woodgate', x: 22, y: 14, hideIf: 'windmillOn' },
-    { id: 'chest_wind', kind: 'chest', x: 23, y: 17 },
+    { id: 'chest_wind', kind: 'chest', x: 23, y: 17, item: 'potion' },
   ],
 };
 
 export const TILE_KEY: Record<string, string> = {
   '.': 't_grass', ',': 't_flower', '#': 't_tree', '=': 't_path', h: 't_roof', H: 't_wall', D: 't_door',
   '~': 't_water', '+': 't_bridge', ':': 't_dirt', S: 't_cliff',
+  f: 't_wood', r: 't_rug', W: 't_iwall', T: 't_table', L: 't_shelf',
 };

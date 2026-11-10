@@ -1,7 +1,7 @@
 // DOM 介面：標題、對話、HUD、夥伴、家長設定、成果。
 import { audio } from './audio';
-import { G, PARTY_MAX, expNeeded, flag, hasAbility, hasSave, maxHp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
-import { SPECIES } from '../data/monsters';
+import { G, PARTY_MAX, buyItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
+import { ITEMS, SPECIES } from '../data/monsters';
 import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
 import { PROMPT_LINES } from '../data/voiceLines';
@@ -33,8 +33,8 @@ export function applyBodyClasses() {
 
 export function thumb(key: string, size = 80): HTMLCanvasElement {
   const c = document.createElement('canvas');
-  c.width = c.height = 16;
   const src = hooks.texture(key);
+  c.width = c.height = (src as HTMLCanvasElement | undefined)?.width ?? 16; // 夥伴是 32×32，其餘 16×16
   if (src) { const ctx = c.getContext('2d')!; ctx.imageSmoothingEnabled = false; ctx.drawImage(src, 0, 0); }
   c.style.width = c.style.height = size + 'px';
   return c;
@@ -104,22 +104,73 @@ const delegate = (root: HTMLElement, fn: (a: string, el: HTMLElement, ev: Event)
   };
 };
 
+/** 道具店：用金幣買藥水。大按鈕、顯示價格與持有數量；錢不夠、還沒上架都有溫和的提示。 */
+export function openShop(): Promise<void> {
+  return new Promise((resolve) => {
+    let note = '';
+    const render = () => {
+      const ids = Object.keys(ITEMS).filter((id) => ITEMS[id].price !== undefined);
+      const html = `<h2>道具店</h2>
+        <div class="note" style="font-size:20px;font-weight:800">你有 🪙 ${G.save.coins ?? 0} 枚金幣</div>
+        <div class="foot" style="flex-direction:column;gap:10px;align-items:stretch">${ids.map((id) => {
+          const it = ITEMS[id];
+          const locked = !!it.need && !flag(it.need);
+          const poor = !locked && (G.save.coins ?? 0) < it.price!;
+          return `<button class="btn ${locked || poor ? '' : 'primary'}" data-a="buy" data-id="${id}" ${locked ? 'disabled style="opacity:.45"' : ''}>
+            ${it.icon} ${it.name}　🪙 ${it.price}　（有 ${itemCount(id)} 個）
+            <small>${locked ? '還沒進貨，等你變強再來看看！' : poor ? `${it.desc}（金幣還不夠）` : it.desc}</small></button>`;
+        }).join('')}</div>
+        <div class="note" style="min-height:1.6em">${note}</div>
+        <div class="foot"><button class="btn" data-a="close">離開商店</button></div>`;
+      const m = openModal(html);
+      delegate(m, (a, el) => {
+        if (a === 'close') { closeModal(); resolve(); return; }
+        if (a !== 'buy') return;
+        const id = el.dataset.id!;
+        const r = buyItem(id);
+        const it = ITEMS[id];
+        if (r === 'ok') { audio.sfx('chest'); saveGame(); note = `買了 ${it.icon} ${it.name}！`; audio.speak(`買了${it.name}`); }
+        else if (r === 'poor') { audio.sfx('wrong'); note = '金幣不夠喔，多打幾隻怪獸再來吧！'; audio.speak(note); }
+        closeModal();
+        render();
+      });
+    };
+    render();
+  });
+}
+
+/** 大按鈕選擇視窗：回傳被選中的選項索引 */
+export function choose(title: string, body: string, options: string[]): Promise<number> {
+  return new Promise((resolve) => {
+    const m = openModal(`<h2>${title}</h2><p>${body}</p>
+      <div class="foot" style="flex-direction:column;gap:10px">${options.map((o, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-a="c" data-i="${i}">${o}</button>`).join('')}</div>`);
+    audio.speak(`${title}。${body}`);
+    delegate(m, (a, el) => {
+      if (a !== 'c') return;
+      audio.sfx('tap');
+      closeModal();
+      resolve(+el.dataset.i!);
+    });
+  });
+}
+
 // ───── 夥伴 ─────
 export function openParty(onChange?: () => void): Promise<void> {
   return new Promise((resolve) => {
     const render = () => {
       const html = `<h2>我的夥伴 <small style="font-size:16px">(${G.save.party.length}/${PARTY_MAX})</small></h2>
-      <div class="note">點一下夥伴，就會換成出戰的夥伴。</div>
+      <div class="note">點一下夥伴，就會換成出戰的夥伴。　🪙 金幣 ${G.save.coins ?? 0}　${Object.keys(ITEMS).filter((id) => itemCount(id) > 0).map((id) => `${ITEMS[id].icon}×${itemCount(id)}`).join(' ')}</div>
       ${G.save.party.map((m, i) => {
         const sp = SPECIES[m.species];
         const names = sp.moves.map((mv) => mv.name + (mv.needAbility && !hasAbility(mv.needAbility) ? '（未學會）' : '')).join('、');
         return `<div class="mon ${i === G.save.active ? 'active' : ''}" data-a="pick" data-i="${i}" role="button">
           <span class="th" data-key="${spriteOf(m)}"></span>
-          <div class="info"><b>${sp.name}</b> ${i === G.save.active ? '⭐出戰中' : ''}　Lv.${m.level}
-          <div class="bar"><i style="width:100%"></i></div>HP ${maxHp(m)}
+          <div class="info"><b>${sp.name}</b>（${sp.role}） ${i === G.save.active ? '⭐出戰中' : ''}　Lv.${m.level}
+          <div class="bar"><i style="width:${(ensureVitals(m), (m.hp! / maxHp(m)) * 100)}%"></i></div>HP ${m.hp}/${maxHp(m)}
+          <div class="bar mp"><i style="width:${(m.mp! / maxMp(m)) * 100}%"></i></div>魔力 ${m.mp}/${maxMp(m)}
           <div class="bar exp"><i style="width:${(m.exp / expNeeded(m)) * 100}%"></i></div>經驗 ${m.exp}/${expNeeded(m)}
           <br>招式：${names}<br><span class="note">${sp.desc}</span></div></div>`;
-      }).join('') || '<p>還沒有夥伴。去找神祕的蛋吧！</p>'}
+      }).join('') || '<p>還沒有夥伴。去研究所找嘟嘟博士吧！</p>'}
       <div class="foot"><button class="btn primary" data-a="close">關閉</button></div>`;
       const m = openModal(html);
       m.querySelectorAll<HTMLElement>('.th').forEach((s) => s.replaceWith(thumb(s.dataset.key!)));
@@ -285,7 +336,7 @@ export function showTitle(): Promise<'new' | 'continue'> {
       const sum = audio.zhuyinSummary();
       sc.className = 'on';
       sc.innerHTML = `<div class="sub">迷霧島冒險</div><div class="logo">注音夥伴</div>
-        <div class="deco-row" style="display:flex;gap:12px;justify-content:center"><span data-k="mon_bobo"></span><span data-k="mon_bobo2"></span><span data-k="egg"></span></div>
+        <div class="deco-row" style="display:flex;gap:12px;justify-content:center"><span data-k="mon_momo2"></span><span data-k="mon_bobo2"></span><span data-k="mon_popo2"></span></div>
         <div class="menu">
           ${hasSave() ? '<button class="btn primary" data-a="continue">繼續冒險</button>' : ''}
           <button class="btn ${hasSave() ? '' : 'primary'}" data-a="new">新的冒險</button>

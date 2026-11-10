@@ -1,0 +1,292 @@
+// 三隻初始夥伴的 32×32 像素圖（原創，風格參考「手繪小怪獸」：純色塊、每隻只用 3～4 色、
+// 稜角分明、朝右的側面、臉只有兩個深色小方塊）。進化後整隻變大、細節變多。
+// 為了在草地、泥地上都看得清楚，外面多加一圈深色細邊。不依賴 Phaser，可在 Node 輸出 PNG 檢查。
+export const N = 32;
+export type Pal = Record<string, string>;
+
+// 先畫在 48×48 的大畫布上（座標可以是負的，偏移 OFF），最後再量出實際範圍，置中放進 32×32，才不會被切掉
+const BUF = 48;
+const OFF = 8;
+class Pix {
+  b: string[] = Array(BUF * BUF).fill('');
+  set(x: number, y: number, c: string) { x = Math.round(x) + OFF; y = Math.round(y) + OFF; if (x >= 0 && y >= 0 && x < BUF && y < BUF) this.b[y * BUF + x] = c; }
+  /** 讀的是畫布座標（含偏移） */
+  raw(x: number, y: number) { return x < 0 || y < 0 || x >= BUF || y >= BUF ? '' : this.b[y * BUF + x]; }
+  /** 實際有畫東西的範圍 */
+  bbox() {
+    let x0 = BUF, y0 = BUF, x1 = -1, y1 = -1;
+    for (let y = 0; y < BUF; y++) for (let x = 0; x < BUF; x++) if (this.raw(x, y)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    return { x0, y0, x1, y1, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  }
+  get(x: number, y: number) { return this.raw(x + OFF, y + OFF); }
+  /** 矩形：(x, y) 左上角，寬 w、高 h */
+  r(x: number, y: number, w: number, h: number, c: string) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c); }
+  /** 三角形（多邊形填色，用來畫角、火焰、翅膀） */
+  t(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, c: string) {
+    const minX = Math.floor(Math.min(x1, x2, x3)), maxX = Math.ceil(Math.max(x1, x2, x3));
+    const minY = Math.floor(Math.min(y1, y2, y3)), maxY = Math.ceil(Math.max(y1, y2, y3));
+    const d = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
+      const a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / d;
+      const b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / d;
+      if (a >= -0.02 && b >= -0.02 && 1 - a - b >= -0.02) this.set(x, y, c);
+    }
+  }
+  /** 方方的圓角塊（四個角各削一格） */
+  chunk(x: number, y: number, w: number, h: number, c: string) {
+    this.r(x + 1, y, w - 2, h, c); this.r(x, y + 1, w, h - 2, c);
+  }
+  /** 外描邊（四方向） */
+  outline(c: string) {
+    const out: number[] = [];
+    for (let y = 0; y < BUF; y++) for (let x = 0; x < BUF; x++) {
+      if (this.raw(x, y)) continue;
+      if (this.raw(x + 1, y) || this.raw(x - 1, y) || this.raw(x, y + 1) || this.raw(x, y - 1)) out.push(y * BUF + x);
+    }
+    out.forEach((i) => { this.b[i] = c; });
+  }
+}
+
+const OUT = '#2e2144';
+const EYE = '#3a4050';
+
+// ───────── 波波（平均型）：桃紅色小惡魔，紫色翅膀與尾巴，淡粉色肚皮 ─────────
+const IMP: Pal = { O: OUT, a: '#e0348c', b: '#8f3a8f', c: '#e8b8d4', d: EYE, g: '#e8b44a', w: '#ffffff' };
+function bobo0(): Pix {
+  const p = new Pix();
+  // 翅膀（在身體後面）與尾巴
+  p.t(5, 16, 14, 18, 13, 26, 'b'); p.t(5, 16, 9, 22, 13, 26, 'b');
+  p.r(8, 27, 6, 1, 'b'); p.r(6, 26, 3, 1, 'b'); p.r(5, 23, 2, 4, 'b'); p.r(4, 22, 1, 2, 'b');
+  // 腿與腳
+  p.r(13, 26, 3, 3, 'a'); p.r(20, 26, 3, 3, 'a'); p.r(12, 29, 5, 1, 'b'); p.r(19, 29, 5, 1, 'b');
+  // 身體與肚皮
+  p.chunk(12, 17, 12, 10, 'a'); p.r(17, 19, 6, 7, 'c'); p.r(15, 21, 3, 2, 'a');
+  // 頭（朝右，鼻子突出）
+  p.chunk(10, 9, 14, 9, 'a'); p.r(24, 13, 3, 4, 'a'); p.r(10, 16, 4, 2, 'b');
+  // 兩支尖角
+  p.t(11, 2, 15, 10, 10, 10, 'a'); p.t(19, 3, 22, 10, 17, 10, 'a'); p.t(11.5, 5, 13.5, 9, 11, 9, 'b');
+  // 眼睛、鼻孔
+  p.r(15, 12, 2, 2, 'd'); p.r(20, 12, 2, 2, 'd'); p.r(25, 14, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+function bobo1(): Pix {
+  const p = new Pix();
+  // 大翅膀（鋸齒邊）與長尾巴
+  p.t(1, 10, 13, 15, 12, 24, 'b'); p.t(1, 10, 6, 18, 12, 24, 'b'); p.t(3, 18, 10, 22, 10, 28, 'b');
+  p.r(6, 27, 9, 1, 'b'); p.r(3, 26, 4, 1, 'b'); p.r(2, 22, 2, 5, 'b'); p.t(0, 20, 4, 22, 1, 24, 'g');
+  // 腿與爪
+  p.r(13, 26, 4, 3, 'a'); p.r(20, 26, 4, 3, 'a'); p.r(12, 29, 6, 1, 'b'); p.r(19, 29, 6, 1, 'b');
+  // 身體、肚皮
+  p.chunk(12, 15, 13, 12, 'a'); p.r(18, 17, 6, 9, 'c'); p.r(16, 20, 3, 3, 'a');
+  // 肩甲
+  p.t(11, 13, 17, 15, 12, 20, 'b');
+  // 頭
+  p.chunk(12, 5, 14, 9, 'a'); p.r(26, 9, 3, 4, 'a'); p.r(12, 12, 4, 2, 'b');
+  // 大角：粗大彎曲、角尖金色
+  p.t(11, 1, 17, 6, 12, 8, 'b'); p.t(20, 1, 25, 6, 19, 6, 'b'); p.t(13, 3, 17, 6, 12, 7, 'a'); p.t(21, 1, 24, 6, 19, 6, 'a');
+  p.t(11, 1, 13, 3, 10, 3, 'g'); p.t(20, 1, 22, 3, 19, 3, 'g');
+  // 眼睛（兇一點）、鼻孔
+  p.r(17, 8, 3, 2, 'd'); p.r(22, 8, 3, 2, 'd'); p.r(27, 10, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// ───────── 摸摸（防禦型）：青綠色果凍泡泡，裡面有藍色的核心與臉 ─────────
+const JELLY: Pal = { O: OUT, a: '#27c4c4', b: '#3f7fb5', h: '#d6eef0', d: EYE, g: '#e8b44a', w: '#ffffff' };
+function momo0(): Pix {
+  const p = new Pix();
+  // 泡泡外殼
+  p.chunk(6, 14, 20, 15, 'a'); p.r(8, 29, 16, 1, 'a');
+  // 左上的反光
+  p.r(9, 16, 3, 1, 'h'); p.r(8, 17, 2, 2, 'h'); p.r(10, 18, 2, 1, 'h');
+  // 藍色核心（臉長在核心上）
+  p.chunk(12, 19, 12, 9, 'b'); p.r(15, 17, 6, 3, 'b'); p.r(17, 16, 3, 2, 'b');
+  // 臉
+  p.r(15, 21, 2, 3, 'd'); p.r(21, 21, 2, 3, 'd'); p.r(18, 25, 3, 1, 'd');
+  p.outline('O');
+  return p;
+}
+function momo1(): Pix {
+  const p = new Pix();
+  // 外殼：更高更大，底下有一圈往外攤開的邊
+  p.chunk(4, 6, 24, 21, 'a'); p.r(2, 25, 28, 3, 'a'); p.r(4, 28, 24, 2, 'a');
+  // 頂上三根小尖刺（結實的感覺）
+  p.t(8, 2, 11, 7, 6, 7, 'a'); p.t(16, 1, 19, 7, 13, 7, 'a'); p.t(24, 2, 26, 7, 21, 7, 'a');
+  // 兩處反光
+  p.r(7, 9, 4, 1, 'h'); p.r(6, 10, 2, 3, 'h'); p.r(9, 11, 2, 1, 'h');
+  p.r(22, 9, 2, 1, 'h');
+  // 藍色核心：大而厚，帶金色胸針
+  p.chunk(11, 12, 15, 15, 'b'); p.r(14, 10, 9, 3, 'b'); p.r(8, 20, 6, 6, 'b');
+  p.t(17, 22, 22, 22, 19.5, 27, 'g'); p.r(17, 21, 5, 1, 'g');
+  // 臉
+  p.r(14, 15, 2, 4, 'd'); p.r(21, 15, 2, 4, 'd'); p.r(17, 19, 4, 1, 'd'); p.r(16, 18, 1, 1, 'd'); p.r(21, 18, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// ───────── 坡坡（攻擊型）：淺藍白色的貓，桃紅色鬃毛與金色火焰 ─────────
+const CAT: Pal = { O: OUT, a: '#d4e8ea', b: '#a9bbc8', m: '#dc3a8c', g: '#e8b44a', d: EYE, w: '#ffffff' };
+function popo0(): Pix {
+  const p = new Pix();
+  // 尾巴：桃紅色，尾尖冒金色火
+  p.r(4, 25, 7, 2, 'm'); p.r(3, 21, 2, 6, 'm'); p.r(3, 18, 1, 3, 'g'); p.t(2, 14, 6, 18, 2, 21, 'g'); p.t(4, 16, 6, 20, 4, 21, 'g');
+  // 後腿＋前腿
+  p.r(10, 26, 4, 4, 'a'); p.r(17, 26, 4, 4, 'a'); p.r(21, 26, 4, 4, 'a'); p.r(10, 24, 6, 3, 'b');
+  // 身體與胸前金毛
+  p.chunk(10, 18, 14, 9, 'a'); p.r(20, 24, 4, 3, 'g');
+  // 頭
+  p.chunk(13, 8, 14, 11, 'a'); p.r(25, 14, 3, 4, 'a'); p.r(13, 16, 4, 2, 'b');
+  // 耳朵（左灰、右淺）
+  p.t(14, 3, 18, 9, 13, 9, 'a'); p.t(22, 2, 26, 9, 20, 9, 'a'); p.t(15, 5, 17, 9, 14, 9, 'b');
+  // 桃紅色頭髮＋金色火尖
+  p.chunk(12, 6, 9, 5, 'm'); p.t(14, 2, 19, 7, 12, 7, 'm'); p.t(15, 1, 19, 4, 15, 4, 'g'); p.t(17, 1, 21, 4, 17, 4, 'g');
+  // 眼睛、鼻子
+  p.r(19, 13, 2, 2, 'd'); p.r(24, 13, 2, 2, 'd'); p.r(27, 15, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+function popo1(): Pix {
+  const p = new Pix();
+  // 兩條尾巴（金色火尖）
+  p.r(2, 26, 8, 2, 'm'); p.r(1, 21, 2, 7, 'm'); p.t(0, 14, 4, 20, 0, 21, 'g'); p.t(2, 12, 5, 18, 2, 19, 'g');
+  p.r(3, 22, 1, 4, 'm');
+  // 腿
+  p.r(9, 27, 4, 3, 'a'); p.r(15, 27, 4, 3, 'a'); p.r(20, 27, 4, 3, 'a'); p.r(25, 27, 3, 3, 'b');
+  // 身體
+  p.chunk(8, 17, 18, 11, 'a'); p.r(8, 24, 6, 3, 'b');
+  // 桃紅色的鬃毛從頭一路披到背上
+  p.t(4, 8, 14, 12, 9, 24, 'm'); p.t(5, 14, 14, 16, 9, 26, 'm'); p.chunk(9, 9, 10, 14, 'm');
+  // 頭
+  p.chunk(14, 6, 14, 12, 'a'); p.r(26, 11, 3, 4, 'a'); p.r(14, 15, 4, 3, 'b');
+  // 耳朵
+  p.t(23, 0, 27, 7, 21, 7, 'a'); p.t(15, 2, 19, 7, 14, 7, 'a');
+  // 火焰冠：桃紅＋金色
+  p.t(11, 1, 18, 7, 9, 8, 'm'); p.t(15, 1, 21, 6, 13, 6, 'm'); p.t(14, 1, 17, 4, 12, 4, 'g'); p.t(18, 1, 20, 3, 15, 3, 'g');
+  p.t(6, 5, 10, 11, 5, 11, 'g');
+  // 眼睛（一條兇眉）、鼻子
+  p.r(19, 10, 3, 2, 'd'); p.r(24, 10, 3, 2, 'd'); p.r(18, 9, 4, 1, 'd'); p.r(24, 9, 4, 1, 'd'); p.r(27, 13, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// ═════════ 敵人（朝左，面對玩家的夥伴）═════════
+
+// 稻草布偶：木樁、稻草帽、紅色衣服、叉叉眼
+const STRAW: Pal = { O: OUT, a: '#e8c88a', b: '#b98a4a', r: '#e8514a', n: '#8b5a3c', d: EYE, w: '#ffffff', s: '#c43a34' };
+function dummy(): Pix {
+  const p = new Pix();
+  p.r(14, 14, 4, 16, 'n'); p.r(10, 29, 12, 1, 'n'); // 木樁與底座
+  p.r(4, 15, 24, 3, 'n'); // 橫桿（手臂）
+  // 稻草從袖口露出來
+  p.t(2, 14, 6, 15, 4, 20, 'a'); p.t(30, 14, 26, 15, 28, 20, 'a'); p.t(3, 12, 5, 16, 3, 18, 'b'); p.t(29, 12, 27, 16, 29, 18, 'b');
+  // 紅色衣服
+  p.chunk(9, 17, 14, 9, 'r'); p.r(9, 24, 14, 2, 's'); p.r(14, 18, 4, 1, 'a'); p.r(14, 21, 4, 1, 'a'); // 縫線
+  // 頭與帽子
+  p.chunk(9, 5, 14, 11, 'a'); p.r(9, 13, 14, 3, 'b');
+  p.r(4, 6, 24, 2, 'b'); p.chunk(10, 1, 12, 6, 'b'); p.r(10, 4, 12, 1, 'r');
+  // 叉叉眼與縫起來的嘴
+  p.r(11, 9, 1, 1, 'd'); p.r(12, 10, 1, 1, 'd'); p.r(13, 9, 1, 1, 'd'); p.r(11, 11, 1, 1, 'd'); p.r(13, 11, 1, 1, 'd');
+  p.r(17, 9, 1, 1, 'd'); p.r(18, 10, 1, 1, 'd'); p.r(19, 9, 1, 1, 'd'); p.r(17, 11, 1, 1, 'd'); p.r(19, 11, 1, 1, 'd');
+  p.r(12, 13, 8, 1, 'd'); [12, 14, 16, 18].forEach((x) => p.r(x, 12, 1, 3, 'd'));
+  p.outline('O');
+  return p;
+}
+
+// 小石怪：灰色的圓石頭，兩顆白眼睛、一張不開心的嘴
+const ROCK: Pal = { O: OUT, a: '#a9abbd', b: '#6f7188', h: '#d6d8e6', d: EYE, w: '#ffffff', g: '#5ccf5c', y: '#ffd84a' };
+function pebble(): Pix {
+  const p = new Pix();
+  p.r(7, 27, 5, 3, 'b'); p.r(20, 27, 5, 3, 'b'); // 小腳
+  p.chunk(4, 11, 24, 18, 'a'); p.chunk(8, 7, 8, 7, 'a'); p.chunk(18, 8, 7, 6, 'a'); // 身體與頭頂的兩塊凸起
+  p.r(4, 23, 24, 6, 'b'); p.r(6, 22, 20, 1, 'b'); // 下半部陰影
+  p.r(9, 9, 3, 1, 'h'); p.r(6, 13, 4, 1, 'h'); p.r(6, 14, 1, 3, 'h'); // 反光
+  // 眼睛（瞳孔偏左，看向玩家）
+  p.r(9, 16, 5, 5, 'w'); p.r(9, 17, 3, 3, 'd'); p.r(18, 16, 5, 5, 'w'); p.r(18, 17, 3, 3, 'd');
+  p.r(11, 25, 8, 1, 'd'); p.r(10, 26, 1, 1, 'd'); p.r(19, 26, 1, 1, 'd'); // 嘴
+  p.r(22, 11, 1, 4, 'b'); p.r(23, 14, 2, 1, 'b'); // 裂縫
+  p.outline('O');
+  return p;
+}
+
+// 岩石大塊頭：長滿青苔的巨人，眼睛發著黃光
+const GOLEM: Pal = { w: '#ffffff', O: OUT, a: '#8c8aa8', b: '#55546e', h: '#b8b6d0', g: '#5ccf5c', G: '#2f9a45', y: '#ffd84a', d: EYE };
+function golem(): Pix {
+  const p = new Pix();
+  p.r(7, 27, 7, 4, 'b'); p.r(19, 27, 7, 4, 'b'); p.r(7, 27, 7, 1, 'a'); p.r(19, 27, 7, 1, 'a'); // 粗腿
+  p.chunk(1, 12, 7, 16, 'a'); p.chunk(24, 12, 7, 16, 'a'); p.r(1, 24, 7, 4, 'b'); p.r(24, 24, 7, 4, 'b'); // 大拳頭
+  p.chunk(5, 9, 22, 19, 'a'); p.r(5, 22, 22, 6, 'b'); // 身體
+  p.chunk(10, 1, 13, 10, 'a'); p.r(10, 8, 13, 3, 'b'); // 頭
+  p.r(12, 3, 4, 1, 'h'); p.r(7, 11, 5, 1, 'h'); // 反光
+  p.r(12, 5, 4, 3, 'y'); p.r(18, 5, 4, 3, 'y'); p.r(12, 5, 2, 3, 'w'); p.r(18, 5, 2, 3, 'w'); // 發光的眼睛
+  p.r(14, 9, 6, 1, 'd'); // 嘴
+  // 青苔
+  p.r(6, 9, 8, 2, 'g'); p.r(8, 11, 4, 1, 'g'); p.r(19, 9, 7, 2, 'g'); p.r(21, 11, 3, 1, 'G'); p.r(11, 1, 5, 1, 'g'); p.r(20, 21, 5, 2, 'g'); p.r(7, 18, 3, 2, 'G');
+  // 身上的裂縫
+  p.r(15, 13, 1, 5, 'd'); p.r(16, 17, 2, 1, 'd'); p.r(17, 18, 1, 3, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 葉蟲：一節一節的綠色毛毛蟲，頭上長著兩片葉子
+const BUG: Pal = { O: OUT, a: '#5ccf5c', b: '#2f9a45', h: '#b8f58a', d: EYE, w: '#ffffff', l: '#3fbf4a', y: '#ffd84a' };
+function leafy(): Pix {
+  const p = new Pix();
+  // 身體：頭在左，往右逐節變小
+  p.chunk(24, 23, 7, 7, 'a'); p.r(24, 28, 7, 2, 'b');
+  p.chunk(17, 20, 9, 10, 'a'); p.r(17, 27, 9, 3, 'b');
+  p.chunk(9, 17, 10, 13, 'a'); p.r(9, 27, 10, 3, 'b');
+  p.chunk(1, 12, 12, 18, 'a'); p.r(1, 27, 12, 3, 'b'); // 頭
+  // 腳
+  [3, 8, 14, 21, 27].forEach((x) => p.r(x, 30, 2, 1, 'd'));
+  // 兩片葉子
+  p.t(2, 3, 8, 12, 1, 12, 'l'); p.t(3, 5, 6, 11, 2, 11, 'h'); p.t(10, 2, 15, 12, 7, 12, 'l'); p.t(11, 4, 13, 11, 9, 11, 'h'); p.r(4, 10, 2, 3, 'b'); p.r(11, 10, 2, 3, 'b');
+  // 反光與臉
+  p.r(3, 15, 3, 1, 'h'); p.r(3, 16, 1, 2, 'h');
+  p.r(3, 18, 4, 4, 'w'); p.r(3, 19, 2, 3, 'd'); p.r(9, 18, 4, 4, 'w'); p.r(9, 19, 2, 3, 'd');
+  p.r(5, 24, 5, 1, 'd'); p.r(4, 23, 1, 1, 'd'); p.r(10, 23, 1, 1, 'd');
+  p.r(20, 22, 3, 1, 'h');
+  p.outline('O');
+  return p;
+}
+
+// 霧影：飄浮的淡紫色霧團，眼睛發著黃光，頭上有兩根角（風車怪王也用這張）
+const MIST: Pal = { O: OUT, a: '#d8cdef', b: '#a99bd6', c: '#7a68b8', d: EYE, y: '#ffd84a', w: '#ffffff' };
+function mist(): Pix {
+  const p = new Pix();
+  // 下半身化成霧：一條條往下飄
+  p.t(4, 20, 10, 29, 2, 29, 'b'); p.t(10, 22, 16, 30, 8, 30, 'a'); p.t(16, 22, 22, 29, 14, 29, 'b'); p.t(22, 21, 28, 30, 20, 30, 'a'); p.t(26, 20, 30, 27, 24, 27, 'b');
+  p.chunk(3, 8, 26, 17, 'a'); p.r(3, 19, 26, 6, 'b'); p.r(7, 22, 18, 3, 'c');
+  // 兩根角
+  p.t(5, 2, 11, 9, 4, 9, 'c'); p.t(27, 2, 21, 9, 28, 9, 'c'); p.t(6, 4, 9, 9, 5, 9, 'b'); p.t(26, 4, 23, 9, 27, 9, 'b');
+  // 反光與臉
+  p.r(7, 10, 5, 1, 'w'); p.r(6, 11, 1, 3, 'w');
+  p.r(8, 12, 5, 5, 'd'); p.r(8, 13, 3, 3, 'y'); p.r(19, 12, 5, 5, 'd'); p.r(19, 13, 3, 3, 'y');
+  p.r(10, 20, 12, 1, 'd'); [11, 13, 15, 17, 19].forEach((x) => p.r(x, 20, 1, 2, 'd'));
+  p.outline('O');
+  return p;
+}
+
+export const MONSTER_ART: Record<string, { pix: () => Pix; pal: Pal }> = {
+  mon_bobo: { pix: bobo0, pal: IMP }, mon_bobo2: { pix: bobo1, pal: IMP },
+  mon_momo: { pix: momo0, pal: JELLY }, mon_momo2: { pix: momo1, pal: JELLY },
+  mon_popo: { pix: popo0, pal: CAT }, mon_popo2: { pix: popo1, pal: CAT },
+  en_dummy: { pix: dummy, pal: STRAW }, en_pebble: { pix: pebble, pal: ROCK }, en_golem: { pix: golem, pal: GOLEM },
+  en_leafy: { pix: leafy, pal: BUG }, en_windking: { pix: mist, pal: MIST },
+};
+
+/** 回傳 32×32 的「列字串」（'.' 為透明），好讓 Phaser 與 Node 共用 */
+export function monsterRows(key: string): { rows: string[]; pal: Pal } {
+  const a = MONSTER_ART[key];
+  const p = a.pix();
+  const pal = { ...a.pal };
+  const bb = p.bbox();
+  if (bb.w > N || bb.h > N) throw new Error(`${key} 太大：${bb.w}×${bb.h}，超過 ${N}×${N}`);
+  // 水平置中；底部貼齊畫布最下面一列（腳踩地）
+  const ox = Math.floor((N - bb.w) / 2) - bb.x0, oy = N - bb.h - bb.y0;
+  const rows: string[] = [];
+  for (let y = 0; y < N; y++) rows.push(Array.from({ length: N }, (_, x) => p.raw(x - ox, y - oy) || '.').join(''));
+  return { rows, pal };
+}
+/** 各圖實際大小（檢查用） */
+export const monsterSize = (key: string) => MONSTER_ART[key].pix().bbox();
