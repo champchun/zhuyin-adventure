@@ -36,6 +36,7 @@ body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none
 /* ───── HUD ───── */
 #hud { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
 #hud > * { pointer-events: auto; position: absolute; }
+body.inbattle #hud { visibility: hidden; }
 #hud .tl { top: max(8px, env(safe-area-inset-top)); left: 8px; background: var(--panel); border: 3px solid var(--ink); border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 18px; }
 #hud .tr { top: max(8px, env(safe-area-inset-top)); right: 8px; display: flex; gap: 8px; }
 
@@ -97,8 +98,8 @@ input[type=range] { width: 200px; height: 36px; }
 #battleui > * { pointer-events: auto; }
 /* 血條以遊戲畫面為基準（--cx/--cy/--cr/--ch 由 battleui.fit() 設定）：敵方在畫面左上，我方在畫面右側偏下，仿初代寶可夢 */
 .hpbar { position: absolute; background: var(--panel); border: 3px solid var(--ink); border-radius: 10px; padding: 6px 12px; min-width: 190px; font-weight: 800; font-size: 17px; }
-.hpbar.enemy { left: calc(var(--cx, 0px) + 10px); top: calc(var(--cy, 0px) + 10px); }
-.hpbar.me { right: calc(var(--cr, 0px) + 10px); top: calc(var(--cy, 0px) + var(--ch, 600px) * 0.34); }
+.hpbar.me { left: calc(var(--cx, 0px) + 10px); top: calc(var(--cy, 0px) + 10px); }
+.hpbar.enemy { right: calc(var(--cr, 0px) + 10px); top: calc(var(--cy, 0px) + 10px); }
 .hpbar .hprow { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .hpbar .hprow b { font-size: 13px; color: #e0742c; }
 .hpbar .hprow .hp { flex: 1; }
@@ -114,6 +115,10 @@ input[type=range] { width: 200px; height: 36px; }
 #bpanel .msg { font-size: clamp(18px, 2.8vmin, 26px); font-weight: 800; min-height: 1.6em; line-height: 1.4; }
 .modes { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .modes .btn { flex: 1; min-width: 140px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.grid4 .btn { min-height: 68px; font-size: 22px; }
+.grid4 .btn small { display: block; font-size: 13px; font-weight: 600; }
+.switchrow { display: flex; justify-content: center; margin-top: 8px; }
 .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 8px; }
 .moves .btn { min-height: 68px; font-size: 22px; }
 .moves .btn small { display: block; font-size: 13px; font-weight: 600; }

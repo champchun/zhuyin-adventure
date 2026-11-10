@@ -56,17 +56,17 @@ export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
     moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog], color: '#f59a3c',
-    desc: '水滴形的小史萊姆，有一張會動的大嘴巴。什麼都平均，最好上手。',
+    desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
     moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog], color: '#4fb3a4',
-    desc: '圓圓扁扁、軟綿綿的史萊姆，皮很厚。HP 很多，被打也比較不痛。',
+    desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
     moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog], color: '#ff8a3a',
-    desc: '火氣大的橘色史萊姆，每一招都比較痛。不過 HP 比較少，要小心。',
+    desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
 /** 博士桌上的三隻初始夥伴 */

@@ -17,7 +17,7 @@ export interface BattleInit { battleId: string; mapTheme: string; done: (r: Batt
 
 // 問答面板會蓋住畫面下半部，所以雙方都放在上半部；地平線也跟著上移
 const PLAYER_POS = { x: 72, y: 86 };
-const ENEMY_POS = { x: 212, y: 46 };
+const ENEMY_POS = { x: 196, y: 50 };
 const HORIZON = 80;
 
 export class BattleScene extends Phaser.Scene {

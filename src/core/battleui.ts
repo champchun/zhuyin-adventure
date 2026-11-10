@@ -20,7 +20,8 @@ export const bui = {
   show(bars = true) {
     root = $('battleui');
     root.hidden = false;
-    // 仿初代寶可夢：敵方資訊在左上、我方資訊在右側偏下（靠近自己的怪獸）
+    document.body.classList.toggle('inbattle', bars); // 戰鬥中隱藏地圖用的按鈕，避免被血條蓋住
+    // 夥伴資訊在左上（靠近自己的怪獸）、對手資訊在右上，與雙方站位同一側
     const bar = (side: string) => `<div class="hpbar ${side}"><div class="n"></div><div class="hprow"><b>HP</b><div class="hp"><i></i></div></div><div class="num"></div>${side === 'me' ? '<div class="hprow"><b class="mpl">MP</b><div class="hp mp"><i></i></div></div><div class="num mpnum"></div>' : ''}</div>`;
     root.innerHTML = `${bar('enemy')}${bar('me')}
       <div id="bpanel"><div class="box" data-lock="0"><div class="msg"></div><div class="body"></div></div></div>`;
@@ -38,7 +39,7 @@ export const bui = {
     root.style.setProperty('--cr', window.innerWidth - r.right + 'px');
     root.style.setProperty('--ch', r.height + 'px');
   },
-  hide() { $('battleui').hidden = true; $('battleui').innerHTML = ''; },
+  hide() { document.body.classList.remove('inbattle'); $('battleui').hidden = true; $('battleui').innerHTML = ''; },
   setHp(side: 'enemy' | 'me', name: string, hp: number, max: number, level?: number) {
     const bar = root.querySelector('.hpbar.' + side)!;
     bar.querySelector('.n')!.textContent = `${name}${level ? '　Lv.' + level : ''}`;
@@ -95,22 +96,36 @@ export const bui = {
     return new Promise((resolve) => {
       const noMp = modes.mp <= 0;
       let mode: Mode = modes.only ?? (modes.avail && !noMp ? modes.cur : 'look');
-      this.msg(`${SPECIES[me.species].name}要怎麼做？`);
+      const name = SPECIES[me.species].name;
       const moves = SPECIES[me.species].moves.filter((m) => !m.needAbility || hasAbility(m.needAbility));
       const body = root.querySelector<HTMLElement>('.body')!;
-      const dis = (m: Mode) => ((modes.only && modes.only !== m) || (m === 'listen' && noMp) ? 'disabled style="opacity:.35"' : '');
       const hasItems = Object.keys(ITEMS).some((id) => itemCount(id) > 0);
-      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look" ${dis('look')}>👊 普通攻擊<small>看符號</small></button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen" ${dis('listen')}>🪄 魔法攻擊<small>${noMp ? '魔力用完了' : '聽聲音（更強），魔力 -1'}</small></button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}
-        ${hasItems ? '<button class="btn" data-a="item">🎒 道具</button>' : ''}
-        ${canSwitch ? '<button class="btn" data-a="switch">🔄 換夥伴</button>' : ''}
-        <button class="btn" data-a="run">🏃 離開</button></div>`; };
-      render();
+      const off = (cond: boolean) => (cond ? 'disabled style="opacity:.35"' : '');
+      const lookOff = !!modes.only && modes.only !== 'look';
+      const listenOff = !modes.avail || noMp || (!!modes.only && modes.only !== 'listen');
+      // 第一層：四宮格（普攻｜道具／魔攻｜撤退）；第二層：選招式
+      const top = () => {
+        this.msg(`${name}要怎麼做？`);
+        body.innerHTML = `<div class="grid4">
+          <button class="btn" data-a="pick" data-m="look" ${off(lookOff)}>👊 普通攻擊<small>看符號</small></button>
+          <button class="btn" data-a="item" ${off(!hasItems)}>🎒 道具<small>${hasItems ? '補血、補魔力' : '還沒有道具'}</small></button>
+          <button class="btn" data-a="pick" data-m="listen" ${off(listenOff)}>🪄 魔法攻擊<small>${noMp ? '魔力用完了' : '聽聲音（更強），魔力 -1'}</small></button>
+          <button class="btn" data-a="run">🏃 撤退<small>先離開這場戰鬥</small></button></div>
+          ${canSwitch ? '<div class="switchrow"><button class="btn small" data-a="switch">🔄 換夥伴</button></div>' : ''}`;
+      };
+      const pickMove = () => {
+        this.msg(mode === 'listen' ? '用哪一招魔法攻擊？' : '用哪一招普通攻擊？');
+        body.innerHTML = `<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}</div>
+          <div class="switchrow"><button class="btn small" data-a="back">↩ 返回</button></div>`;
+      };
+      top();
       body.onclick = (e) => {
         const el = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null;
         if (!el) return;
         audio.sfx('tap');
         const a = el.dataset.a;
-        if (a === 'mode') { mode = el.dataset.m as Mode; render(); return; }
+        if (a === 'pick') { mode = el.dataset.m as Mode; pickMove(); return; }
+        if (a === 'back') { top(); return; }
         body.onclick = null;
         if (a === 'move') resolve({ type: 'move', move: moves[+el.dataset.i!], mode });
         else resolve({ type: a as 'item' | 'switch' | 'run' });

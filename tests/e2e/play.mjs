@@ -28,13 +28,15 @@ async function tapTile(x, y) {
     const w = window.__game.world();
     const cam = w.cameras.main;
     const c = document.querySelector('#stage canvas').getBoundingClientRect();
-    const z = cam.zoom;
+    const cv = document.querySelector('#stage canvas');
+    const z = cam.zoom * (c.width / cv.width); // 畫布顯示大小可能與內部解析度不同（CSS 等比例貼合視窗）
     return { x: c.left + (x * 16 + 8 - cam.worldView.x) * z, y: c.top + (y * 16 + 8 - cam.worldView.y) * z };
   }, [x, y]);
   await page.mouse.click(pos.x, pos.y);
 }
 
 /** 處理畫面上的對話／戰鬥／彈窗，直到 cond() 成立 */
+let seenTop = false, seenMove = false;
 async function pump(cond, label, maxMs = 900000) {
   const t0 = Date.now();
   let lastBattle = '';
@@ -49,13 +51,15 @@ async function pump(cond, label, maxMs = 900000) {
       const big = document.querySelector('#battleui .qcard .big')?.textContent ?? '';
       const glow = document.querySelector('#battleui .opt.glow');
       const results = document.querySelector('#modal [data-a=go]');
+      const top = [...document.querySelectorAll('#battleui .grid4 [data-a=pick]:not([disabled])')].map((b) => b.dataset.m); // 四宮格第一層
       const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
-      return { dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      return { top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
-    else if (st.move) { await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
+    else if (st.top.length) { if (!seenTop) { seenTop = true; await snap('battle-menu'); } await page.click(`#battleui .grid4 [data-a=pick][data-m=${process.env.MODE ?? st.top[0]}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
       const answer = st.big && st.big !== '🔊' ? st.big : st.glow;
@@ -119,7 +123,7 @@ await doTap(18, 8, '村長爺爺');
 await doTap(14, 3, '研究所門');
 if ((await save()).mapId !== 'lab') throw new Error('沒有進入研究所');
 await snap('lab');
-await doTap(5, 3, '還沒見博士就點史萊姆');
+await doTap(5, 3, '還沒見博士就點桌上的夥伴');
 if ((await save()).party.length) throw new Error('還沒跟博士說話就選到夥伴');
 await doTap(9, 5, '博士');
 const STARTER = process.env.STARTER ?? 'momo';
