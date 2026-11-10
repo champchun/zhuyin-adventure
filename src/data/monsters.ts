@@ -1,11 +1,20 @@
 export interface MoveDef {
   id: string;
   name: string;
+  /** 魔法攻擊（聽聲音）時顯示的名字 */
+  magicName: string;
   power: number;
   fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
+  /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
+  symbol?: string;
   desc: string;
+}
+/** 答對 symbol 後要使出的招式：有綁定且已學會的招式優先，否則用通用的小拳擊。 */
+export function moveFor(speciesId: string, symbol: string, has: (ability: string) => boolean): MoveDef {
+  const moves = SPECIES[speciesId].moves;
+  return moves.find((m) => m.symbol === symbol && (!m.needAbility || has(m.needAbility))) ?? moves.find((m) => !m.symbol && !m.needAbility) ?? moves[0];
 }
 export interface ItemDef {
   id: string;
@@ -45,12 +54,12 @@ export interface SpeciesDef {
   color: string;
 }
 export const MOVES: Record<string, MoveDef> = {
-  tap: { id: 'tap', name: '小拳擊', power: 3, fx: 'punch', desc: '用大拳套輕輕打一下。' },
-  blast: { id: 'blast', name: '爆破拳', power: 6, fx: 'blast', needAbility: 'blast', desc: '蓄力一擊，連裂石都能打碎！' },
-  hum: { id: 'hum', name: '哼哼波', power: 4, fx: 'hum', needAbility: 'hum', desc: '嘴巴閉起來「ㄇ～」，震出一圈圈波紋，能搖響鈴鐺。' },
-  fog: { id: 'fog', name: '吹霧', power: 5, fx: 'fog', needAbility: 'fog', desc: '咬住下唇「ㄈ～」吹氣，把迷霧吹散。' },
-  peck: { id: 'peck', name: '啄擊', power: 3, fx: 'peck', desc: '用尖尖的嘴巴輕啄。' },
-  gust: { id: 'gust', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
+  tap: { id: 'tap', magicName: '小魔法彈', name: '小拳擊', power: 3, fx: 'punch', desc: '用大拳套輕輕打一下。' },
+  blast: { id: 'blast', magicName: '爆破魔法', symbol: 'ㄅ', name: '爆破拳', power: 6, fx: 'blast', needAbility: 'blast', desc: '蓄力一擊，連裂石都能打碎！' },
+  hum: { id: 'hum', magicName: '哼哼魔法', symbol: 'ㄇ', name: '哼哼波', power: 4, fx: 'hum', needAbility: 'hum', desc: '嘴巴閉起來「ㄇ～」，震出一圈圈波紋，能搖響鈴鐺。' },
+  fog: { id: 'fog', magicName: '吹霧魔法', symbol: 'ㄈ', name: '吹霧', power: 5, fx: 'fog', needAbility: 'fog', desc: '咬住下唇「ㄈ～」吹氣，把迷霧吹散。' },
+  peck: { id: 'peck', magicName: '啄擊魔法', name: '啄擊', power: 3, fx: 'peck', desc: '用尖尖的嘴巴輕啄。' },
+  gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
@@ -76,10 +85,10 @@ export interface EnemyDef {
   id: string; name: string; sprite: string; hp: number; atk: number; scale: number;
 }
 export const ENEMIES: Record<string, EnemyDef> = {
-  dummy: { id: 'dummy', name: '稻草布偶', sprite: 'en_dummy', hp: 6, atk: 1, scale: 2.25 },
-  pebble: { id: 'pebble', name: '小石怪', sprite: 'en_pebble', hp: 6, atk: 2, scale: 2.25 },
-  golem: { id: 'golem', name: '岩石大塊頭', sprite: 'en_golem', hp: 7, atk: 3, scale: 2.75 },
-  leafy: { id: 'leafy', name: '葉蟲', sprite: 'en_leafy', hp: 6, atk: 2, scale: 2.25 },
-  mist: { id: 'mist', name: '霧影', sprite: 'en_windking', hp: 7, atk: 3, scale: 2.75 },
-  windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 7, atk: 3, scale: 2.75 },
+  dummy: { id: 'dummy', name: '稻草布偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
+  pebble: { id: 'pebble', name: '小石怪', sprite: 'en_pebble', hp: 12, atk: 2, scale: 2.25 },
+  golem: { id: 'golem', name: '岩石大塊頭', sprite: 'en_golem', hp: 14, atk: 3, scale: 2.75 },
+  leafy: { id: 'leafy', name: '葉蟲', sprite: 'en_leafy', hp: 14, atk: 2, scale: 2.25 },
+  mist: { id: 'mist', name: '霧影', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
+  windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };

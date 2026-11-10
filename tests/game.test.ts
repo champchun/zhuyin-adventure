@@ -4,7 +4,7 @@ import { BATTLES, LEVELS } from '../src/data/levels';
 import { ALL_SYMBOLS } from '../src/data/symbols';
 import { QuestionRun, makeQuestion } from '../src/core/learning';
 import { G, activeSymbols, addCoins, addItem, buyItem, emptyStat, ensureVitals, giveMonster, healAll, itemCount, maxHp, maxMp, newSave, useItem } from '../src/core/save';
-import { ENEMIES, ITEMS, SPECIES } from '../src/data/monsters';
+import { ENEMIES, ITEMS, SPECIES, moveFor } from '../src/data/monsters';
 import { MONSTER_ART, monsterRows, monsterSize } from '../src/gfx/monsterArt';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -289,5 +289,24 @@ describe('已教過的符號', () => {
     G.save.flags.practiceDone = true;
     expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ']);
     G.save.flags = {};
+  });
+});
+
+describe('招式綁符號', () => {
+  it('答對哪個符號就使出綁定的招式；還沒學會就用小拳擊', () => {
+    const none = () => false;
+    const all = () => true;
+    for (const id of Object.keys(SPECIES)) {
+      expect(moveFor(id, 'ㄅ', none).id).toBe('tap');
+      expect(moveFor(id, 'ㄅ', all).id).toBe('blast');
+      expect(moveFor(id, 'ㄆ', all).id).toBe('gust');
+      expect(moveFor(id, 'ㄇ', all).id).toBe('hum');
+      expect(moveFor(id, 'ㄈ', all).id).toBe('fog');
+      expect(moveFor(id, 'ㄇ', (a) => a === 'blast').id).toBe('tap');
+    }
+  });
+  it('每一招都有魔法版的名字', () => {
+    expect(moveFor('bobo', 'ㄅ', () => true).magicName).toBe('爆破魔法');
+    expect(moveFor('bobo', 'ㄉ', () => true).magicName).toBe('小魔法彈');
   });
 });

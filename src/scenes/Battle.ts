@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
-import { G, activeSymbols, ensureVitals, maxHp, maxMp, powerBonus, spriteOf, useItem } from '../core/save';
+import { G, activeSymbols, ensureVitals, hasAbility, maxHp, maxMp, powerBonus, spriteOf, useItem } from '../core/save';
 import type { MonsterInst } from '../core/save';
-import { ENEMIES, ITEMS, SPECIES } from '../data/monsters';
+import { ENEMIES, ITEMS, SPECIES, moveFor } from '../data/monsters';
 import type { MoveDef } from '../data/monsters';
 import { BATTLES } from '../data/levels';
 import type { BattleDef } from '../data/levels';
@@ -275,10 +275,11 @@ export class BattleScene extends Phaser.Scene {
         const listenBonus = q.type === 'listen' ? 1 : 0; // 聽的招式比較難，威力加成
         const sec = run.ms / 1000;
         const speed = G.settings.speedBonus && clean ? (sec <= 4 ? 2 : sec <= 8 ? 1 : 0) : 0;
-        const dmg = act.move.power + powerBonus(me) + listenBonus + speed;
+        const move = moveFor(me.species, q.target, hasAbility); // 答對哪個符號，就使出綁定的招式
+        const dmg = move.power + powerBonus(me) + listenBonus + speed;
         if (q.type === 'listen') { me.mp = Math.max(0, me.mp! - 1); bui.setMp(me.mp, maxMp(me)); } // 魔法攻擊耗 1 點魔力
-        bui.msg(`${SPECIES[me.species].name}使出了${act.move.name}！${speed >= 2 ? '⚡好快！威力大增！' : speed === 1 ? '⚡不錯！威力增加！' : ''}`);
-        await this.playerAttack(act.move);
+        bui.msg(`${SPECIES[me.species].name}使出了${q.type === 'listen' ? move.magicName : move.name}！${speed >= 2 ? '⚡好快！威力大增！' : speed === 1 ? '⚡不錯！威力增加！' : ''}`);
+        await this.playerAttack(move);
         ehp = Math.max(0, ehp - dmg);
         this.num(this.en.x, this.en.y - 30, `-${dmg}`, '#ffd84a');
         bui.setHp('enemy', enemy.name, ehp, enemy.hp);

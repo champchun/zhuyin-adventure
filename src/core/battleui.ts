@@ -10,7 +10,7 @@ import { PROMPT_LINES } from '../data/voiceLines';
 
 const $ = (id: string) => document.getElementById(id)!;
 export type Mode = 'look' | 'listen';
-export type Action = { type: 'move'; move: MoveDef; mode: Mode } | { type: 'item' } | { type: 'switch' } | { type: 'run' };
+export type Action = { type: 'move'; mode: Mode } | { type: 'item' } | { type: 'switch' } | { type: 'run' };
 
 let root: HTMLElement;
 let fitBound = false;
@@ -97,7 +97,6 @@ export const bui = {
       const noMp = modes.mp <= 0;
       let mode: Mode = modes.only ?? (modes.avail && !noMp ? modes.cur : 'look');
       const name = SPECIES[me.species].name;
-      const moves = SPECIES[me.species].moves.filter((m) => !m.needAbility || hasAbility(m.needAbility));
       const body = root.querySelector<HTMLElement>('.body')!;
       const hasItems = Object.keys(ITEMS).some((id) => itemCount(id) > 0);
       const off = (cond: boolean) => (cond ? 'disabled style="opacity:.35"' : '');
@@ -113,21 +112,15 @@ export const bui = {
           <button class="btn" data-a="run">🏃 撤退<small>先離開這場戰鬥</small></button></div>
           ${canSwitch ? '<div class="switchrow"><button class="btn small" data-a="switch">🔄 換夥伴</button></div>' : ''}`;
       };
-      const pickMove = () => {
-        this.msg(mode === 'listen' ? '用哪一招魔法攻擊？' : '用哪一招普通攻擊？');
-        body.innerHTML = `<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}</div>
-          <div class="switchrow"><button class="btn small" data-a="back">↩ 返回</button></div>`;
-      };
       top();
       body.onclick = (e) => {
         const el = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null;
-        if (!el) return;
+        if (!el || el.hasAttribute('disabled')) return;
         audio.sfx('tap');
         const a = el.dataset.a;
-        if (a === 'pick') { mode = el.dataset.m as Mode; pickMove(); return; }
-        if (a === 'back') { top(); return; }
         body.onclick = null;
-        if (a === 'move') resolve({ type: 'move', move: moves[+el.dataset.i!], mode });
+        // 普通攻擊／魔法攻擊直接進入出題；出哪一招由答對的符號決定
+        if (a === 'pick') { mode = el.dataset.m as Mode; resolve({ type: 'move', mode }); }
         else resolve({ type: a as 'item' | 'switch' | 'run' });
       };
     });
