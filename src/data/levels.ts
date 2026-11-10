@@ -51,7 +51,7 @@ export const BATTLES: Record<string, BattleDef> = {
   // 小關A：ㄅㄆ（村裡的練習戰，全程有視覺提示）
   practice: {
     id: 'practice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄅ', 'ㄆ'], review: [], guided: true,
-    intro: ['這是稻草布偶，用來練習。', '看，有一個符號在發光！找出和上面一樣的符號，波波就會出招。'],
+    intro: ['這是稻草布偶，用來練習。', '答對題目，波波就會出招。答案會亮亮的，跟著點就好！'],
     reward: {
       flag: 'practiceDone', exp: 3, abilities: ['blast', 'gust'],
       story: ['練習完成！波波好有精神。', '「ㄅ」像嘴唇「啪」地彈開，波波學會了爆破拳！', '「ㄆ」像輕輕吹出一口氣，波波學會了噴風！', '村外的小路上，也有迷霧在搗亂，去看看吧！'],

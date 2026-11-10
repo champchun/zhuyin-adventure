@@ -204,10 +204,18 @@ export class BattleScene extends Phaser.Scene {
         }
         await bui.note(`第 ${phase} 個小回合！（共 ${def.phases} 個）`);
       }
+      // 教學戰：第 1 回合只能用普通攻擊（看符號），第 2 回合只能用魔法攻擊（聽聲音）
+      const canListen = audio.audioReadyFor(targets);
+      const teachMode: Mode | undefined = def.guided ? (phase >= 2 && canListen ? 'listen' : 'look') : undefined;
+      if (def.guided && canListen) {
+        await bui.note(teachMode === 'listen'
+          ? '這一次換「🪄 魔法攻擊」！點它，然後「聽」聲音，找出聽到的符號。魔法比較強喔！'
+          : '先用「👊 普通攻擊」！點它，然後「看」符號，找出一樣的。');
+      }
       while (ehp > 0) {
         const tierSetting = G.settings.tier;
         const choosable = tierSetting === 'auto' && !def.guided && (audio.audioReadyFor(targets) || (G.settings.experimentalSymbolTts && targets.length > 0));
-        const act = await bui.menu(me, party.length > 1, { avail: choosable, cur: mode });
+        const act = await bui.menu(me, party.length > 1, { avail: choosable || (!!def.guided && canListen), cur: mode, only: def.guided && canListen ? teachMode : undefined });
         if (act.type === 'run') { bui.msg(PROMPT_LINES.runAway, true); await sleep(900); return 'run'; }
         if (act.type === 'switch') {
           const i = await bui.chooseMon(party, party.indexOf(me));
@@ -216,7 +224,7 @@ export class BattleScene extends Phaser.Scene {
         }
         // 選招式 → 播放題目 → 選符號
         if (act.type === 'move') mode = act.mode;
-        const tier = def.guided ? 1 : tierSetting !== 'auto' ? tierSetting : choosable ? (mode === 'listen' ? 2 : 1) : 1;
+        const tier = def.guided ? (teachMode === 'listen' ? 2 : 1) : tierSetting !== 'auto' ? tierSetting : choosable ? (mode === 'listen' ? 2 : 1) : 1;
         const q = makeQuestion({
           focus: def.focus, review: def.review, allowed: activeSymbols(), tier,
           audioReady: audio.audioReadyFor(targets) || (G.settings.experimentalSymbolTts && targets.length > 0),

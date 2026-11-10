@@ -53,13 +53,14 @@ export const bui = {
     });
   },
   /** modes.avail＝可選「聽」招式；cur 是目前選的招式種類（看／聽），結果會隨 Action 回傳 */
-  menu(me: MonsterInst, canSwitch: boolean, modes: { avail: boolean; cur: Mode }): Promise<Action> {
+  menu(me: MonsterInst, canSwitch: boolean, modes: { avail: boolean; cur: Mode; only?: Mode }): Promise<Action> {
     return new Promise((resolve) => {
-      let mode: Mode = modes.avail ? modes.cur : 'look';
+      let mode: Mode = modes.only ?? (modes.avail ? modes.cur : 'look');
       this.msg(`${SPECIES[me.species].name}要怎麼做？`);
       const moves = SPECIES[me.species].moves.filter((m) => !m.needAbility || hasAbility(m.needAbility));
       const body = root.querySelector<HTMLElement>('.body')!;
-      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look">👀 看的招式</button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen">👂 聽的招式（更強）</button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${m.name}<small>${m.desc}</small></button>`).join('')}
+      const dis = (m: Mode) => (modes.only && modes.only !== m ? 'disabled style="opacity:.35"' : '');
+      const render = () => { body.innerHTML = `${modes.avail ? `<div class="modes"><button class="btn small ${mode === 'look' ? 'primary' : ''}" data-a="mode" data-m="look" ${dis('look')}>👊 普通攻擊<small>看符號</small></button><button class="btn small ${mode === 'listen' ? 'primary' : ''}" data-a="mode" data-m="listen" ${dis('listen')}>🪄 魔法攻擊<small>聽聲音（更強）</small></button></div>` : ''}<div class="moves">${moves.map((m, i) => `<button class="btn primary" data-a="move" data-i="${i}">${mode === 'listen' ? '🪄' : '👊'} ${m.name}<small>${m.desc}</small></button>`).join('')}
         ${canSwitch ? '<button class="btn" data-a="switch">🔄 換夥伴</button>' : ''}
         <button class="btn" data-a="run">🏃 離開</button></div>`; };
       render();
