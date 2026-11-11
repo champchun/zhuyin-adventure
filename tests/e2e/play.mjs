@@ -36,7 +36,7 @@ async function tapTile(x, y) {
 }
 
 /** 處理畫面上的對話／戰鬥／彈窗，直到 cond() 成立 */
-let seenTop = false, seenMove = false;
+let seenTop = false, seenMove = false, usedPotions = 0;
 async function pump(cond, label, maxMs = 900000) {
   const t0 = Date.now();
   let lastBattle = '';
@@ -52,12 +52,18 @@ async function pump(cond, label, maxMs = 900000) {
       const glow = document.querySelector('#battleui .opt.glow');
       const results = document.querySelector('#modal [data-a=go]');
       const top = [...document.querySelectorAll('#battleui .grid4 [data-a=pick]:not([disabled])')].map((b) => b.dataset.m); // 四宮格第一層
+      const gs = window.__game.G.save, me = gs.party[gs.active];
+      const heal = ['bigpotion', 'potion'].find((id) => (gs.items?.[id] ?? 0) > 0);
+      const low = !!heal && top.length > 0 && me.hp <= 9; // 像玩家一樣：血量低就喝藥水
+      const itemPick = document.querySelector('#battleui [data-a=it]');
       const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
-      return { top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      return { low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
+    else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
+    else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
     else if (st.top.length) { if (!seenTop) { seenTop = true; await snap('battle-menu'); } await page.click(`#battleui .grid4 [data-a=pick][data-m=${process.env.MODE ?? st.top[0]}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
@@ -189,6 +195,7 @@ await doTap(22, 4, '霧影');
 s = await save();
 if (!s.flags.boss_p) throw new Error('霧影沒有打贏');
 await snap('after-boss-p');
+log('  戰鬥中喝了藥水', usedPotions, '次');
 log('✓ 畢業戰完成，隊伍：', s.party.map((m) => m.species + ' Lv' + m.level).join());
 await doTap(11, 9, '風車'); await doTap(5, 7, '落葉'); await doTap(5, 4, '落葉後寶箱'); await doTap(22, 14, '木門(已開)').catch(() => {});
 await doTap(23, 17, '木門後寶箱');
@@ -231,6 +238,38 @@ if (!['m1', 'm2', 'm3'].every((id) => monstersShown.includes(id)) || monstersSho
 await snap('valley-respawned');
 log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭目沒有');
 await doTap(4, 18, '回村');
+
+// ───── 舌尖中音島（ㄉㄊㄋㄌ）─────
+await doTap(10, 17, '第四扇圓門（舌尖中音島）');
+if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島');
+f = await flags();
+if (!f.dEntered) throw new Error('進島後應該開始教 ㄉㄊ');
+await snap('island');
+await doTap(6, 14, '島上練習布偶');
+s = await save();
+if (!s.flags.dPractice || !s.abilities.includes('drum') || !s.abilities.includes('splash')) throw new Error('練習戰後沒有學到擊鼓拳／水花彈 ' + JSON.stringify(s.abilities));
+log('✓ 島上練習戰完成，學會擊鼓拳與水花彈');
+await doTap(8, 17, '島上寶箱');
+await doTap(3, 11, '大鼓（擊鼓拳）'); await doTap(3, 10, '鼓後寶箱');
+await doTap(9, 15, '乾花（水花彈）'); await doTap(10, 15, '花旁寶箱');
+f = await flags();
+if (!f['g:d:drum'] || !f['c:d:chest_drum'] || !f['g:d:plant'] || !f['c:d:chest_plant']) throw new Error('大鼓／乾花機關失敗 ' + JSON.stringify(f));
+await snap('island-gimmicks');
+log('✓ 擊鼓拳敲響大鼓、水花彈澆開乾花，各取得寶箱');
+for (const [x, y, n] of [[9, 9, '水滴怪'], [11, 4, '橫行蟹'], [12, 2, '寶箱']]) await doTap(x, y, n);
+await doTap(19, 10, '橋後的水滴怪');
+await doTap(22, 4, '鼓王咚咚');
+s = await save();
+if (!s.flags.boss_d || !s.abilities.includes('nasal') || !s.abilities.includes('stream')) throw new Error('鼓王沒有打贏，或沒有學到嗯嗯泡／流水衝 ' + JSON.stringify(s.abilities));
+await snap('after-boss-d');
+log('✓ 鼓王咚咚打贏了，學會嗯嗯泡與流水衝');
+await doTap(18, 15, '小水壩（流水衝）'); await doTap(18, 16, '水壩後寶箱');
+await doTap(6, 5, '泡泡球（嗯嗯泡）'); await doTap(6, 4, '泡泡後寶箱');
+f = await flags();
+if (!f['g:d:dam'] || !f['c:d:chest_dam'] || !f['g:d:bubble'] || !f['c:d:chest_bubble']) throw new Error('水壩／泡泡機關失敗 ' + JSON.stringify(f));
+log('✓ 流水衝沖開水壩、嗯嗯泡飄走泡泡球，各取得寶箱');
+await doTap(4, 18, '回村');
+if ((await save()).mapId !== 'village') throw new Error('沒有從島回到村子');
 
 // ───── 回家睡覺：HP／魔力回滿 ─────
 await ev(() => { const m = window.__game.G.save.party[0]; m.hp = 1; m.mp = 0; });

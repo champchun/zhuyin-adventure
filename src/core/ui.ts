@@ -65,7 +65,7 @@ export function say(lines: (string | Line)[], opts: { speak?: boolean } = {}): P
     const onClick = (e: Event) => {
       const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a');
       if (a === 'replay') { audio.sfx('tap'); audio.speak(ls[i].text); return; }
-      if (a !== 'next' && !(e.target as HTMLElement).closest('.txt')) return;
+      // 對話沒有選項，只有「繼續／好」：點畫面任何地方（除了重聽）都可以下一頁
       if (performance.now() - shownAt < 250) return; // 防止連點跳過
       audio.sfx('tap');
       if (i < ls.length - 1) { i++; render(); } else {
@@ -232,12 +232,12 @@ export async function openSettings(onReset?: () => void): Promise<void> {
       ${vs.map((v) => `<div class="row"><button class="btn small ${s.voiceURI === v.voiceURI ? 'primary' : ''}" data-a="voice" data-uri="${v.voiceURI}">${v.name}</button><span class="note">${v.lang}${v.localService ? '' : '・線上'}${v.default ? '・預設' : ''}</span></div>`).join('')}`;
     })()}
     <h3>注音單音檔</h3>
-    <div class="note">已就緒 ${sum.ready} / ${sum.total}（遊戲目前用到 ㄅㄆㄇㄈㄉㄊㄋ 這 7 個）。${!audio.audioReadyFor(ALL_SYMBOLS) ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
+    <div class="note">已就緒 ${sum.ready} / ${sum.total}（遊戲目前用到 ㄅㄆㄇㄈㄉㄊㄋㄌ 這 8 個）。${!audio.audioReadyFor(ALL_SYMBOLS) ? '尚未安裝完整音檔，「聽音選符號」會暫時改成「看符號配對」。把可授權使用的音檔放進 public/audio/zhuyin/（檔名見 README）即可啟用。' : '音檔齊全，可使用聽音選符號。'}</div>
     <div class="row">實驗：用語音合成念單一符號（發音未經驗證，不建議） ${sw('experimentalSymbolTts', s.experimentalSymbolTts)}</div>
     <h3>注音發音測試</h3>
     <div class="note">按符號聽聽看。語音引擎念單一符號常常不準，請用耳朵判斷，不要當作標準發音。</div>
     <div class="row"><span class="seg">${([['sym', '① 符號本身'], ['word', '② 例字'], ['hudu', '③ 呼讀音'], ['file', '④ 音檔']] as const).map(([m, t]) => `<button class="${testMode === m ? 'on' : ''}" data-a="ztmode" data-m="${m}">${t}</button>`).join('')}</span></div>
-    <div class="note">① 叫語音念符號；② 念例字（如「爸」，會連韻母一起念）；③ 念呼讀用字（如 ㄅ→波；ㄅㄆㄇㄈ 為近似音，標準國語沒有 ㄅㄜ 這個字）；④ 播放 public/audio/zhuyin/ 的音檔（目前只定義 ㄅㄆㄇㄈㄉㄊㄋ，缺檔會提示）。</div>
+    <div class="note">① 叫語音念符號；② 念例字（如「爸」，會連韻母一起念）；③ 念呼讀用字（如 ㄅ→波；ㄅㄆㄇㄈ 為近似音，標準國語沒有 ㄅㄜ 這個字）；④ 播放 public/audio/zhuyin/ 的音檔（37 個注音都已定義，缺檔會提示）。</div>
     ${ZHUYIN_TEST.map((g) => `<div class="note"><b>${g.group}</b></div><div class="chips">${g.list.map(([c, w]) => `<button class="chip on" style="background:#fff;font-size:26px" data-a="zt" data-c="${c}" data-w="${w}" aria-label="${c}">${c}<small style="display:block;font-size:12px;font-weight:600">${w}</small></button>`).join('')}</div>`).join('')}
     <div class="note" id="ztlog">（按上面的符號開始）</div>
     <h3>對話朗讀比較</h3>
@@ -321,7 +321,7 @@ export function openResults(): Promise<'continue' | 'replay'> {
       新能力：${G.save.abilities.map((a) => (({ blast: '爆破拳', gust: '噴風', hum: '哼哼波', fog: '吹霧' } as Record<string, string>)[a] ?? a)).join('、') || '無'}<br>
       ⭐ 星星：${G.save.stars}　獨立答對：${firsts} 次<br>
       已完成：第0關 唇音（ㄅㄆㄇㄈ）</div>
-      <p class="note">村莊裡還有鈴鐺和迷霧小屋，等著你再回來探險！<br>舌尖中音島、舌根音島還在迷霧中（尚未開放）。</p>
+      <p class="note">村莊裡還有鈴鐺和迷霧小屋，等著你再回來探險！<br>村子下面第四扇圓門亮了，舌尖中音島（ㄉㄊㄋㄌ）已經開放！</p>
       <div class="foot" style="justify-content:center"><button class="btn green" data-a="go">繼續探索</button>
       <button class="btn small" data-a="replay">重玩草原</button></div></div>`);
     delegate(m, (a) => { closeModal(); resolve(a === 'replay' ? 'replay' : 'continue'); });

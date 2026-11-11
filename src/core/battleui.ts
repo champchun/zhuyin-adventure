@@ -84,10 +84,13 @@ export const bui = {
       const body = root.querySelector('.body')!;
       body.innerHTML = `<div style="display:flex;justify-content:space-between;margin-top:8px"><button class="btn small" data-a="re">🔊 重聽</button><button class="btn primary" data-a="ok">繼續 ▶</button></div>`;
       const t0 = performance.now();
-      (body as HTMLElement).onclick = (e) => {
+      // 只有「繼續」時，點畫面任何地方都可以下一句（讓整個戰鬥層可點擊）
+      const prev = root.style.pointerEvents;
+      root.style.pointerEvents = 'auto';
+      root.onclick = (e) => {
         const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a');
         if (a === 're') { audio.speak(text); return; }
-        if (a === 'ok' && performance.now() - t0 > 250) { audio.sfx('tap'); (body as HTMLElement).onclick = null; resolve(); }
+        if (performance.now() - t0 > 250) { audio.sfx('tap'); root.onclick = null; root.style.pointerEvents = prev; resolve(); }
       };
     });
   },
@@ -126,7 +129,7 @@ export const bui = {
     });
   },
   /** 作答。答對回傳 'correct'；按「返回」回傳 'back'。答錯不扣血、不結束。 */
-  ask(run: QuestionRun, ctx: { speakPrompt: boolean }): Promise<'correct' | 'back'> {
+  ask(run: QuestionRun, ctx: { speakPrompt: boolean; penalty?: boolean }): Promise<'correct' | 'back' | 'wrong'> {
     return new Promise((resolve) => {
       const q = run.q;
       const body = root.querySelector<HTMLElement>('.body')!;
@@ -181,6 +184,12 @@ export const bui = {
           } else if (r === 'wrong') {
             audio.sfx('wrong');
             el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope');
+            if (ctx.penalty) { // 答錯有懲罰：這一題結束，攻擊失敗
+              this.lock(true);
+              body.onclick = null;
+              setTimeout(() => resolve('wrong'), G.settings.reduceMotion ? 350 : 600);
+              return;
+            }
             hint.textContent = run.revealed ? '看，亮亮的是答案，點它吧！' : '沒關係，再聽一次，再試試看～';
             refresh();
           }

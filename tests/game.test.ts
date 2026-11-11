@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import { BATTLES, LEVELS } from '../src/data/levels';
-import { ALL_SYMBOLS } from '../src/data/symbols';
+import { ALL_SYMBOLS, LEARN_STEPS, symbolDef } from '../src/data/symbols';
 import { QuestionRun, makeQuestion } from '../src/core/learning';
 import { G, activeSymbols, addCoins, addItem, buyItem, emptyStat, ensureVitals, giveMonster, healAll, itemCount, maxHp, maxMp, newSave, useItem } from '../src/core/save';
 import { ENEMIES, ITEMS, SPECIES, moveFor } from '../src/data/monsters';
@@ -307,6 +307,54 @@ describe('招式綁符號', () => {
   });
   it('每一招都有魔法版的名字', () => {
     expect(moveFor('bobo', 'ㄅ', () => true).magicName).toBe('爆破魔法');
-    expect(moveFor('bobo', 'ㄉ', () => true).magicName).toBe('小魔法彈');
+    expect(moveFor('bobo', 'ㄍ', () => true).magicName).toBe('小魔法彈');
+  });
+});
+
+describe('答錯懲罰', () => {
+  it('練習戰答錯不罰；小關B 之後的戰鬥答錯會攻擊失敗', () => {
+    expect(BATTLES.practice.penalty).toBeFalsy();
+    for (const id of ['b1', 'b2', 'b3', 'boss_b', 'p1', 'p2', 'p3', 'boss_p']) expect(BATTLES[id].penalty, id).toBe(true);
+  });
+});
+
+describe('舌尖中音島（ㄉㄊㄋㄌ）', () => {
+  it('符號依教學進度逐步出現：進島教 ㄉㄊ，練習完才教 ㄋㄌ', () => {
+    G.save.flags = {};
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ']);
+    G.save.flags.practiceDone = true;
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ']);
+    G.save.flags.dEntered = true;
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ']);
+    G.save.flags.dPractice = true;
+    expect(activeSymbols()).toEqual(['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ', 'ㄋ', 'ㄌ']);
+    G.save.flags = {};
+  });
+  it('每一招需要的能力，都能從某場戰鬥的獎勵拿到；每個綁定的符號都存在', () => {
+    const granted = new Set(Object.values(BATTLES).flatMap((b) => b.reward.abilities ?? []));
+    for (const m of Object.values(SPECIES.bobo.moves)) {
+      if (m.needAbility) expect(granted.has(m.needAbility), m.id).toBe(true);
+      if (m.symbol) expect(ALL_SYMBOLS.includes(m.symbol), m.id).toBe(true);
+    }
+  });
+  it('島上的戰鬥都有敵人、符號都在教學進度內，頭目與練習戰不會重生', () => {
+    const learnable = new Set(LEARN_STEPS.flatMap((s) => s.symbols));
+    for (const id of ['dpractice', 'd1', 'd2', 'd3', 'boss_d']) {
+      const b = BATTLES[id];
+      expect(ENEMIES[b.enemy], id).toBeDefined();
+      for (const s of [...b.focus, ...b.review]) expect(learnable.has(s), `${id} ${s}`).toBe(true);
+    }
+    expect(BATTLES.boss_d.respawn).toBeFalsy();
+    expect(BATTLES.dpractice.respawn).toBeFalsy();
+    expect(BATTLES.dpractice.penalty).toBeFalsy();
+    expect(BATTLES.boss_d.penalty).toBe(true);
+  });
+  it('四個機關各用一個新招式，且都有對應的圖', () => {
+    const gs = MAPS.d.objects.filter((o) => o.kind === 'gimmick');
+    expect(gs.map((o) => o.ability).sort()).toEqual(['drum', 'nasal', 'splash', 'stream']);
+    for (const g of gs) { expect(g.hitText?.length, g.id).toBeGreaterThan(0); expect(g.lockText?.length, g.id).toBeGreaterThan(0); }
+  });
+  it('教學進度裡的符號都是有定義、有例字的聲母', () => {
+    for (const s of LEARN_STEPS.flatMap((x) => x.symbols)) expect(symbolDef(s), s).toBeDefined();
   });
 });

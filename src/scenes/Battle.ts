@@ -60,12 +60,12 @@ export class BattleScene extends Phaser.Scene {
 
   private drawBackground(theme: string) {
     const g = (this.bg = this.add.graphics());
-    const sky = theme === 'valley' ? ['#b9a6e8', '#cdbcf2', '#e0d4f7'] : theme === 'meadow' ? ['#7fd0ff', '#a6e0ff', '#c8f0ff'] : ['#7fd0ff', '#a6e0ff', '#c8f0ff'];
-    const ground = theme === 'valley' ? ['#c9a070', '#b78e5c'] : ['#7ed957', '#5fbf45'];
+    const sky = theme === 'island' ? ['#7fe0ff', '#a6ecff', '#d0f6ff'] : theme === 'valley' ? ['#b9a6e8', '#cdbcf2', '#e0d4f7'] : theme === 'meadow' ? ['#7fd0ff', '#a6e0ff', '#c8f0ff'] : ['#7fd0ff', '#a6e0ff', '#c8f0ff'];
+    const ground = theme === 'island' ? ['#f0dca0', '#dcc27a'] : theme === 'valley' ? ['#c9a070', '#b78e5c'] : ['#7ed957', '#5fbf45'];
     const hex = (s: string) => Phaser.Display.Color.HexStringToColor(s).color;
     const band = HORIZON / sky.length;
     sky.forEach((s, i) => { g.fillStyle(hex(s)); g.fillRect(0, i * band, VIEW_W, band + 1); });
-    g.fillStyle(hex(theme === 'valley' ? '#8a8aa3' : '#5fbf45'));
+    g.fillStyle(hex(theme === 'island' ? '#4ac0d8' : theme === 'valley' ? '#8a8aa3' : '#5fbf45'));
     g.fillTriangle(0, HORIZON, 70, HORIZON - 44, 150, HORIZON); g.fillTriangle(110, HORIZON, 190, HORIZON - 56, 280, HORIZON); g.fillTriangle(220, HORIZON, 290, HORIZON - 36, 330, HORIZON);
     g.fillStyle(hex(ground[0])); g.fillRect(0, HORIZON, VIEW_W, VIEW_H - HORIZON);
     g.fillStyle(hex(ground[1]));
@@ -134,6 +134,46 @@ export class BattleScene extends Phaser.Scene {
         }
         await sleep(620);
         this.burst(to.x, to.y, 'spark', 6, 28, 400);
+        break;
+      }
+      case 'drum': {
+        audio.sfx('drum');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(4, 0xe8514a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 40, alpha: 0, duration: 420, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        this.burst(to.x, to.y, 'spark', 6, 34, 450);
+        if (!G.settings.reduceMotion) this.cameras.main.shake(200, 0.005);
+        break;
+      }
+      case 'splash': {
+        audio.sfx('splash');
+        for (let i = 0; i < 12; i++) {
+          const d = this.add.image(from.x + 16, from.y - 10, 'drop').setDepth(40).setScale(1.5);
+          this.tweens.add({ targets: d, x: to.x + (i - 6) * 3, y: to.y + (i % 3) * 4, duration: 380, delay: i * 30, ease: 'Quad.out', onComplete: () => d.destroy() });
+        }
+        await sleep(560);
+        this.burst(to.x, to.y, 'drop', 8, 30, 420);
+        break;
+      }
+      case 'bubble': {
+        audio.sfx('bubble');
+        for (let i = 0; i < 5; i++) {
+          const b = this.add.circle(from.x + 20, from.y - 6, 5 + i, 0xbfe6ff, 0.55).setStrokeStyle(2, 0xffffff).setDepth(40);
+          this.tweens.add({ targets: b, x: to.x, y: to.y - 6 + (i - 2) * 6, duration: 450, delay: i * 90, onComplete: () => { b.destroy(); } });
+        }
+        await sleep(750);
+        this.burst(to.x, to.y, 'puff', 6, 26, 380);
+        break;
+      }
+      case 'stream': {
+        audio.sfx('splash');
+        for (let i = 0; i < 7; i++) {
+          const l = this.add.image(from.x, from.y - 12 + i * 5, 'windline').setDepth(40).setTint(0x4aa8f0);
+          this.tweens.add({ targets: l, x: to.x, duration: 360, delay: i * 45, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'drop', 8, 30, 400);
         break;
       }
       case 'fog':
@@ -266,8 +306,16 @@ export class BattleScene extends Phaser.Scene {
           prevTarget, stats: G.save.stats,
         });
         const run = new QuestionRun(q, G.save.stats, !!def.guided);
-        const r = await bui.ask(run, { speakPrompt: asked++ === 0 });
+        const r = await bui.ask(run, { speakPrompt: asked++ === 0, penalty: !!def.penalty });
         if (r === 'back') continue;
+        if (r === 'wrong') { // 選錯：攻擊失敗，換對方攻擊
+          prevTarget = q.target;
+          bui.msg(`選錯了！${SPECIES[me.species].name}的攻擊失敗了…`, true);
+          await sleep(900);
+          if (await enemyTurn()) return 'lose';
+          bui.lock(false);
+          continue;
+        }
         prevTarget = q.target;
         // 出招（動畫期間介面已鎖定）
         bui.lock(true);

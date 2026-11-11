@@ -106,6 +106,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.centerOn(this.player.x, this.player.y);
     setHudInfo(m.name);
     audio.playBgm(m.theme);
+    if (m.id === 'd' && !flag('dEntered')) setFlag('dEntered'); // 進到舌尖中音島：開始教 ㄉㄊ
   }
 
   private buildFollowers() {
@@ -137,6 +138,7 @@ export class WorldScene extends Phaser.Scene {
     if (o.kind === 'rock' && flag(`r:${m}:${o.id}`)) return false;
     if (o.kind === 'leaves' && flag(`l:${m}:${o.id}`)) return false;
     if (o.kind === 'fog' && flag(`f:${m}:${o.id}`)) return false;
+    if (o.kind === 'gimmick' && o.vanish && flag(`g:${m}:${o.id}`)) return false;
     return true;
   }
   private gateOpen(lv: string): boolean {
@@ -144,6 +146,7 @@ export class WorldScene extends Phaser.Scene {
     if (!L.open) return false;
     if (lv === 'b') return flag('practiceDone');
     if (lv === 'p') return flag('boss_b');
+    if (lv === 'd') return flag('boss_p');
     return true;
   }
 
@@ -171,6 +174,7 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
+        case 'gimmick': spr = this.add.image(px, py, flag(`g:${m.id}:${def.id}`) && def.sprite2 ? def.sprite2 : def.sprite!).setOrigin(0).setDepth(depth); break;
         case 'sign': spr = this.add.image(px, py, def.sprite ?? 'sign').setOrigin(0).setDepth(depth); break;
         case 'exit': spr = this.add.image(px, py, 'exit_tile').setOrigin(0).setDepth(depth); break;
         case 'door': spr = this.add.image(px, py, 't_door').setOrigin(0).setDepth(depth); break;
@@ -383,15 +387,27 @@ export class WorldScene extends Phaser.Scene {
         setFlag(`f:${m}:${d.id}`); this.refreshObjects();
         return say(STORY.fogBlow);
       case 'woodgate': return say(STORY.woodLocked);
+      case 'gimmick': return this.useGimmick(o);
     }
   }
 
+  /** 用招式啟動的機關（大鼓、乾花、泡泡球、小水壩…）：沒學會招式只會提示，學會了就會有特效，並可能冒出寶箱 */
+  private async useGimmick(o: Obj) {
+    const d = o.def, key = `g:${this.map.id}:${d.id}`;
+    if (flag(key)) return say((d.doneText ?? ['已經完成囉！']).map((text) => ({ text })));
+    if (!hasAbility(d.ability!)) return say((d.lockText ?? []).map((text) => ({ text })));
+    await this.gimmickFx(d.fx!, o.spr.x + 8, o.spr.y + 8);
+    setFlag(key); this.refreshObjects();
+    audio.sfx('chest');
+    return say((d.hitText ?? []).map((text) => ({ text })));
+  }
   private async talkGuide() {
     const who = '嘟嘟博士';
     const say2 = (ls: string[]) => say(ls.map((text) => ({ who, text })));
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
     else if (!flag('starterChosen')) await say2(STORY.guideChoose);
     else if (!flag('giftGiven')) await this.starterTest();
+    else if (flag('boss_d')) await say2(STORY.guideEndD);
     else if (flag('boss_p')) await say2(STORY.guideEnd);
     else await say2(STORY.guideAfter);
     saveGame();
@@ -498,6 +514,38 @@ export class WorldScene extends Phaser.Scene {
     }
     await new Promise((r) => this.time.delayedCall(900, r));
   }
+  /** 島上機關的特效：鼓（震動波）、水花、泡泡、水流 */
+  private async gimmickFx(fx: 'drum' | 'splash' | 'bubble' | 'stream', x: number, y: number) {
+    const calm = G.settings.reduceMotion;
+    if (fx === 'drum') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xe8514a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 600, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(140, 0.003);
+    } else if (fx === 'splash') {
+      audio.sfx('splash');
+      for (let i = 0; i < 10; i++) {
+        const s = this.add.image(x, y - 4, 'drop').setDepth(9999);
+        const a = -Math.PI / 2 + (i - 4.5) * 0.28;
+        this.tweens.add({ targets: s, x: x + Math.cos(a) * 18, y: y + Math.sin(a) * 18 + 10, alpha: 0, duration: 650, ease: 'Quad.out', onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'bubble') {
+      audio.sfx('bubble');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xbfe6ff);
+        this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else {
+      audio.sfx('splash');
+      for (let i = 0; i < 8; i++) {
+        const s = this.add.image(x - 16, y + (i - 4) * 3, 'windline').setDepth(9999).setTint(0x4aa8f0);
+        this.tweens.add({ targets: s, x: x + 24, alpha: 0, duration: 550, delay: i * 40, onComplete: () => s.destroy() });
+      }
+    }
+    await new Promise((r) => this.time.delayedCall(850, r));
+  }
   private async windPuff(x: number, y: number, tint: number) {
     for (let i = 0; i < 8; i++) {
       const s = this.add.image(x - 14, y + (i - 4) * 3, 'windline').setDepth(9999).setTint(tint === 0xffffff ? 0xffffff : 0xffeedd);
@@ -600,8 +648,7 @@ export class WorldScene extends Phaser.Scene {
         if (!giveMonster(rw.join)) lines.push('隊伍滿了，新夥伴先在村子裡等你。');
       }
     }
-    if (def.id === 'boss_b' && !G.save.cleared.includes('b')) G.save.cleared.push('b');
-    if (def.id === 'boss_p' && !G.save.cleared.includes('p')) G.save.cleared.push('p');
+    if (def.id.startsWith('boss_')) { const lv = def.id.slice(5); if (!G.save.cleared.includes(lv)) G.save.cleared.push(lv); }
     if (rw.coins) addCoins(rw.coins);
     this.refreshObjects();
     this.buildFollowers();

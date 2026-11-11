@@ -5,13 +5,14 @@ import { isSpeakable, splitZhuyin } from './speech';
 import type { Segment } from './speech';
 
 export type VoiceStatus = 'checking' | 'ok' | 'approx' | 'none' | 'unsupported';
-export type Sfx = 'tap' | 'correct' | 'wrong' | 'hit' | 'blast' | 'wind' | 'peck' | 'chest' | 'levelup' | 'hatch' | 'rock' | 'win' | 'hint';
+export type Sfx = 'drum' | 'splash' | 'bubble' | 'tap' | 'correct' | 'wrong' | 'hit' | 'blast' | 'wind' | 'peck' | 'chest' | 'levelup' | 'hatch' | 'rock' | 'win' | 'hint';
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 // 原創的簡單音樂：每個主題一段旋律（MIDI 音高，0 為休止）與低音
 const THEMES: Record<string, { mel: number[]; bass: number[]; step: number; wave: OscillatorType }> = {
   village: { mel: [72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 74, 0, 72, 0, 0, 0, 74, 0, 77, 0, 81, 0, 79, 0, 76, 0, 72, 0, 74, 0, 0, 0], bass: [48, 55, 53, 55], step: 0.26, wave: 'triangle' },
   valley: { mel: [69, 0, 72, 0, 76, 0, 72, 0, 74, 0, 71, 0, 69, 0, 0, 0, 65, 0, 69, 0, 72, 0, 69, 0, 71, 0, 67, 0, 69, 0, 0, 0], bass: [45, 41, 43, 45], step: 0.3, wave: 'triangle' },
+  island: { mel: [67, 0, 71, 0, 74, 0, 71, 0, 76, 0, 74, 0, 71, 0, 0, 0, 69, 0, 72, 0, 76, 0, 72, 0, 74, 0, 71, 0, 67, 0, 0, 0], bass: [43, 48, 50, 48], step: 0.27, wave: 'triangle' },
   meadow: { mel: [79, 0, 83, 0, 86, 0, 83, 0, 81, 0, 79, 0, 76, 0, 0, 0, 74, 0, 79, 0, 83, 0, 81, 0, 79, 0, 74, 0, 79, 0, 0, 0], bass: [43, 50, 48, 50], step: 0.24, wave: 'triangle' },
   battle: { mel: [67, 70, 74, 70, 67, 70, 74, 79, 77, 74, 70, 74, 77, 74, 70, 67], bass: [43, 43, 46, 48], step: 0.18, wave: 'square' },
 };
@@ -371,6 +372,9 @@ class AudioManager {
       case 'chest': [392, 523, 659, 784].forEach((f, i) => this.tone(f, 0.18, 'triangle', 0.2, t + i * 0.09, d)); break;
       case 'levelup': [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.2, 'square', 0.13, t + i * 0.1, d)); break;
       case 'hatch': this.noise(0.1, 0.4, t); this.noise(0.1, 0.4, t + 0.2); [392, 587, 784].forEach((f, i) => this.tone(f, 0.2, 'triangle', 0.2, t + 0.4 + i * 0.1, d)); break;
+      case 'drum': this.noise(0.12, 0.5, t, 400); this.tone(110, 0.3, 'sine', 0.4, t, d, 55); this.tone(80, 0.2, 'triangle', 0.25, t + 0.12, d, 50); break;
+      case 'splash': this.noise(0.35, 0.35, t, 3000); this.tone(700, 0.18, 'sine', 0.1, t, d, 300); break;
+      case 'bubble': this.tone(500, 0.12, 'sine', 0.2, t, d, 900); this.tone(650, 0.14, 'sine', 0.15, t + 0.1, d, 1000); break;
       case 'rock': this.noise(0.5, 0.9, t, 1200); break;
       case 'win': [523, 523, 523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.18, 'square', 0.13, t + i * 0.11, d)); break;
     }

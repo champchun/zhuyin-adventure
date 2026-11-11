@@ -1,4 +1,4 @@
-import { ALL_SYMBOLS } from '../data/symbols';
+import { ALL_SYMBOLS, LEARN_STEPS } from '../data/symbols';
 import { ITEMS, SPECIES } from '../data/monsters';
 import { MAPS } from '../data/maps';
 
@@ -66,7 +66,7 @@ export const defaultSettings = (): Settings => ({
   bgmOn: true,
   sfxOn: true,
   reduceMotion: typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches,
-  allowed: ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'],
+  allowed: [...ALL_SYMBOLS],
   tier: 'auto',
   optionCount: 'auto',
   experimentalSymbolTts: false,
@@ -95,8 +95,9 @@ export function loadSettings() {
     try { Object.assign(G.settings, JSON.parse(raw)); } catch { /* ignore */ }
   }
   G.settings.allowed = G.settings.allowed.filter((s) => ALL_SYMBOLS.includes(s));
-  // 舊版預設是開放全部 7 個符號；現在第 0 關只教唇音，舊的「全開」設定改回新預設（家長自己勾過的不動）
-  if (G.settings.allowed.length === ALL_SYMBOLS.length) G.settings.allowed = defaultSettings().allowed;
+  // 哪些符號出現由教學進度（LEARN_STEPS）決定；家長設定只是「再縮小範圍」。舊版預設（只開唇音或舊的 7 個）升級成新預設全開
+  const oldDefault = G.settings.allowed.length === 4 || G.settings.allowed.length === 7;
+  if (oldDefault && ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'].every((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
   if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));
@@ -122,7 +123,7 @@ export const flag = (k: string) => !!G.save.flags[k];
 export const setFlag = (k: string, v = true) => { G.save.flags[k] = v; };
 /** 目前「已經教過」的符號：ㄅㄆ 一開始就有，ㄇㄈ 要到村裡練習戰完成、進入小徑後才教。再與家長開放的符號取交集。 */
 export const activeSymbols = (): string[] => {
-  const learned = ['ㄅ', 'ㄆ', ...(flag('practiceDone') ? ['ㄇ', 'ㄈ'] : [])];
+  const learned = LEARN_STEPS.filter((st) => !st.flag || flag(st.flag)).flatMap((st) => st.symbols);
   const a = G.settings.allowed.filter((s) => learned.includes(s));
   return a.length >= 2 ? a : learned;
 };

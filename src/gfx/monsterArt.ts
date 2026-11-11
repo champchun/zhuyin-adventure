@@ -267,7 +267,68 @@ function mist(): Pix {
   return p;
 }
 
+// 水滴怪：藍色的水滴，頭頂尖尖的，圓圓的白眼睛
+const DROP: Pal = { O: OUT, a: '#4aa8f0', b: '#2f7ad0', h: '#c4ebff', d: EYE, w: '#ffffff' };
+function drippy(): Pix {
+  const p = new Pix();
+  p.t(15, 1, 9, 13, 21, 13, 'a'); p.t(15, 4, 12, 12, 16, 12, 'h'); // 頭頂的尖尖
+  p.chunk(4, 10, 24, 19, 'a'); p.r(4, 22, 24, 7, 'b'); p.r(7, 20, 18, 2, 'b'); // 身體與下半部陰影
+  p.r(7, 13, 4, 1, 'h'); p.r(6, 14, 1, 4, 'h'); // 反光
+  p.r(8, 17, 5, 5, 'w'); p.r(8, 18, 3, 3, 'd'); p.r(18, 17, 5, 5, 'w'); p.r(18, 18, 3, 3, 'd'); // 眼睛（瞳孔偏左）
+  p.r(11, 24, 8, 1, 'd'); p.r(10, 23, 1, 1, 'd'); p.r(19, 23, 1, 1, 'd'); // 嘴
+  p.r(6, 29, 3, 1, 'b'); p.r(22, 29, 4, 1, 'b'); // 腳邊的水漬
+  p.outline('O');
+  return p;
+}
+
+// 橫行蟹：紅色的小螃蟹，兩隻大鉗子高高舉起
+const CRAB: Pal = { O: OUT, a: '#e8514a', b: '#a83030', h: '#ff9a8a', d: EYE, w: '#ffffff', y: '#ffd84a' };
+function crabby(): Pix {
+  const p = new Pix();
+  // 大鉗子（左右各一，開口朝上）
+  p.chunk(1, 5, 8, 10, 'a'); p.r(4, 5, 2, 4, ''); p.r(1, 11, 8, 3, 'b'); p.r(2, 6, 1, 3, 'h');
+  p.chunk(23, 5, 8, 10, 'a'); p.r(25, 5, 2, 4, ''); p.r(23, 11, 8, 3, 'b'); p.r(29, 6, 1, 3, 'h');
+  p.r(8, 13, 3, 4, 'b'); p.r(21, 13, 3, 4, 'b'); // 手臂
+  // 身體
+  p.chunk(6, 14, 20, 12, 'a'); p.r(6, 22, 20, 4, 'b'); p.r(9, 15, 5, 1, 'h');
+  // 眼睛長在柄上
+  p.r(10, 9, 2, 6, 'b'); p.r(20, 9, 2, 6, 'b');
+  p.r(8, 5, 5, 5, 'w'); p.r(8, 6, 3, 3, 'd'); p.r(19, 5, 5, 5, 'w'); p.r(19, 6, 3, 3, 'd');
+  p.r(12, 21, 8, 1, 'd'); p.r(11, 20, 1, 1, 'd'); p.r(20, 20, 1, 1, 'd'); // 嘴
+  // 腳
+  [7, 11, 17, 21].forEach((x) => p.r(x, 26, 2, 3, 'b')); p.r(5, 28, 3, 1, 'b'); p.r(24, 28, 3, 1, 'b');
+  p.outline('O');
+  return p;
+}
+
+// 鼓王咚咚：一面大鼓，臉在鼓面上，兩隻手拿著鼓棒，頭上戴著金色的王冠
+const DRUM: Pal = { O: OUT, a: '#e8514a', b: '#a83030', c: '#f6e2b0', t: '#d4b070', y: '#ffd84a', n: '#8b5a3c', d: EYE, w: '#ffffff' };
+function drumking(): Pix {
+  const p = new Pix();
+  // 王冠
+  p.r(9, 2, 14, 2, 'y'); p.t(9, 2, 12, 2, 10, 0, 'y'); p.t(14, 2, 18, 2, 16, 0, 'y'); p.t(20, 2, 23, 2, 22, 0, 'y');
+  // 鼓身
+  p.chunk(6, 4, 20, 6, 'c'); p.r(6, 9, 20, 1, 't'); // 鼓面（上緣）
+  p.chunk(6, 7, 20, 17, 'a'); p.r(6, 18, 20, 6, 'b'); // 紅色鼓身與陰影
+  p.chunk(6, 4, 20, 4, 'c');
+  p.r(6, 10, 20, 1, 'y'); p.r(6, 22, 20, 1, 'y'); // 金色鼓邊
+  // 鼓繩（V 字形）
+  [8, 12, 16, 20].forEach((x) => p.t(x, 11, x + 4, 11, x + 2, 13, 'y'));
+  // 臉
+  p.r(9, 14, 6, 1, 'd'); p.r(17, 14, 6, 1, 'd'); // 生氣的眉毛
+  p.r(10, 15, 5, 3, 'w'); p.r(10, 16, 3, 2, 'd'); p.r(17, 15, 5, 3, 'w'); p.r(17, 16, 3, 2, 'd');
+  p.r(11, 20, 10, 1, 'd'); [12, 14, 16, 18].forEach((x) => p.r(x, 19, 1, 2, 'w')); // 嘴（牙齒）
+  // 手與鼓棒
+  p.r(3, 14, 3, 5, 'a'); p.r(26, 14, 3, 5, 'a');
+  p.r(2, 5, 2, 9, 'n'); p.r(28, 5, 2, 9, 'n'); p.chunk(1, 2, 4, 4, 'c'); p.chunk(27, 2, 4, 4, 'c');
+  // 腳
+  p.r(9, 24, 5, 3, 'b'); p.r(18, 24, 5, 3, 'b'); p.r(8, 27, 7, 2, 'n'); p.r(17, 27, 7, 2, 'n');
+  p.outline('O');
+  return p;
+}
+
 export const MONSTER_ART: Record<string, { pix: () => Pix; pal: Pal }> = {
+  en_drippy: { pix: drippy, pal: DROP }, en_crabby: { pix: crabby, pal: CRAB }, en_drumking: { pix: drumking, pal: DRUM },
   mon_bobo: { pix: bobo0, pal: IMP }, mon_bobo2: { pix: bobo1, pal: IMP },
   mon_momo: { pix: momo0, pal: JELLY }, mon_momo2: { pix: momo1, pal: JELLY },
   mon_popo: { pix: popo0, pal: CAT }, mon_popo2: { pix: popo1, pal: CAT },

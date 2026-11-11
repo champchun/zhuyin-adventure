@@ -1,5 +1,5 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
 export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
@@ -29,6 +29,14 @@ export interface MapObj {
   hideIf?: string;
   label?: string;
   sprite?: string;
+  /** gimmick（用招式啟動的機關）：需要的能力、特效、啟動前後的圖與說明 */
+  ability?: string;
+  fx?: 'drum' | 'splash' | 'bubble' | 'stream';
+  sprite2?: string;
+  /** 啟動後這個物件就消失（例如泡泡球、小水壩） */
+  vanish?: boolean;
+  hitText?: string[];
+  doneText?: string[];
 }
 export interface MapDef {
   id: string;
@@ -38,7 +46,7 @@ export interface MapDef {
   tiles: string[];
   start: { x: number; y: number };
   objects: MapObj[];
-  theme: 'village' | 'valley' | 'meadow';
+  theme: 'village' | 'valley' | 'meadow' | 'island';
   /** 戰敗後恢復的位置 */
   respawn: { x: number; y: number };
 }
@@ -172,7 +180,8 @@ export const MAPS: Record<string, MapDef> = {
           { not: 'practiceDone', lines: ['選好夥伴了呀，很好很好。', '先在廣場跟稻草布偶練習看看，會比較安心。'] },
           { not: 'boss_b', lines: ['村外的小徑最近很不平靜，一直有迷霧飄出來。', '練習完的話，可以到下面那排圓門，去亮著的那一扇看看。'] },
           { not: 'boss_p', lines: ['小徑通了！你看，村子裡的鈴鐺和迷霧小屋也不一樣了。', '風車好久沒轉了，聽說往風車草原走，可以找到答案。'] },
-          { lines: ['迷霧淡了，聽說遠方傳來了鼓聲。', '下一個島，大概就是舌尖中音島了吧。'] },
+          { not: 'boss_d', lines: ['迷霧淡了，遠方傳來了鼓聲。', '下面那排圓門，第四扇亮起來了，那就是舌尖中音島！'] },
+          { lines: ['鼓聲回來了，島上又熱鬧了起來！', '聽說更遠的地方，還有一座會發出回音的島……'] },
         ],
       },
       {
@@ -256,8 +265,42 @@ MAPS.p = {
   ],
 };
 
+// ───────── ㄉㄊㄋㄌ：舌尖中音島 ─────────
+const island = (() => {
+  const g = new Grid(28, 20, 'a').border('~');
+  g.many(',', [[2, 4], [5, 13], [10, 17], [12, 6], [18, 12], [21, 16], [25, 7], [17, 2]]);
+  g.rect('~', 14, 1, 2, 18).rect('+', 14, 8, 2, 1); // 河把島分成左右兩邊，只有一座橋
+  g.many('#', [[7, 8], [12, 10], [4, 7], [11, 13], [18, 6], [24, 8], [20, 13], [8, 2], [16, 3], [25, 16], [2, 15]]);
+  return g;
+})();
+MAPS.d = {
+  id: 'd', name: '舌尖中音島（ㄉㄊㄋㄌ）', w: 28, h: 20, tiles: island.rows(), theme: 'island',
+  start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
+  objects: [
+    { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 10, y: 15 }, label: '回村' },
+    { id: 'sign1', kind: 'sign', x: 7, y: 16, text: ['舌尖中音島。', '這座島的注音，都是舌尖頂著上牙齦後面發出來的：ㄉ ㄊ ㄋ ㄌ。', '島上有大鼓、水花和泡泡，學會新招式，也許就能叫醒它們！'] },
+    { id: 'dummy', kind: 'monster', x: 6, y: 14, battle: 'dpractice', hideIf: 'dPractice' },
+    { id: 'chest_1', kind: 'chest', x: 8, y: 17, item: 'potion' },
+    { id: 'drum', kind: 'gimmick', x: 3, y: 11, sprite: 'drum_big', ability: 'drum', fx: 'drum', lockText: ['一面大鼓，沒有人敲它。', '用「ㄉ」的力氣敲下去，也許會有回音……'], hitText: ['夥伴舌尖一彈「ㄉ」，大鼓「咚！」地響了！', '鼓後面冒出了一個寶箱！'], doneText: ['大鼓還在「咚咚」地輕輕回響。'] },
+    { id: 'chest_drum', kind: 'chest', x: 3, y: 10, showIf: 'g:d:drum' },
+    { id: 'plant', kind: 'gimmick', x: 9, y: 15, sprite: 'plant_dry', sprite2: 'plant_wet', ability: 'splash', fx: 'splash', lockText: ['一盆乾巴巴的花，葉子都垂下來了。', '好像需要一點水花……'], hitText: ['夥伴「ㄊ」地吐出水花，小花喝飽水，開出花來了！', '花盆旁邊出現了一個寶箱！'], doneText: ['小花開得好漂亮。'] },
+    { id: 'chest_plant', kind: 'chest', x: 10, y: 15, showIf: 'g:d:plant' },
+    { id: 'm1', kind: 'monster', x: 9, y: 9, battle: 'd1' },
+    { id: 'bubble', kind: 'gimmick', x: 6, y: 5, sprite: 'bubble_ball', ability: 'nasal', fx: 'bubble', vanish: true, lockText: ['一顆好大的泡泡球，擋在寶箱前面。', '用鼻子「嗯～」吹出的泡泡，也許能把它飄走……'], hitText: ['夥伴鼻子「嗯～」，吹出大泡泡，泡泡球飄走了！'] },
+    { id: 'chest_bubble', kind: 'chest', x: 6, y: 4, showIf: 'g:d:bubble' },
+    { id: 'm2', kind: 'monster', x: 11, y: 4, battle: 'd2' },
+    { id: 'chest_2', kind: 'chest', x: 12, y: 2, item: 'berry' },
+    { id: 'm3', kind: 'monster', x: 19, y: 10, battle: 'd3' },
+    { id: 'dam', kind: 'gimmick', x: 18, y: 15, sprite: 'dam', ability: 'stream', fx: 'stream', vanish: true, lockText: ['一座小木頭水壩，把水堵住了。', '舌尖輕輕彈的「ㄌ」，像水流一樣，也許能沖開它……'], hitText: ['夥伴「ㄌ」！水流衝出去，水壩被沖開了！'] },
+    { id: 'chest_dam', kind: 'chest', x: 18, y: 16, showIf: 'g:d:dam' },
+    { id: 'chest_3', kind: 'chest', x: 24, y: 12, item: 'potion' },
+    { id: 'boss', kind: 'monster', x: 22, y: 4, battle: 'boss_d', hideIf: 'boss_d' },
+    { id: 'chest_boss', kind: 'chest', x: 24, y: 3, showIf: 'boss_d' },
+  ],
+};
+
 export const TILE_KEY: Record<string, string> = {
   '.': 't_grass', ',': 't_flower', '#': 't_tree', '=': 't_path', h: 't_roof', H: 't_wall', D: 't_door',
   '~': 't_water', '+': 't_bridge', ':': 't_dirt', S: 't_cliff',
-  f: 't_wood', r: 't_rug', W: 't_iwall', T: 't_table', L: 't_shelf',
+  a: 't_sand', f: 't_wood', r: 't_rug', W: 't_iwall', T: 't_table', L: 't_shelf',
 };

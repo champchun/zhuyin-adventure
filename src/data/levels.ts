@@ -12,7 +12,7 @@ export interface LevelDef {
 export const LEVELS: Record<string, LevelDef> = {
   b: { id: 'b', symbol: 'ㄇㄈ', name: '村外小徑', open: true, mapId: 'b', partner: '夥伴' },
   p: { id: 'p', symbol: '霧', name: '風車草原', open: true, mapId: 'p', partner: '夥伴' },
-  d: { id: 'd', symbol: 'ㄉ', name: '舌尖中音島（鼓與流水）', open: false, partner: '（鼓王咚咚）' },
+  d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'd', partner: '夥伴' },
   g: { id: 'g', symbol: 'ㄍ', name: '舌根音島（回音洞窟）', open: false, partner: '（蝙蝠王嗡嗡）' },
 };
 
@@ -44,11 +44,13 @@ export interface BattleDef {
   guided?: boolean;
   /** 野生怪：離開地圖再回來會重新出現（頭目與練習用的布偶不會） */
   respawn?: boolean;
+  /** 答錯有懲罰：攻擊失敗，換對方攻擊（練習戰沒有） */
+  penalty?: boolean;
   intro: string[];
   reward: RewardDef;
 }
 const wild = (id: string, enemy: string, tier: Tier, focus: string[], review: string[], flag: string): BattleDef => ({
-  id, enemy, phases: 1, tier, focus, review, respawn: true,
+  id, enemy, phases: 1, tier, focus, review, respawn: true, penalty: true,
   intro: ['野生怪獸出現了！'],
   reward: { flag, exp: 4, coins: 8, story: [] },
 });
@@ -68,11 +70,31 @@ export const BATTLES: Record<string, BattleDef> = {
   b2: wild('b2', 'pebble', 1, ['ㄈ'], ['ㄅ', 'ㄆ', 'ㄇ'], 'm:b:m2'),
   b3: wild('b3', 'pebble', 2, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:b:m3'),
   boss_b: {
-    id: 'boss_b', enemy: 'golem', phases: 3, tier: 2, focus: ['ㄇ', 'ㄈ'], review: ['ㄅ', 'ㄆ'],
+    id: 'boss_b', enemy: 'golem', penalty: true, phases: 3, tier: 2, focus: ['ㄇ', 'ㄈ'], review: ['ㄅ', 'ㄆ'],
     intro: ['轟隆隆～岩石大塊頭被迷霧罩住，擋住了路！', '一共三個小回合，累了隨時都可以離開。'],
     reward: {
       flag: 'boss_b', exp: 10, coins: 30, abilities: ['hum', 'fog'], grow: 'starter', items: { potion: 2, berry: 1 },
       story: ['大塊頭碎成小石頭了！', '夥伴閃閃發光，長大了！', '「ㄇ」是嘴巴閉起來「嗯～」，夥伴學會了哼哼波！', '「ㄈ」是咬住下唇吹氣，夥伴學會了吹霧！', '村子裡好像有鈴鐺和迷霧……回去試試看吧！'],
+    },
+  },
+  // 第 1 座島：舌尖中音島（ㄉㄊㄋㄌ）。一進島先練習 ㄉㄊ，ㄋㄌ 要等練習完才出現
+  dpractice: {
+    id: 'dpractice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄉ', 'ㄊ'], review: [], guided: true,
+    intro: ['島上也有稻草布偶，先來練習！', '這一次要認的是「ㄉ」和「ㄊ」。舌尖頂住上牙齦後面，彈開就是它們！'],
+    reward: {
+      flag: 'dPractice', exp: 4, coins: 6, abilities: ['drum', 'splash'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄉ」像鼓棒「咚」地敲下去，夥伴學會了擊鼓拳！', '「ㄊ」像吐出一口氣，噴出水花，夥伴學會了水花彈！', '島上還有「ㄋ」和「ㄌ」等著你，往前走走看吧！'],
+    },
+  },
+  d1: wild('d1', 'drippy', 1, ['ㄉ', 'ㄊ'], ['ㄅ', 'ㄆ'], 'm:d:m1'),
+  d2: { ...wild('d2', 'crabby', 2, ['ㄋ', 'ㄌ'], ['ㄉ', 'ㄊ'], 'm:d:m2'), intro: ['橫行蟹擋住了路！', '牠會考新的注音：「ㄋ」和「ㄌ」。'] },
+  d3: wild('d3', 'drippy', 3, ['ㄋ', 'ㄌ'], ['ㄉ', 'ㄊ', 'ㄅ', 'ㄆ'], 'm:d:m3'),
+  boss_d: {
+    id: 'boss_d', enemy: 'drumking', penalty: true, phases: 3, tier: 3, focus: ['ㄋ', 'ㄌ', 'ㄉ', 'ㄊ'], review: ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'],
+    intro: ['咚咚咚咚～鼓王咚咚被迷霧罩住，把全島的鼓聲都偷走了！', '一共三個小回合，把學過的注音都用上！'],
+    reward: {
+      flag: 'boss_d', exp: 16, coins: 60, abilities: ['nasal', 'stream'], items: { potion: 2, berry: 2 },
+      story: ['鼓王咚咚的迷霧散了，鼓聲又回到島上！', '「ㄋ」是氣從鼻子出來「嗯～」，夥伴學會了嗯嗯泡！', '「ㄌ」是舌尖輕輕彈，像水流一樣，夥伴學會了流水衝！', '島上還有幾個機關，回頭用新招式試試看吧！'],
     },
   },
   // 畢業區：風車草原，四個唇音全部複習
@@ -80,7 +102,7 @@ export const BATTLES: Record<string, BattleDef> = {
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),
   p3: wild('p3', 'leafy', 3, LIP, [], 'm:p:m3'),
   boss_p: {
-    id: 'boss_p', enemy: 'mist', phases: 3, tier: 3, focus: LIP, review: [],
+    id: 'boss_p', enemy: 'mist', penalty: true, phases: 3, tier: 3, focus: LIP, review: [],
     intro: ['呼呼呼～迷霧凝結成了霧影，把風都藏起來了！', '一共三個小回合，把學過的唇音都用上！'],
     reward: {
       flag: 'boss_p', exp: 10, coins: 40, results: true, items: { potion: 2, berry: 2 },
@@ -107,13 +129,15 @@ export const STORY = {
     '村子廣場有一個稻草布偶，帶夥伴去練習吧！',
   ],
   guideAfter: ['每一扇圓門都通往一個地方。', '夥伴的招式，要先學會對應的注音才能用喔！', '累了就回家睡一覺，夥伴的體力和魔力都會恢復。'],
-  guideEnd: ['你已經學會所有唇音了，太厲害了！', '接下來就去舌尖中音島吧，那裡的鼓聲被迷霧偷走了。', '現在還在準備中，村裡的新道路我也能陪你探索！'],
+  guideEnd: ['你已經學會所有唇音了，太厲害了！', '接下來就去舌尖中音島吧，那裡的鼓聲被迷霧偷走了。', '村子下面第四扇圓門已經亮了，快去看看！'],
+  guideEndD: ['鼓聲回來了，真是了不起！', '「ㄉㄊㄋㄌ」你都學會了。接下來是舌根音島，那裡還在準備中，等我研究好再告訴你！'],
   sleep: ['呼～睡得好飽！', '夥伴的體力和魔力都回來了。'],
   shopHello: ['歡迎光臨小福道具店！', '打贏怪獸得到的金幣，可以在這裡買藥水和魔力果。'],
   shopBye: ['謝謝惠顧！下次再來喔～'],
   lockedGate: ['這扇門還藏在迷霧裡。', '等我們變得更強，就能進去了！'],
   needPractice: ['先讓夥伴練習一下，圓門才會亮起來喔。'],
-  needBoss: ['這扇門被迷霧封住了。', '先到村外小徑，把迷霧打散吧！'],
+  needBoss: ['這扇門被迷霧封住了。', '先到村外小徑和風車草原，把迷霧打散吧！'],
+  dIsland: ['舌尖中音島。', '這座島的注音，都是舌尖頂著上牙齦後面發出來的：ㄉ ㄊ ㄋ ㄌ。', '島上有大鼓、水花和泡泡，學會新招式，也許就能叫醒它們！'],
   rockLocked: ['一塊裂開的大石頭。', '需要很強的拳頭才能打碎它。'],
   rockBreak: ['夥伴揮出爆破拳！碎石四散，路打通了！'],
   starterPicked: ['加入了你的隊伍！'],
