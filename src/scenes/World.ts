@@ -9,7 +9,8 @@ import {
   G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
-import { choose, openParty, openResults, openSettings, openShop, say, setHudInfo, toast, ui } from '../core/ui';
+import { choose, openParty, openResults, openSettings, openShop, openWorldMap, say, setHudInfo, toast, ui } from '../core/ui';
+import { defeatSpot, dockSpot, markArrival, visitedHubs } from '../core/travel';
 import { bui } from '../core/battleui';
 import { QuestionRun, shuffle } from '../core/learning';
 import type { BattleOutcome } from './Battle';
@@ -107,6 +108,7 @@ export class WorldScene extends Phaser.Scene {
     setHudInfo(m.name);
     audio.playBgm(m.theme);
     if (m.id === 'd' && !flag('dEntered')) setFlag('dEntered'); // 進到舌尖中音島：開始教 ㄉㄊ
+    markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
   private buildFollowers() {
@@ -173,7 +175,8 @@ export class WorldScene extends Phaser.Scene {
         case 'leaves': spr = this.add.image(px, py, 'leaves').setOrigin(0).setDepth(depth); break;
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
-        case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
+        case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
+        case 'woodgate': spr =this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
         case 'gimmick': spr = this.add.image(px, py, flag(`g:${m.id}:${def.id}`) && def.sprite2 ? def.sprite2 : def.sprite!).setOrigin(0).setDepth(depth); break;
         case 'sign': spr = this.add.image(px, py, def.sprite ?? 'sign').setOrigin(0).setDepth(depth); break;
         case 'exit': spr = this.add.image(px, py, 'exit_tile').setOrigin(0).setDepth(depth); break;
@@ -388,7 +391,18 @@ export class WorldScene extends Phaser.Scene {
         return say(STORY.fogBlow);
       case 'woodgate': return say(STORY.woodLocked);
       case 'gimmick': return this.useGimmick(o);
+      case 'dock': return this.useDock();
     }
+  }
+
+  /** 碼頭：列出去過的其他主島，選一個就免費搭船過去（沒有別的島時只說明一下） */
+  private async useDock() {
+    const dests = visitedHubs(G.save.flags).filter((h) => h.id !== this.map.id);
+    if (!dests.length) { await say(STORY.dockEmpty.map((text) => ({ text }))); return; }
+    const id = await openWorldMap(dests.map((h) => ({ id: h.id, name: h.name })));
+    if (!id) return;
+    const spot = dockSpot(MAPS[id]);
+    await this.travel(spot.map, spot.x, spot.y);
   }
 
   /** 用招式啟動的機關（大鼓、乾花、泡泡球、小水壩…）：沒學會招式只會提示，學會了就會有特效，並可能冒出寶箱 */
@@ -621,7 +635,8 @@ export class WorldScene extends Phaser.Scene {
       // 被打倒不算失敗：送回自己的房間睡一覺，HP／魔力全部恢復
       await say(STORY.defeat);
       this.queue = []; this.pending = undefined;
-      await this.travel('room', 2, 3);
+      const back = defeatSpot(G.save.homeMap);
+      await this.travel(back.map, back.x, back.y);
       healAll();
       saveGame();
       return;

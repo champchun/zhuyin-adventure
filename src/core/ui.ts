@@ -154,6 +154,22 @@ export function choose(title: string, body: string, options: string[]): Promise<
   });
 }
 
+/** 世界地圖：列出去過的主島，選一個就搭船過去。回傳地圖 id；按「先不要」回傳 null。 */
+export function openWorldMap(dests: { id: string; name: string }[]): Promise<string | null> {
+  return new Promise((resolve) => {
+    const m = openModal(`<h2>🗺️ 要去哪裡？</h2><p>搭船不用錢，隨時可以回家喔。</p>
+      <div class="foot" style="flex-direction:column;gap:10px">${dests.map((d, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" data-a="go" data-id="${d.id}">⛵ ${d.name}</button>`).join('')}
+      <button class="btn small" data-a="no">先不要</button></div>`);
+    audio.speak('要去哪裡？搭船不用錢，隨時可以回家喔。');
+    delegate(m, (a, el) => {
+      if (a !== 'go' && a !== 'no') return;
+      audio.sfx('tap');
+      closeModal();
+      resolve(a === 'go' ? el.dataset.id! : null);
+    });
+  });
+}
+
 // ───── 夥伴 ─────
 export function openParty(onChange?: () => void): Promise<void> {
   return new Promise((resolve) => {
