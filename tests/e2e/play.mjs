@@ -107,7 +107,7 @@ await page.goto(URL);
 await page.waitForSelector('#screen .menu');
 await snap('title');
 await page.click('#screen [data-a=new]');
-await ev(() => { const s = window.__game.G.settings; s.monstersMove = false; s.writeChallenge = false; }); // 機器人用座標點擊走路：怪物不動、也不用寫字，流程才穩定
+await ev(() => { const s = window.__game.G.settings; s.monstersMove = false; s.writeChallenge = false; s.reduceMotion = true; }); // 機器人用座標點擊走路：怪物不動、也不用寫字，流程才穩定；精簡動畫（減少粒子與等待）讓它跑得更快
 await page.waitForFunction(() => !document.querySelector('#screen .menu'));
 await pump(idle, 'intro');
 await snap('room-start');
