@@ -10,8 +10,8 @@ import {
   G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, itemCount, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
-import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
-import { defeatSpot, dockDestinations, dockSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
+import { choose, openParty, openResults, openSettings, openShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
+import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
@@ -463,7 +463,7 @@ export class WorldScene extends Phaser.Scene {
         return say(STORY.fogBlow);
       case 'woodgate': return say(STORY.woodLocked);
       case 'gimmick': return this.useGimmick(o);
-      case 'dock': return this.useDock();
+      case 'dock': return this.useDock(d);
       case 'stairs': await this.travel(d.to!.map, d.to!.x, d.to!.y); return;
       case 'lockdoor': return this.useLockdoor(o);
       case 'barrier': return say((d.lockText ?? ['路被擋住了。']).map((text) => ({ text })));
@@ -481,14 +481,13 @@ export class WorldScene extends Phaser.Scene {
     return say([{ text: '用小鑰匙打開了門！' }]);
   }
 
-  /** 碼頭：列出可以去的島（其他主島、自己的怪物島；怪物島只能回主島），選一個就免費搭船過去 */
-  private async useDock() {
-    const dests = dockDestinations(this.map, G.save.flags);
-    if (!dests.length) { await say(STORY.dockEmpty.map((text) => ({ text }))); return; }
-    const id = await openWorldMap(dests.map((h) => ({ id: h.id, name: h.name })));
-    if (!id) return;
-    const spot = dockSpot(MAPS[id]);
-    await this.travel(spot.map, spot.x, spot.y);
+  /** 碼頭：每個碼頭只通往一個地方（dockTo），問一聲就免費搭船過去 */
+  private async useDock(d: MapObj) {
+    const to = d.dockTo!;
+    const name = MAPS[to.map].name;
+    const i = await choose(`搭船去${name}？`, '搭船不用錢。', ['出發 ⛵', '先不要']);
+    if (i !== 0) return;
+    await this.travel(to.map, to.x, to.y);
   }
 
   /**
@@ -541,7 +540,7 @@ export class WorldScene extends Phaser.Scene {
     await say(STORY.innHello.map((text) => ({ who, text })));
     const stay = stayOutcome(G.save.coins, price);
     if (!stay.ok) {
-      await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！碼頭的小船可以載你回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
+      await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！東邊碼頭的小船可以載你回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
       return;
     }
     const i = await choose(`住一晚要 ${price} 金幣？`, `夥伴的 HP 和魔力都會回滿，還會幫你存檔。你有 ${G.save.coins} 枚金幣。`, ['住一晚 💤', '先不要']);

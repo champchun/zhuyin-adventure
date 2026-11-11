@@ -42,6 +42,8 @@ export interface MapObj {
   ai?: 'patrol' | 'chase';
   /** monster：巡邏路線（不含起點，起點就是 x, y）；每一格要和前一格上下左右相鄰 */
   patrol?: { x: number; y: number }[];
+  /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
+  dockTo?: { map: string; x: number; y: number };
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
 }
@@ -57,9 +59,7 @@ export interface MapDef {
   /** 戰敗後恢復的位置 */
   respawn: { x: number; y: number };
   /** 主島：有碼頭可以搭船。dock＝搭船抵達時落腳的格子；defeat＝被打倒時改送去別的地方（例如起始村送回自己的房間） */
-  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; /** 這個旗標為真時，其他主島的碼頭就能選這座島（還沒去過也可以） */ unlockedBy?: string; /** 從這座主島的碼頭搭船可以去的怪物島（地圖 id） */ isles?: string[] };
-  /** 怪物島：有碼頭可以搭船回主島。hub＝回哪座主島；dock＝搭船抵達時落腳的格子 */
-  isle?: { hub: string; dock: { x: number; y: number } };
+  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; };
   /** 迷宮：同一個洞窟的各樓層設成同一個 group；樓層之間走動，野生怪不會重生（從外面進來才重生） */
   group?: string;
 }
@@ -181,7 +181,7 @@ export const MAPS: Record<string, MapDef> = {
     start: { x: 5, y: 4 }, respawn: { x: 5, y: 4 },
     hub: { dock: { x: 20, y: 11 }, defeat: { map: 'room', x: 2, y: 3 } },
     objects: [
-      { id: 'dock', kind: 'dock', x: 21, y: 11, showIf: 'boss_p' },
+      { id: 'dock', kind: 'dock', x: 21, y: 11, showIf: 'boss_p', dockTo: { map: 'dh', x: 22, y: 10 } },
       { id: 'door_home', kind: 'door', x: 5, y: 3, to: { map: 'room', x: 5, y: 6 } },
       { id: 'door_lab', kind: 'door', x: 14, y: 3, to: { map: 'lab', x: 5, y: 7 } },
       { id: 'door_shop', kind: 'door', x: 19, y: 14, to: { map: 'shop', x: 4, y: 6 } },
@@ -296,9 +296,8 @@ const island = (() => {
 MAPS.d = {
   id: 'd', name: '舌尖中音島（ㄉㄊㄋㄌ）', w: 28, h: 20, tiles: island.rows(), theme: 'island',
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
-  isle: { hub: 'dh', dock: { x: 4, y: 17 } },
   objects: [
-    { id: 'dock', kind: 'dock', x: 4, y: 18 },
+    { id: 'dock', kind: 'dock', x: 4, y: 18, dockTo: { map: 'dh', x: 4, y: 10 } }, // 回主島的西邊碼頭
     { id: 'cave', kind: 'stairs', x: 3, y: 3, to: { map: 'dc1', x: 2, y: 1 }, label: '洞窟', showIf: 'dPractice' },
     { id: 'sign1', kind: 'sign', x: 7, y: 16, text: ['舌尖中音島。', '這座島的注音，都是舌尖頂著上牙齦後面發出來的：ㄉ ㄊ ㄋ ㄌ。', '島上有大鼓、水花和泡泡，學會新招式，也許就能叫醒它們！'] },
     { id: 'dummy', kind: 'monster', x: 6, y: 14, battle: 'dpractice', hideIf: 'dPractice' },
@@ -378,7 +377,8 @@ MAPS.dc2 = {
 // 沙灘小島，四周是海；北邊旅館（左）與商店（右），一條橫路接兩扇門，一條直路通到南邊出口；東邊海灣旁是碼頭。
 const dhGrid = (() => {
   const g = new Grid(28, 20, 'a').border('~');
-  g.rect('~', 24, 7, 3, 7); // 東邊的海灣
+  g.rect('~', 24, 7, 3, 7); // 東邊的海灣（通往起始村）
+  g.rect('~', 0, 8, 3, 5); // 西邊的海灣（通往舌尖中音島）
   g.many(',', [[3, 14], [9, 16], [12, 7], [18, 15], [21, 8]]);
   g.many('#', [[2, 3], [11, 2], [16, 2], [3, 17], [24, 17], [10, 12], [19, 7], [8, 9]]);
   g.rect('h', 4, 2, 5, 1).rect('H', 4, 3, 5, 1).set(6, 3, 'D'); // 旅館：門在 (6,3)
@@ -389,30 +389,31 @@ const dhGrid = (() => {
 MAPS.dh = {
   id: 'dh', name: '鼓聲港', w: 28, h: 20, tiles: dhGrid.rows(), theme: 'island',
   start: { x: 14, y: 17 }, respawn: { x: 7, y: 4 },
-  hub: { dock: { x: 22, y: 10 }, unlockedBy: 'boss_p', isles: ['d'] },
+  hub: { dock: { x: 22, y: 10 } },
   objects: [
     { id: 'isle_b', kind: 'sign', x: 24, y: 16, sprite: 'gate_off', text: ['南邊的怪物島，被濃濃的迷霧罩住了。', '等我們變得更強，也許就能過去！'] },
     { id: 'door_inn', kind: 'door', x: 6, y: 3, to: { map: 'dh_inn', x: 4, y: 6 } },
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'dh_shop', x: 4, y: 6 } },
-    { id: 'dock', kind: 'dock', x: 23, y: 10 },
+    { id: 'dock_village', kind: 'dock', x: 23, y: 10, dockTo: { map: 'village', x: 20, y: 11 } }, // 東邊：回起始村
+    { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'd', x: 4, y: 17 } }, // 西邊：去舌尖中音島
     {
       id: 'drummer', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '小鼓手',
       talk: [
-        { not: 'dPractice', lines: ['歡迎來到鼓聲港！', '這座島的注音，都是舌尖頂著上牙齦後面發出來的。', '西邊的出口通到怪物島，島上有稻草布偶，先去練習看看吧！'] },
-        { not: 'boss_d', lines: ['聽說怪物島上的洞窟，要先找到小鑰匙才能走到更深的地方。', '累了就來旅館住一晚。'] },
+        { not: 'dPractice', lines: ['歡迎來到鼓聲港！', '這座島的注音，都是舌尖頂著上牙齦後面發出來的。', '怪物島要搭船去：西邊的碼頭，船會載你過去。島上有稻草布偶，先去練習看看吧！'] },
+        { not: 'boss_d', lines: ['聽說怪物島上的洞窟，要先找到小鑰匙才能走到更深的地方。', '西邊的碼頭可以去怪物島，累了就來旅館住一晚。'] },
         { lines: ['鼓聲回來了！謝謝你！', '南邊還有一座更遠的怪物島，現在迷霧還很濃……'] },
       ],
     },
     {
       id: 'fisher', kind: 'npc', x: 18, y: 12, sprite: 'npc_elder', label: '漁夫爺爺',
       talk: [
-        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，搭船回起始村的家睡覺，是免費的喔！'] },
+        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，從東邊的碼頭搭船回起始村的家睡覺，是免費的喔！'] },
       ],
     },
     {
       id: 'sailor', kind: 'npc', x: 8, y: 15, sprite: 'npc_girl', label: '船長小桃',
       talk: [
-        { lines: ['東邊碼頭的小船，可以載你回起始村。', '想回家的時候，隨時都可以搭！'] },
+        { lines: ['東邊的碼頭，是回起始村的船。', '西邊的碼頭，是去怪物島的船。', '想回家的時候，隨時都可以搭！'] },
       ],
     },
   ],

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import type { MapDef } from '../src/data/maps';
 import { LEVELS } from '../src/data/levels';
-import { defeatSpot, dockDestinations, dockSpot, markArrival } from '../src/core/travel';
+import { defeatSpot, markArrival } from '../src/core/travel';
 import { stayOutcome } from '../src/core/inn';
 describe('stayOutcome：旅館住宿', () => {
   it('金幣夠：扣掉住宿費；剛好夠也可以住', () => {
@@ -30,38 +30,30 @@ describe('markArrival：記下去過的主島', () => {
 
 describe('主島「鼓聲港」', () => {
   const dh = MAPS.dh;
-  it('是主島：有碼頭、等起始村的頭目打倒就能搭船來；被打倒會送回主島的 respawn 位置', () => {
-    expect(dh).toBeDefined();
+  it('是主島：被打倒會送回主島的 respawn 位置', () => {
     expect(dh.hub).toBeDefined();
-    expect(dh.hub!.unlockedBy).toBe('boss_p');
     expect(dh.hub!.defeat).toBeUndefined();
     expect(defeatSpot('dh')).toEqual({ map: 'dh', x: dh.respawn.x, y: dh.respawn.y });
   });
-  it('碼頭的落腳點可以走，碼頭物件就在它旁邊', () => {
-    const d = dockSpot(dh);
-    expect(BLOCKED_TILES.has(dh.tiles[d.y][d.x])).toBe(false);
-    const dock = dh.objects.find((o) => o.kind === 'dock')!;
-    expect(dock).toBeDefined();
-    expect(dock.showIf).toBeUndefined();
-    expect(Math.abs(dock.x - d.x) + Math.abs(dock.y - d.y)).toBe(1);
-  });
   it('沒有傳送點：主島、怪物島都沒有 exit 物件，往來都靠碼頭', () => {
     for (const id of ['dh', 'd']) expect(MAPS[id].objects.some((o) => o.kind === 'exit')).toBe(false);
-    expect(dh.hub!.isles).toEqual(['d']);
-    expect(MAPS.d.isle!.hub).toBe('dh');
   });
-  it('怪物島的碼頭落腳點可以走，碼頭物件就在旁邊', () => {
-    const d = dockSpot(MAPS.d);
-    expect(BLOCKED_TILES.has(MAPS.d.tiles[d.y][d.x])).toBe(false);
-    const dock = MAPS.d.objects.find((o) => o.kind === 'dock')!;
-    expect(Math.abs(dock.x - d.x) + Math.abs(dock.y - d.y)).toBe(1);
+  it('一個碼頭只通往一個地方：主島有兩個碼頭，一個去起始村、一個去怪物島', () => {
+    const docks = dh.objects.filter((o) => o.kind === 'dock');
+    expect(docks.map((o) => o.dockTo!.map).sort()).toEqual(['d', 'village']);
+    expect(MAPS.d.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['dh']);
   });
-  it('碼頭目的地：起始村要先打倒頭目才看得到主島；主島可去起始村與怪物島；怪物島只能回主島', () => {
-    const v = MAPS.village;
-    expect(dockDestinations(v, {}).map((m) => m.id)).toEqual([]);
-    expect(dockDestinations(v, { boss_p: true }).map((m) => m.id)).toEqual(['dh']);
-    expect(dockDestinations(dh, { 'visited:village': true }).map((m) => m.id)).toEqual(['village', 'd']);
-    expect(dockDestinations(MAPS.d, {}).map((m) => m.id)).toEqual(['dh']);
+  it('每個碼頭都有抵達位置：可以走、旁邊是水，而且抵達位置旁邊就有對面那個碼頭可以搭回去', () => {
+    for (const m of Object.values(MAPS)) {
+      for (const dock of m.objects.filter((o) => o.kind === 'dock')) {
+        const to = dock.dockTo!, dest = MAPS[to.map];
+        expect(BLOCKED_TILES.has(dest.tiles[to.y][to.x]), `${m.id}:${dock.id} 的抵達位置不能走`).toBe(false);
+        const back = dest.objects.some((o) => o.kind === 'dock' && o.dockTo!.map === m.id && Math.abs(o.x - to.x) + Math.abs(o.y - to.y) === 1);
+        expect(back, `${m.id}:${dock.id} 抵達後旁邊沒有回程碼頭`).toBe(true);
+        const wet = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => m.tiles[dock.y + dy]?.[dock.x + dx] === '~');
+        expect(wet, `${m.id}:${dock.id} 旁邊沒有水`).toBe(true);
+      }
+    }
   });
   it('起始村只留兩扇新手圓門，不再有第四扇', () => {
     expect(MAPS.village.objects.filter((o) => o.kind === 'gate').map((o) => o.id)).toEqual(['gate_b', 'gate_p']);

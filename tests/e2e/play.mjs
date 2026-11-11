@@ -83,17 +83,10 @@ const visibleTile = (x, y) => ev(([x, y]) => {
   return x * 16 >= v.x + 4 && x * 16 + 16 <= v.right - 4 && y * 16 >= v.y + 40 / cam.zoom && y * 16 + 16 <= v.bottom - 4;
 }, [x, y]);
 /** 點擊目標；若目標不在畫面內，先沿路徑點擊畫面內最遠的一格（和真人一樣得先走近） */
-const doTap = async (x, y, label, boatTo) => {
+const doTap = async (x, y, label) => {
   for (let i = 0; i < 10; i++) {
     if (await visibleTile(x, y)) {
-      await tapTile(x, y); await sleep(250);
-      if (boatTo) { // 碼頭：自己在「要去哪裡？」視窗點指定的島（pump 只會點第一個）
-        const sel = `#modal [data-a=go][data-id=${boatTo}]`;
-        await page.waitForSelector(sel, { timeout: 60000 });
-        await page.click(sel);
-        await sleep(300);
-      }
-      await pump(idle, label);
+      await tapTile(x, y); await sleep(250); await pump(idle, label); // 碼頭的「出發」選擇視窗由 pump 自動選第一個
       return;
     }
     const mid = await ev(([x, y]) => {
@@ -298,7 +291,7 @@ log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭
 await doTap(4, 18, '回村');
 
 // ───── 舌尖中音島（ㄉㄊㄋㄌ）─────
-await doTap(21, 11, '起始村的碼頭（打倒草原頭目後出現）', 'dh');
+await doTap(21, 11, '起始村的碼頭（打倒草原頭目後出現）');
 if ((await save()).mapId !== 'dh') throw new Error('沒有搭船到主島鼓聲港');
 f = await flags();
 if (!f['visited:dh']) throw new Error('到主島後應該記下去過 ' + JSON.stringify(f));
@@ -317,7 +310,7 @@ if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('住一晚後應
 log('✓ 主島旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
 await doTap(4, 7, '離開旅館');
 if ((await save()).mapId !== 'dh') throw new Error('沒有走出旅館');
-await doTap(23, 10, '主島的碼頭（去怪物島）', 'd');
+await doTap(3, 10, '主島西邊的碼頭（去怪物島）');
 if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島（怪物島）');
 f = await flags();
 if (!f.dEntered) throw new Error('進島後應該開始教 ㄉㄊ');
@@ -374,9 +367,9 @@ if ((await save()).mapId !== 'dc1') throw new Error('沒有回到洞窟 1 樓');
 await doTap(1, 1, '回島的樓梯');
 if ((await save()).mapId !== 'd') throw new Error('沒有走回舌尖中音島');
 log('✓ 洞窟：樓層之間來回、走回島上');
-await doTap(4, 18, '怪物島的碼頭（回主島）', 'dh');
+await doTap(4, 18, '怪物島的碼頭（回主島）');
 if ((await save()).mapId !== 'dh') throw new Error('沒有從怪物島回到主島');
-await doTap(23, 10, '主島的碼頭（回起始村）', 'village');
+await doTap(23, 10, '主島東邊的碼頭（回起始村）');
 if ((await save()).mapId !== 'village') throw new Error('沒有從主島回到起始村');
 
 // ───── 回家睡覺：HP／魔力回滿 ─────
