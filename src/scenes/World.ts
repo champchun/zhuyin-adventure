@@ -11,6 +11,8 @@ import {
 import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWorldMap, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, dockSpot, markArrival, visitedHubs } from '../core/travel';
+import { makeMon, stepMonsters, stunMon } from '../core/monsters';
+import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
 import { QuestionRun, shuffle } from '../core/learning';
 import type { BattleOutcome } from './Battle';
@@ -21,12 +23,14 @@ const STEP_MS = 140;
 type Dir = 'down' | 'up' | 'left' | 'right';
 const DIRS: Record<Dir, [number, number]> = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
-interface Obj { def: MapObj; spr: Phaser.GameObjects.Image; extra: Phaser.GameObjects.GameObject[] }
+interface Obj { def: MapObj; spr: Phaser.GameObjects.Image; extra: Phaser.GameObjects.GameObject[]; /** 目前所在格（會動的怪物會改變；其他物件等於 def.x / def.y） */ x: number; y: number }
 
 export class WorldScene extends Phaser.Scene {
   private map!: MapDef;
   private tilesRT?: Phaser.GameObjects.RenderTexture;
   private objs = new Map<string, Obj>();
+  /** 這張地圖上會動的怪物的狀態（refreshObjects 會重建圖片，所以位置要存在這裡；換地圖時清空） */
+  private mons = new Map<string, MonState>();
   private player!: Phaser.GameObjects.Image;
   private pShadow!: Phaser.GameObjects.Image;
   private followers: { spr: Phaser.GameObjects.Image; sh: Phaser.GameObjects.Image }[] = [];
@@ -85,6 +89,7 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.killAll();
     this.children.removeAll(true);
     this.objs.clear();
+    this.mons.clear();
     this.followers = [];
     this.labels = [];
     this.trail = [];
@@ -152,6 +157,13 @@ export class WorldScene extends Phaser.Scene {
     return true;
   }
 
+  /** 取得（或建立）會動的怪物的狀態 */
+  private monOf(def: MapObj): MonState {
+    let m = this.mons.get(def.id);
+    if (!m) { m = makeMon(def); this.mons.set(def.id, m); }
+    return m;
+  }
+
   private refreshObjects() {
     this.objs.forEach((o) => { o.spr.destroy(); o.extra.forEach((e) => e.destroy()); });
     this.objs.clear();
@@ -159,7 +171,9 @@ export class WorldScene extends Phaser.Scene {
     const m = this.map;
     for (const def of m.objects) {
       if (!this.visible(def)) continue;
-      const px = def.x * T, py = def.y * T;
+      const mon = def.kind === 'monster' && def.ai ? this.monOf(def) : undefined;
+      const ox = mon ? mon.x : def.x, oy = mon ? mon.y : def.y; // 會動的怪物：用目前所在格
+      const px = ox * T, py = oy * T;
       const extra: Phaser.GameObjects.GameObject[] = [];
       let spr: Phaser.GameObjects.Image;
       const depth = py + T;
@@ -207,18 +221,18 @@ export class WorldScene extends Phaser.Scene {
           const big = en.scale >= 2.5; // 敵人圖是 32×32，縮成 0.5～0.75 倍放在地圖上
           shadow(big ? 1.8 : 1);
           spr = this.add.image(px + 8, py + 16, en.sprite).setOrigin(0.5, 1).setScale(big ? 0.75 : 0.5).setDepth(depth);
-          bob(spr, 2, 500);
+          if (!def.ai) bob(spr, 2, 500); // 會動的怪物用移動動畫，不能同時上下晃（兩個動畫會搶 y）
           break;
         }
         default: continue;
       }
-      this.objs.set(def.id, { def, spr, extra });
+      this.objs.set(def.id, { def, spr, extra, x: ox, y: oy });
     }
   }
 
   // ───────── 通行判定與尋路 ─────────
   private objAt(x: number, y: number): Obj | undefined {
-    for (const o of this.objs.values()) if (o.def.x === x && o.def.y === y) return o;
+    for (const o of this.objs.values()) if (o.x === x && o.y === y) return o;
     return undefined;
   }
   private walkable(x: number, y: number): boolean {
@@ -226,6 +240,35 @@ export class WorldScene extends Phaser.Scene {
     if (x < 0 || y < 0 || x >= m.w || y >= m.h) return false;
     if (BLOCKED_TILES.has(m.tiles[y][x])) return false;
     return !this.objAt(x, y);
+  }
+
+  /** 怪物走路時的阻擋：地圖外、阻擋地形、以及「不是會動的怪物」的任何物件所在格 */
+  private blockedForMonsters(x: number, y: number): boolean {
+    const m = this.map;
+    if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
+    if (BLOCKED_TILES.has(m.tiles[y][x])) return true;
+    for (const o of this.objs.values()) if (!this.mons.has(o.def.id) && o.x === x && o.y === y) return true;
+    return false;
+  }
+
+  /**
+   * 主角剛走了一步：輪到怪物（同步回合制）。回傳怪物移動動畫（done）與這回合碰到主角的怪物（contact）。
+   * 設定關掉「怪物會走動」或這張地圖沒有會動的怪物時，什麼都不做。
+   */
+  private monsterTurn(): { done: Promise<void>; contact?: Obj } {
+    const live = [...this.objs.values()].filter((o) => this.mons.has(o.def.id));
+    if (!G.settings.monstersMove || !live.length) return { done: Promise.resolve() };
+    const res = stepMonsters(live.map((o) => this.mons.get(o.def.id)!), { x: this.tx, y: this.ty }, (x, y) => this.blockedForMonsters(x, y));
+    const tweens: Promise<void>[] = [];
+    for (const mv of res.moves) {
+      const o = this.objs.get(mv.id)!;
+      o.x = mv.to.x; o.y = mv.to.y;
+      o.spr.setDepth(mv.to.y * T + T);
+      const shadow = o.extra[0] as Phaser.GameObjects.Image | undefined;
+      tweens.push(new Promise<void>((r) => this.tweens.add({ targets: o.spr, x: mv.to.x * T + 8, y: mv.to.y * T + 16, duration: STEP_MS, ease: 'Linear', onComplete: () => r() })));
+      if (shadow) this.tweens.add({ targets: shadow, x: mv.to.x * T + 8, y: mv.to.y * T + 14, duration: STEP_MS, ease: 'Linear' });
+    }
+    return { done: Promise.all(tweens).then(() => undefined), contact: res.contact ? this.objs.get(res.contact) : undefined };
   }
   private findPath(goal: (x: number, y: number) => boolean): { x: number; y: number }[] | null {
     const start = { x: this.tx, y: this.ty };
@@ -312,6 +355,7 @@ export class WorldScene extends Phaser.Scene {
   private async run() {
     if (this.moving) return;
     this.moving = true;
+    let contact: Obj | undefined;
     while (this.queue.length && !this.busy) {
       const n = this.queue.shift()!;
       if (!this.walkable(n.x, n.y)) { this.queue = []; break; }
@@ -321,17 +365,30 @@ export class WorldScene extends Phaser.Scene {
       this.trail.unshift({ x: this.tx, y: this.ty });
       this.trail.length = Math.min(this.trail.length, 6);
       this.tx = n.x; this.ty = n.y;
+      const turn = this.monsterTurn(); // 主角走一格，怪物也走一格（同步）；動畫和主角的移動同時進行
       this.placeFollowers(true);
       if (!G.settings.reduceMotion) this.tweens.add({ targets: this.player, scaleY: { from: 1, to: 0.9 }, duration: STEP_MS / 2, yoyo: true });
-      await new Promise<void>((res) => this.tweens.add({ targets: this.player, x: n.x * T + 8, y: n.y * T + 16, duration: STEP_MS, ease: 'Linear', onComplete: () => res() }));
+      await Promise.all([
+        new Promise<void>((res) => this.tweens.add({ targets: this.player, x: n.x * T + 8, y: n.y * T + 16, duration: STEP_MS, ease: 'Linear', onComplete: () => res() })),
+        turn.done,
+      ]);
       G.save.x = this.tx; G.save.y = this.ty;
       if (++this.stepCount % 25 === 0) saveGame();
+      if (turn.contact) { contact = turn.contact; this.queue = []; break; } // 碰到怪物：停下來，準備開戰
     }
     this.moving = false;
+    if (contact && !this.busy) {
+      this.pending = undefined;
+      this.busy = true;
+      try { await this.startBattle(contact); } catch (e) { console.error(e); }
+      this.busy = false;
+      saveGame();
+      return;
+    }
     const o = this.pending;
     this.pending = undefined;
-    if (o && !this.busy && Math.abs(o.def.x - this.tx) + Math.abs(o.def.y - this.ty) === 1) {
-      const dx = o.def.x - this.tx, dy = o.def.y - this.ty;
+    if (o && !this.busy && Math.abs(o.x - this.tx) + Math.abs(o.y - this.ty) === 1) {
+      const dx = o.x - this.tx, dy = o.y - this.ty;
       this.dir = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
       this.syncPlayerTexture();
       this.busy = true;
@@ -641,7 +698,7 @@ export class WorldScene extends Phaser.Scene {
       saveGame();
       return;
     }
-    if (res === 'run') return;
+    if (res === 'run') { const st = this.mons.get(o.def.id); if (st) stunMon(st); return; } // 撤退：這隻怪暫停幾步，讓孩子來得及走開
     await this.applyReward(def, o);
   }
 

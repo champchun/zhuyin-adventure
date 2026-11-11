@@ -106,6 +106,7 @@ await page.goto(URL);
 await page.waitForSelector('#screen .menu');
 await snap('title');
 await page.click('#screen [data-a=new]');
+await ev(() => { window.__game.G.settings.monstersMove = false; }); // 機器人用座標點擊走路：怪物不動，流程才穩定
 await page.waitForFunction(() => !document.querySelector('#screen .menu'));
 await pump(idle, 'intro');
 await snap('room-start');
