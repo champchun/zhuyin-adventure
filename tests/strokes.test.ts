@@ -3,6 +3,8 @@ import { STROKES } from '../src/data/strokes';
 import type { StrokePoint } from '../src/data/strokes';
 import { DENSE_STEP, SAMPLE_STEP, TOLERANCE, densify, sampleStroke, strokeDone, strokeProgress } from '../src/core/strokes';
 import { ALL_SYMBOLS } from '../src/data/symbols';
+import { MAPS } from '../src/data/maps';
+import { defaultSettings } from '../src/core/save';
 
 const BO: StrokePoint[] = STROKES['ㄅ'][0].points;
 const target = sampleStroke(BO);
@@ -82,5 +84,22 @@ describe('strokeProgress / strokeDone：判定 ㄅ', () => {
   it('手指移動很快、只有稀疏的幾個點（補點之後）仍可完成', () => {
     const sparse = BO.map(([x, y]) => ({ x, y }));
     expect(strokeDone(sparse, target)).toBe(true);
+  });
+});
+
+describe('寫字挑戰的資料', () => {
+  it('兩顆裂石都要求寫 ㄅ，且 ㄅ 有筆順資料', () => {
+    const rocks = Object.values(MAPS).flatMap((m) => m.objects.filter((o) => o.kind === 'rock').map((o) => ({ map: m.id, o })));
+    expect(rocks.map((r) => r.o.id).sort()).toEqual(['rock_a', 'rock_b']);
+    for (const { map, o } of rocks) {
+      expect(o.write, `${map}/${o.id}`).toBe('ㄅ');
+      expect(STROKES[o.write!], `${map}/${o.id}`).toBeDefined();
+    }
+  });
+  it('只有裂石會要求寫字（其他機關這次不動）', () => {
+    for (const m of Object.values(MAPS)) for (const o of m.objects) if (o.write) expect(o.kind, `${m.id}/${o.id}`).toBe('rock');
+  });
+  it('「寫字挑戰」設定預設開', () => {
+    expect(defaultSettings().writeChallenge).toBe(true);
   });
 });

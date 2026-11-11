@@ -41,6 +41,8 @@ export interface MapObj {
   ai?: 'patrol' | 'chase';
   /** monster：巡邏路線（不含起點，起點就是 x, y）；每一格要和前一格上下左右相鄰 */
   patrol?: { x: number; y: number }[];
+  /** rock：要先用手指照筆順寫出這個注音，才會出招打碎（要有 STROKES 資料） */
+  write?: string;
 }
 export interface MapDef {
   id: string;
@@ -203,7 +205,7 @@ export const MAPS: Record<string, MapDef> = {
       { id: 'chest_t', kind: 'chest', x: 8, y: 10, item: 'potion' },
       { id: 'dummy', kind: 'monster', x: 16, y: 11, battle: 'practice', showIf: 'starterChosen', hideIf: 'practiceDone' },
       { id: 'sign1', kind: 'sign', x: 10, y: 15, text: ['下面的圓門，每一扇都有一個注音符號。', '亮著的門可以進去冒險，灰色的門還在迷霧裡。', '門上的字是這一關要學的注音。'] },
-      { id: 'rock_a', kind: 'rock', x: 23, y: 4 },
+      { id: 'rock_a', kind: 'rock', x: 23, y: 4, write: 'ㄅ' },
       { id: 'chest_hidden', kind: 'chest', x: 23, y: 3, item: 'berry' },
       { id: 'bell', kind: 'bell', x: 21, y: 7 },
       { id: 'chest_bell', kind: 'chest', x: 22, y: 8, showIf: 'bellRung' },
@@ -233,7 +235,7 @@ MAPS.b = {
     { id: 'm2', kind: 'monster', x: 15, y: 12, battle: 'b2' },
     { id: 'chest_2', kind: 'chest', x: 18, y: 10, item: 'berry' },
     { id: 'm3', kind: 'monster', x: 16, y: 6, battle: 'b3' },
-    { id: 'rock_b', kind: 'rock', x: 10, y: 11 },
+    { id: 'rock_b', kind: 'rock', x: 10, y: 11, write: 'ㄅ' },
     { id: 'chest_rock', kind: 'chest', x: 3, y: 9 },
     { id: 'boss', kind: 'monster', x: 22, y: 4, battle: 'boss_b', hideIf: 'boss_b' },
     { id: 'chest_boss', kind: 'chest', x: 24, y: 3, showIf: 'boss_b' },

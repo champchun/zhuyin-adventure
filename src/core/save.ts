@@ -17,6 +17,8 @@ export interface Settings {
   speedBonus: boolean;
   /** 怪物會在地圖上走動（給比較小的孩子可以關掉） */
   monstersMove: boolean;
+  /** 要先用手指寫出注音，裂石才會被打碎（比較小的孩子可以關掉） */
+  writeChallenge: boolean;
   /** 家長手動選的語音（voiceURI）；空字串＝自動 */
   voiceURI: string;
 }
@@ -76,6 +78,7 @@ export const defaultSettings = (): Settings => ({
   experimentalSymbolTts: false,
   speedBonus: true,
   monstersMove: true,
+  writeChallenge: true,
   voiceURI: '',
 });
 export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assisted: 0, conf: {} });

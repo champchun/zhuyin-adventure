@@ -4,6 +4,9 @@ import { G, PARTY_MAX, buyItem, ensureVitals, expNeeded, flag, hasAbility, hasSa
 import { ITEMS, SPECIES } from '../data/monsters';
 import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
+import { STROKES } from '../data/strokes';
+import { sampleStroke, strokeDone } from './strokes';
+import type { Pt } from './strokes';
 import { PROMPT_LINES } from '../data/voiceLines';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -170,6 +173,101 @@ export function openWorldMap(dests: { id: string; name: string }[]): Promise<str
   });
 }
 
+/**
+ * 寫字：照著虛線描出注音（每一畫要依序經過關鍵點才算過）。
+ * 全部寫完回傳 true；按「先不要」回傳 false。沒有這個符號的筆順資料時不擋，直接回傳 true。
+ */
+export function openWriteSymbol(symbol: string): Promise<boolean> {
+  const strokes = STROKES[symbol];
+  if (!strokes?.length) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const SIZE = Math.max(220, Math.min(360, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.6)));
+    const m = openModal(`<h2>✍️ 寫出「${symbol}」</h2><p id="wmsg" style="min-height:1.5em">照著箭頭，從圓點開始描一描。</p>
+      <div style="display:flex;justify-content:center"><canvas id="writecv" width="${SIZE}" height="${SIZE}" style="width:${SIZE}px;height:${SIZE}px;touch-action:none;background:#fffaf0;border:4px solid var(--ink);border-radius:14px"></canvas></div>
+      <div class="foot" style="justify-content:center"><button class="btn small" data-a="no">先不要</button></div>`);
+    audio.speak(`照著箭頭，把${symbol}寫出來`);
+    const cv = m.querySelector<HTMLCanvasElement>('#writecv')!;
+    const ctx = cv.getContext('2d')!;
+    const msg = (t: string) => { m.querySelector('#wmsg')!.textContent = t; };
+    const px = (v: number) => (v / 100) * SIZE;
+    const targets = strokes.map((s) => sampleStroke(s.points));
+    let cur = 0; // 目前要寫第幾畫
+    let trail: Pt[] = [];
+    let drawing = false;
+    let closed = false;
+    const close = (ok: boolean) => { if (closed) return; closed = true; closeModal(); resolve(ok); };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      ctx.fillStyle = 'rgba(43,33,64,.10)'; ctx.font = `bold ${SIZE * 0.8}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(symbol, SIZE / 2, SIZE / 2 + SIZE * 0.04);
+      ctx.lineWidth = SIZE * 0.05; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      strokes.forEach((s, i) => {
+        const done = i < cur;
+        ctx.setLineDash(done ? [] : [SIZE * 0.02, SIZE * 0.035]);
+        ctx.strokeStyle = done ? '#2fa84f' : i === cur ? '#8a7aa8' : '#cfc6dd';
+        ctx.beginPath();
+        s.points.forEach(([x, y], k) => (k ? ctx.lineTo(px(x), px(y)) : ctx.moveTo(px(x), px(y))));
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      // 每一畫：起點圓點（含順序數字）與終點箭頭
+      strokes.forEach((s, i) => {
+        const [sx, sy] = s.points[0];
+        ctx.fillStyle = i < cur ? '#2fa84f' : '#ff8a3a';
+        ctx.beginPath(); ctx.arc(px(sx), px(sy), SIZE * 0.045, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = `bold ${SIZE * 0.06}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(i + 1), px(sx), px(sy) + 1);
+        const [ex, ey] = s.points[s.points.length - 1];
+        const [bx, by] = s.points[s.points.length - 2];
+        const ang = Math.atan2(ey - by, ex - bx);
+        const L = SIZE * 0.06;
+        ctx.fillStyle = i < cur ? '#2fa84f' : '#8a7aa8';
+        ctx.beginPath();
+        ctx.moveTo(px(ex) + Math.cos(ang) * L, px(ey) + Math.sin(ang) * L);
+        ctx.lineTo(px(ex) + Math.cos(ang + 2.5) * L, px(ey) + Math.sin(ang + 2.5) * L);
+        ctx.lineTo(px(ex) + Math.cos(ang - 2.5) * L, px(ey) + Math.sin(ang - 2.5) * L);
+        ctx.closePath(); ctx.fill();
+      });
+      // 孩子畫的線
+      if (trail.length > 1) {
+        ctx.strokeStyle = '#ff8a3a'; ctx.lineWidth = SIZE * 0.045;
+        ctx.beginPath();
+        trail.forEach((p, k) => (k ? ctx.lineTo(px(p.x), px(p.y)) : ctx.moveTo(px(p.x), px(p.y))));
+        ctx.stroke();
+      }
+    };
+
+    const toUnit = (e: PointerEvent): Pt => {
+      const r = cv.getBoundingClientRect();
+      return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 };
+    };
+    cv.onpointerdown = (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drawing = true; trail = [toUnit(e)]; draw(); };
+    cv.onpointermove = (e) => { if (!drawing) return; trail.push(toUnit(e)); draw(); };
+    const finish = () => {
+      if (!drawing) return;
+      drawing = false;
+      if (strokeDone(trail, targets[cur])) {
+        cur++; trail = [];
+        if (cur >= strokes.length) {
+          draw(); audio.sfx('correct'); msg('寫好了！');
+          m.querySelector<HTMLButtonElement>('[data-a=no]')!.disabled = true; // 已經寫完：不能再取消
+          setTimeout(() => close(true), G.settings.reduceMotion ? 350 : 700);
+          return;
+        }
+        audio.sfx('hint'); msg('好棒！換下一畫。');
+      } else {
+        trail = []; audio.sfx('wrong'); msg('再試一次，從圓點開始喔！');
+      }
+      draw();
+    };
+    cv.onpointerup = finish;
+    cv.onpointercancel = finish;
+    delegate(m, (a) => { if (a === 'no') { audio.sfx('tap'); audio.stopSpeech(); close(false); } });
+    draw();
+  });
+}
+
 // ───── 夥伴 ─────
 export function openParty(onChange?: () => void): Promise<void> {
   return new Promise((resolve) => {
@@ -272,6 +370,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="note">1＝看符號找一樣的（搭配聲音）；2＝聽聲音選符號（可要提示）；3＝混合複習。「依關卡」會隨冒險進度逐漸提高。</div>
     <div class="row">答得越快、攻擊越強（不顯示倒數，只有加成） ${sw('speedBonus', s.speedBonus)}</div>
     <div class="row">怪物會在地圖上走動（比較小的孩子可以關掉） ${sw('monstersMove', s.monstersMove)}</div>
+    <div class="row">用手指寫出注音才能打碎石頭（比較小的孩子可以關掉） ${sw('writeChallenge', s.writeChallenge)}</div>
     <div class="row">選項數量 ${seg('optionCount', ['auto', 2, 3], s.optionCount, ['自動', '2 個', '3 個'])}</div>
     <h3>學習紀錄</h3>
     <table class="stats"><tr><th>符號</th><th>獨立答對</th><th>協助後完成</th><th>答錯</th><th>提示</th></tr>${rows}</table>

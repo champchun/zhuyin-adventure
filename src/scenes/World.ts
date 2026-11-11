@@ -9,7 +9,7 @@ import {
   G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
-import { choose, openParty, openResults, openSettings, openShop, openWorldMap, say, setHudInfo, toast, ui } from '../core/ui';
+import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, dockSpot, markArrival, visitedHubs } from '../core/travel';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
@@ -418,6 +418,8 @@ export class WorldScene extends Phaser.Scene {
       case 'gate': return this.useGate(d);
       case 'rock':
         if (!hasAbility('blast')) return say(STORY.rockLocked);
+        // 要先用手指照筆順寫出注音才會出招；「先不要」就什麼都不發生（石頭還在）
+        if (d.write && G.settings.writeChallenge && !(await openWriteSymbol(d.write))) return;
         await this.breakRock(o);
         setFlag(`r:${m}:${d.id}`); this.refreshObjects();
         return say(STORY.rockBreak);
