@@ -61,6 +61,7 @@ describe('maps', () => {
       }
     });
     it(`${m.id}: 起點能走到所有一般物件旁`, () => {
+      if (m.group) return; // 迷宮樓層有鎖門、機關、裂石，由 tests/dungeon.test.ts 用模擬來驗證
       const solid = new Set(m.objects.map((o) => `${o.x},${o.y}`));
       const seen = reach(m.id, m.start, solid);
       const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog']);

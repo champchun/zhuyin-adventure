@@ -1,4 +1,5 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
+import { fromAscii } from './ascii';
 export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
@@ -293,6 +294,7 @@ MAPS.d = {
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
   objects: [
     { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'village', x: 10, y: 15 }, label: '回村' },
+    { id: 'cave', kind: 'stairs', x: 3, y: 3, to: { map: 'dc1', x: 2, y: 1 }, label: '洞窟', showIf: 'dPractice' },
     { id: 'sign1', kind: 'sign', x: 7, y: 16, text: ['舌尖中音島。', '這座島的注音，都是舌尖頂著上牙齦後面發出來的：ㄉ ㄊ ㄋ ㄌ。', '島上有大鼓、水花和泡泡，學會新招式，也許就能叫醒它們！'] },
     { id: 'dummy', kind: 'monster', x: 6, y: 14, battle: 'dpractice', hideIf: 'dPractice' },
     { id: 'chest_1', kind: 'chest', x: 8, y: 17, item: 'potion' },
@@ -312,6 +314,59 @@ MAPS.d = {
     { id: 'boss', kind: 'monster', x: 22, y: 4, battle: 'boss_d', hideIf: 'boss_d' },
     { id: 'chest_boss', kind: 'chest', x: 24, y: 3, showIf: 'boss_d' },
   ],
+};
+
+// ───────── 試煉洞窟：階段 3 的小迷宮示範（兩層）─────────
+// 文字圖：# 牆、. 地板、其他字元看圖例。每層 21×9。
+const DC1 = fromAscii([
+  '#####################',
+  '#<....##.....##.....#',
+  '#...................#',
+  '#.....##.....##.....#',
+  '###R######.######D###',
+  '#.....##.....##.....#',
+  '#.....##.....##.....#',
+  '#..C..##..K..##..>..#',
+  '#####################',
+], {
+  '<': { id: 'up', kind: 'stairs', to: { map: 'd', x: 3, y: 4 }, label: '出口' },
+  '>': { id: 'down', kind: 'stairs', to: { map: 'dc2', x: 2, y: 1 }, label: '往下' },
+  R: { id: 'rock_f', kind: 'rock' },
+  C: { id: 'chest_f', kind: 'chest', item: 'potion' },
+  K: { id: 'chest_key', kind: 'chest', item: 'key' },
+  D: { id: 'door', kind: 'lockdoor', lockText: ['門被鎖住了。', '要先找到小鑰匙。'] },
+});
+MAPS.dc1 = {
+  id: 'dc1', name: '試煉洞窟 1F', w: DC1.w, h: DC1.h, tiles: DC1.tiles, theme: 'valley', group: 'dc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: [...DC1.objects, { id: 'm1', kind: 'monster', x: 9, y: 1, battle: 'dc1m', ai: 'patrol', patrol: [{ x: 10, y: 1 }, { x: 11, y: 1 }] }],
+};
+const DC2 = fromAscii([
+  '#####################',
+  '#<....##.....##.....#',
+  '#...................#',
+  '#.....##...H.##..W..#',
+  '##########B##########',
+  '########.....########',
+  '########.....########',
+  '########..C..########',
+  '#####################',
+], {
+  '<': { id: 'up', kind: 'stairs', to: { map: 'dc1', x: 17, y: 6 }, label: '回 1 樓' },
+  H: { id: 'm2', kind: 'monster', battle: 'dc2m', ai: 'chase' },
+  W: {
+    id: 'switch1', kind: 'gimmick', sprite: 'drum_big', ability: 'drum', fx: 'drum',
+    lockText: ['一面大鼓。', '用「ㄉ」的力氣敲下去，也許會有回音……'],
+    hitText: ['夥伴舌尖一彈「ㄉ」，大鼓「咚！」地響了！', '遠處傳來「轟隆」一聲，好像有一道牆打開了！'],
+    doneText: ['大鼓還在「咚咚」地輕輕回響。'],
+  },
+  B: { id: 'barrier1', kind: 'barrier', hideIf: 'g:dc2:switch1', lockText: ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'] },
+  C: { id: 'chest_berry', kind: 'chest', item: 'berry' },
+});
+MAPS.dc2 = {
+  id: 'dc2', name: '試煉洞窟 2F', w: DC2.w, h: DC2.h, tiles: DC2.tiles, theme: 'valley', group: 'dc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: DC2.objects,
 };
 
 export const TILE_KEY: Record<string, string> = {

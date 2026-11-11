@@ -121,7 +121,7 @@ describe('招式互動物件要寫的注音（由招式自動決定）', () => {
         count++;
       }
     }
-    expect(count).toBe(10); // 裂石 2、落葉、風車、鈴鐺、迷霧，加上島上 4 個機關物件
+    expect(count).toBe(12); // 裂石 2、落葉、風車、鈴鐺、迷霧，加上島上 4 個機關物件，再加洞窟的裂石與機關開關各 1
   });
   it('木門、告示牌、NPC 等不是招式互動物件：沒有對應招式', () => {
     for (const k of ['woodgate', 'sign', 'npc', 'chest', 'monster', 'dock'] as const) {

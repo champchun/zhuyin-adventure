@@ -6,6 +6,7 @@ import { shouldRespawn } from '../src/core/travel';
 import { fromAscii } from '../src/data/ascii';
 import type { Legend } from '../src/data/ascii';
 import { reachReport } from '../src/core/dungeon';
+import { BATTLES } from '../src/data/levels';
 
 describe('小鑰匙', () => {
   it('是不能買、不能在戰鬥中使用的道具', () => {
@@ -146,5 +147,70 @@ describe('reachReport：迷宮驗證', () => {
   it('入口的地圖不在 floors 裡：丟出清楚的錯誤', () => {
     const f = floor('t', ['###', '#.#', '###']);
     expect(() => reachReport([f], at('nope', 1, 1), [])).toThrow('nope');
+  });
+});
+
+describe('示範洞窟（舌尖中音島的小迷宮）', () => {
+  const dc1 = MAPS.dc1, dc2 = MAPS.dc2;
+  it('兩層都存在、屬於同一個洞窟，島上有入口、兩層之間與回島的樓梯都對得上', () => {
+    expect(dc1).toBeDefined();
+    expect(dc2).toBeDefined();
+    expect(dc1.group).toBe('dc');
+    expect(dc2.group).toBe('dc');
+    const cave = MAPS.d.objects.find((o) => o.id === 'cave')!;
+    expect(cave.kind).toBe('stairs');
+    expect(cave.showIf).toBe('dPractice');
+    expect(cave.to).toEqual({ map: 'dc1', x: 2, y: 1 });
+    expect(dc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('dc2');
+    expect(dc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('dc1');
+    expect(dc1.objects.find((o) => o.id === 'up')!.to!.map).toBe('d');
+  });
+  it('學會爆破拳和擊鼓拳之後：每個地方、每個物件都走得到，鑰匙剛好用完', () => {
+    const r = reachReport([dc1, dc2], { map: 'dc1', x: 2, y: 1 }, ['blast', 'drum']);
+    expect(r.unreachableFloor, r.unreachableFloor.join(' ')).toEqual([]);
+    expect(r.unreachableObjects, r.unreachableObjects.join(' ')).toEqual([]);
+    expect(r.keysLeft).toBe(0);
+  });
+  it('缺爆破拳：隱藏房間走不到；缺擊鼓拳：寶藏房走不到（證明這兩個元素真的有擋路）', () => {
+    const noBlast = reachReport([dc1, dc2], { map: 'dc1', x: 2, y: 1 }, ['drum']);
+    expect(noBlast.unreachableObjects).toContain('dc1/chest_f');
+    const noDrum = reachReport([dc1, dc2], { map: 'dc1', x: 2, y: 1 }, ['blast']);
+    expect(noDrum.unreachableObjects).toContain('dc2/chest_berry');
+  });
+  it('洞窟的怪物有自己的戰鬥與旗標，不會和島上的怪物共用', () => {
+    const ms = [...dc1.objects, ...dc2.objects].filter((o) => o.kind === 'monster');
+    expect(ms.length).toBeGreaterThanOrEqual(2);
+    const flags = ms.map((o) => `m:${o.id === 'm1' ? 'dc1' : 'dc2'}:${o.id}`);
+    for (const o of ms) {
+      const b = BATTLES[o.battle!];
+      expect(b, o.id).toBeDefined();
+      expect(b.reward.flag.startsWith('m:dc'), `${o.id} 的旗標 ${b.reward.flag}`).toBe(true);
+    }
+    expect(new Set(flags).size).toBe(flags.length);
+  });
+  it('一隻巡邏、一隻追擊', () => {
+    expect(dc1.objects.find((o) => o.id === 'm1')!.ai).toBe('patrol');
+    expect(dc2.objects.find((o) => o.id === 'm2')!.ai).toBe('chase');
+  });
+  it('所有地圖的樓梯都通到存在的地圖', () => {
+    for (const m of Object.values(MAPS)) {
+      for (const o of m.objects.filter((o) => o.kind === 'stairs')) {
+        expect(o.to, `${m.id}/${o.id}`).toBeDefined();
+        expect(MAPS[o.to!.map], `${m.id}/${o.id} -> ${o.to!.map}`).toBeDefined();
+      }
+    }
+  });
+  it('鎖門與擋路石牆的 lockText 不是空陣列（空陣列會讓輸入鎖死）', () => {
+    for (const m of Object.values(MAPS)) {
+      for (const o of m.objects.filter((o) => o.kind === 'lockdoor' || o.kind === 'barrier')) {
+        if (o.lockText !== undefined) expect(o.lockText.length, `${m.id}/${o.id}`).toBeGreaterThan(0);
+      }
+    }
+  });
+  it('洞窟兩層的物件 id 在各自樓層內不重複', () => {
+    for (const m of [dc1, dc2]) {
+      const ids = m.objects.map((o) => o.id);
+      expect(new Set(ids).size, `${m.id}`).toBe(ids.length);
+    }
   });
 });
