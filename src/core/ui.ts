@@ -448,7 +448,7 @@ export function openResults(): Promise<'continue' | 'replay'> {
       新能力：${G.save.abilities.map((a) => (({ blast: '爆破拳', gust: '噴風', hum: '哼哼波', fog: '吹霧' } as Record<string, string>)[a] ?? a)).join('、') || '無'}<br>
       ⭐ 星星：${G.save.stars}　獨立答對：${firsts} 次<br>
       已完成：第0關 唇音（ㄅㄆㄇㄈ）</div>
-      <p class="note">村莊裡還有鈴鐺和迷霧小屋，等著你再回來探險！<br>村子下面第四扇圓門亮了，舌尖中音島（ㄉㄊㄋㄌ）已經開放！</p>
+      <p class="note">村莊裡還有鈴鐺和迷霧小屋，等著你再回來探險！<br>池塘邊的碼頭出現了，搭船就能去舌尖中音島（ㄉㄊㄋㄌ）！</p>
       <div class="foot" style="justify-content:center"><button class="btn green" data-a="go">繼續探索</button>
       <button class="btn small" data-a="replay">重玩草原</button></div></div>`);
     delegate(m, (a) => { closeModal(); resolve(a === 'replay' ? 'replay' : 'continue'); });
