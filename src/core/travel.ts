@@ -29,6 +29,7 @@ export function markArrival(save: { flags: Record<string, boolean>; homeMap?: st
   if (!m.hub) return;
   save.flags[`visited:${m.id}`] = true;
   save.homeMap = m.id;
+  if (m.hub.opensDock) save.flags.dockOpen = true; // 到了這座主島，起始村的碼頭才會出現
 }
 
 /** 換地圖時，要不要讓已經打倒的野生怪重生：同一個洞窟（group 相同）的樓層之間不重生，從外面進來才重生。 */

@@ -1,6 +1,6 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
 import { fromAscii } from './ascii';
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
 export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
@@ -42,6 +42,8 @@ export interface MapObj {
   ai?: 'patrol' | 'chase';
   /** monster：巡邏路線（不含起點，起點就是 x, y）；每一格要和前一格上下左右相鄰 */
   patrol?: { x: number; y: number }[];
+  /** innkeeper：住一晚要多少金幣 */
+  price?: number;
 }
 export interface MapDef {
   id: string;
@@ -55,7 +57,7 @@ export interface MapDef {
   /** 戰敗後恢復的位置 */
   respawn: { x: number; y: number };
   /** 主島：有碼頭可以搭船。dock＝搭船抵達時落腳的格子；defeat＝被打倒時改送去別的地方（例如起始村送回自己的房間） */
-  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number } };
+  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; /** 第一次到這座主島，起始村的碼頭才會出現 */ opensDock?: boolean };
   /** 迷宮：同一個洞窟的各樓層設成同一個 group；樓層之間走動，野生怪不會重生（從外面進來才重生） */
   group?: string;
 }
