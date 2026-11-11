@@ -12,6 +12,7 @@ import {
 import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, dockSpot, markArrival, respawnMapIds, shouldRespawn, visitedHubs } from '../core/travel';
+import { stayOutcome } from '../core/inn';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
@@ -185,7 +186,8 @@ export class WorldScene extends Phaser.Scene {
         this.tweens.add({ targets: target, y: target.y - amp, duration: dur + Math.random() * 200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       };
       switch (def.kind) {
-        case 'npc': shadow(); spr = this.add.image(px + 8, py + 16, def.sprite ?? 'npc_guide').setOrigin(0.5, 1).setDepth(depth); bob(spr); break;
+        case 'npc':
+        case 'innkeeper': shadow(); spr = this.add.image(px + 8, py + 16, def.sprite ?? 'npc_guide').setOrigin(0.5, 1).setDepth(depth); bob(spr); break;
         case 'chest': spr = this.add.image(px, py, flag(`c:${m.id}:${def.id}`) ? 'chest_open' : 'chest').setOrigin(0).setDepth(depth); break;
         case 'rock': spr = this.add.image(px, py, 'rock').setOrigin(0).setDepth(depth); break;
         case 'leaves': spr = this.add.image(px, py, 'leaves').setOrigin(0).setDepth(depth); break;
@@ -411,6 +413,7 @@ export class WorldScene extends Phaser.Scene {
     const m = this.map.id;
     switch (d.kind) {
       case 'npc': return d.id === 'doctor' ? this.talkGuide() : d.id === 'clerk' ? this.talkClerk(d) : this.talkNpc(d);
+      case 'innkeeper': return this.useInn(d);
       case 'sign': return say((d.text ?? []).map((t) => ({ who: d.sprite === 'desk' ? '書桌' : '告示牌', text: t })));
       case 'chest': return this.openChest(o);
       case 'bed': return this.sleepInBed();
@@ -529,6 +532,23 @@ export class WorldScene extends Phaser.Scene {
     if (!v) return;
     await say(v.lines.map((text) => ({ who: d.label, text })));
     if (v.set) { setFlag(v.set); saveGame(); }
+  }
+
+  /** 旅館：付錢住一晚，夥伴 HP／魔力回滿並存檔。金幣不夠就不能住（搭船回起始村睡覺是免費的），也不扣錢。 */
+  private async useInn(d: MapObj) {
+    const who = d.label ?? '旅館老闆';
+    const price = d.price ?? 25;
+    await say(STORY.innHello.map((text) => ({ who, text })));
+    const stay = stayOutcome(G.save.coins, price);
+    if (!stay.ok) {
+      await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！碼頭的小船可以載你回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
+      return;
+    }
+    const i = await choose(`住一晚要 ${price} 金幣？`, `夥伴的 HP 和魔力都會回滿，還會幫你存檔。你有 ${G.save.coins} 枚金幣。`, ['住一晚 💤', '先不要']);
+    if (i !== 0) return;
+    G.save.coins = stay.coinsAfter;
+    await this.rest(); // 淡出、全部回滿、存檔
+    await say(STORY.innBye.map((text) => ({ who, text })));
   }
 
   /** 店員：打招呼後開商店 */
