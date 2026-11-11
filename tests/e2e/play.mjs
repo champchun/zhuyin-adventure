@@ -6,8 +6,9 @@ import fs from 'node:fs';
 const URL = process.argv[2] ?? 'http://127.0.0.1:5173/';
 const OUT = process.argv[3] ?? './e2e-shots';
 fs.mkdirSync(OUT, { recursive: true });
-const exe = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find((p) => fs.existsSync(p));
-const browser = await chromium.launch({ executablePath: exe, headless: true, args: ['--disable-gpu', '--disable-dev-shm-usage', '--js-flags=--max-old-space-size=1024'] });
+// 瀏覽器：環境變數 E2E_BROWSER 指定 > 本機的 Edge／Chrome > Playwright 自己下載的 Chromium（GitHub Actions 上用這個）
+const exe = process.env.E2E_BROWSER ?? ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find((p) => fs.existsSync(p));
+const browser = await chromium.launch({ executablePath: exe, headless: true, args: ['--disable-gpu', '--disable-dev-shm-usage', '--js-flags=--max-old-space-size=1024', ...(process.env.CI ? ['--no-sandbox'] : [])] });
 const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, hasTouch: false });
 const page = await ctx.newPage();
 const errors = [];
