@@ -266,6 +266,12 @@ export function generateTextures(scene: Phaser.Scene) {
     for (let i = 0; i < 4; i++) { px(c, '#2b2140', 1, 2 + i * 3, 14, 4); px(c, i % 2 ? '#8b5a3c' : '#b9824f', 2, 3 + i * 3, 12, 2); px(c, '#d9a26a', 2, 3 + i * 3, 12, 1); }
   });
   make('drop', 4, 5, (c) => { px(c, '#bfe6ff', 1, 0, 2, 1); px(c, '#4aa8f0', 0, 1, 4, 3); px(c, '#2f7ad0', 1, 4, 2, 1); px(c, '#ffffff', 1, 1, 1, 1); });
+  make('dock', 16, 16, (c) => {
+    px(c, '#4aa8f0', 0, 0, 16, 16); px(c, '#8ad0ff', 2, 3, 4, 1); px(c, '#8ad0ff', 10, 13, 4, 1);
+    px(c, '#2b2140', 0, 5, 16, 7); px(c, '#b9824f', 0, 6, 16, 5); px(c, '#d9a26a', 0, 6, 16, 1);
+    for (let x = 3; x < 16; x += 4) px(c, '#8b5a3c', x, 6, 1, 5);
+    px(c, '#2b2140', 2, 1, 5, 4); px(c, '#e8514a', 3, 2, 3, 2); px(c, '#ffffff', 11, 1, 1, 5); px(c, '#ffffff', 11, 1, 4, 3);
+  });
   make('bell', 16, 16, (c) => {
     px(c, '#2b2140', 7, 1, 2, 3); px(c, '#2b2140', 4, 3, 8, 9); px(c, '#2b2140', 3, 10, 10, 3);
     px(c, '#ffd84a', 5, 4, 6, 8); px(c, '#ffd84a', 4, 10, 8, 2); px(c, '#fff3b0', 5, 5, 2, 5);

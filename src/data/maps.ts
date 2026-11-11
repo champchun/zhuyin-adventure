@@ -163,7 +163,9 @@ export const MAPS: Record<string, MapDef> = {
   village: {
     id: 'village', name: '起始村', w: 28, h: 20, tiles: village.rows(), theme: 'village',
     start: { x: 5, y: 4 }, respawn: { x: 5, y: 4 },
+    hub: { dock: { x: 20, y: 11 }, defeat: { map: 'room', x: 2, y: 3 } },
     objects: [
+      { id: 'dock', kind: 'dock', x: 21, y: 11, showIf: 'dockOpen' },
       { id: 'door_home', kind: 'door', x: 5, y: 3, to: { map: 'room', x: 5, y: 6 } },
       { id: 'door_lab', kind: 'door', x: 14, y: 3, to: { map: 'lab', x: 5, y: 7 } },
       { id: 'door_shop', kind: 'door', x: 19, y: 14, to: { map: 'shop', x: 4, y: 6 } },

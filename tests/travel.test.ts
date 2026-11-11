@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAPS } from '../src/data/maps';
+import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import type { MapDef } from '../src/data/maps';
 import { defeatSpot, dockSpot, markArrival, visitedHubs } from '../src/core/travel';
 
@@ -57,5 +57,28 @@ describe('markArrival：進入地圖時記錄', () => {
     markArrival(save, fakes.cave);
     expect(save.flags).toEqual({});
     expect(save.homeMap).toBe('isleA');
+  });
+});
+
+describe('起始村是主島，第 0 關的行為不變', () => {
+  const v = MAPS.village;
+  it('有 hub 設定，被打倒仍然送回自己的房間', () => {
+    expect(v.hub).toBeDefined();
+    expect(defeatSpot('village')).toEqual({ map: 'room', x: 2, y: 3 });
+    expect(MAPS.room).toBeDefined();
+    expect(BLOCKED_TILES.has(MAPS.room.tiles[3][2])).toBe(false);
+  });
+  it('碼頭落腳點是可以走的格子，且碼頭物件就在它旁邊', () => {
+    const d = v.hub!.dock;
+    expect(BLOCKED_TILES.has(v.tiles[d.y][d.x])).toBe(false);
+    const dock = v.objects.find((o) => o.kind === 'dock')!;
+    expect(dock).toBeDefined();
+    expect(Math.abs(dock.x - d.x) + Math.abs(dock.y - d.y)).toBe(1);
+  });
+  it('碼頭預設看不到（階段 4 才會打開 dockOpen 旗標），所以第 0 關看起來沒變', () => {
+    expect(v.objects.find((o) => o.kind === 'dock')!.showIf).toBe('dockOpen');
+  });
+  it('dockSpot 指向起始村的碼頭旁', () => {
+    expect(dockSpot(v)).toEqual({ map: 'village', x: v.hub!.dock.x, y: v.hub!.dock.y });
   });
 });
