@@ -12,7 +12,7 @@ export interface LevelDef {
 export const LEVELS: Record<string, LevelDef> = {
   b: { id: 'b', symbol: 'ㄇㄈ', name: '村外小徑', open: true, mapId: 'b', partner: '夥伴' },
   p: { id: 'p', symbol: '霧', name: '風車草原', open: true, mapId: 'p', partner: '夥伴' },
-  d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'd', partner: '夥伴' },
+  d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'dh', partner: '夥伴' },
   g: { id: 'g', symbol: 'ㄍ', name: '舌根音島（回音洞窟）', open: false, partner: '（蝙蝠王嗡嗡）' },
 };
 
