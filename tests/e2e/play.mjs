@@ -155,7 +155,8 @@ if (!(await save()).abilities.includes('blast') || !(await save()).abilities.inc
 log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
 // ───── 寫字施法：開啟寫字挑戰，用滑鼠依筆順描出 ㄅ，石頭才會碎 ─────
 await ev(() => { window.__game.G.settings.writeChallenge = true; });
-await tapTile(23, 4); // 走到石頭旁並點它。不能用 doTap：寫字畫布開著時不會自己結束，doTap 會一直等
+await doTap(23, 5, '走到裂石前'); // 石頭在牆缺口 (23,4)，可走的前一格是 (23,5)；此時還沒開寫字畫布，doTap 安全
+await tapTile(23, 4); // 點石頭本身。不能用 doTap：寫字畫布開著時不會自己結束，doTap 會一直等
 await page.waitForSelector('#writecv');
 await snap('write-overlay');
 const box = await page.locator('#writecv').boundingBox();
@@ -163,6 +164,7 @@ const BO = [[31, 14], [19, 40], [78, 31], [76, 50], [66, 72], [55, 86], [49, 87]
 const at = ([x, y]) => [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height];
 // 先故意寫錯（隨便劃一條短線）：畫布不該關閉，也不該打碎石頭
 await page.mouse.move(...at([20, 80])); await page.mouse.down(); await page.mouse.move(...at([30, 85])); await page.mouse.up();
+await sleep(400); // 給延遲關閉留時間，確認畫布真的還開著
 if (!(await page.locator('#writecv').count())) throw new Error('寫錯了畫布不該關閉');
 if ((await flags())['r:village:rock_a']) throw new Error('寫錯了石頭不該碎');
 // 再照筆順描一次
