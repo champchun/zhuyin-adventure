@@ -356,7 +356,8 @@ export class WorldScene extends Phaser.Scene {
     if (this.moving) return;
     this.moving = true;
     let contact: Obj | undefined;
-    while (this.queue.length && !this.busy) {
+    try { // 迴圈中任何例外都要放開 moving，免得地圖輸入鎖死（內文刻意不縮排，保持 diff 小）
+    while (this.queue.length && !this.busy && !ui.blocking) { // 彈窗開著時暫停走路與怪物回合
       const n = this.queue.shift()!;
       if (!this.walkable(n.x, n.y)) { this.queue = []; break; }
       const dx = n.x - this.tx, dy = n.y - this.ty;
@@ -376,7 +377,8 @@ export class WorldScene extends Phaser.Scene {
       if (++this.stepCount % 25 === 0) saveGame();
       if (turn.contact) { contact = turn.contact; this.queue = []; break; } // 碰到怪物：停下來，準備開戰
     }
-    this.moving = false;
+    } finally { this.moving = false; }
+    if (ui.blocking) this.queue = []; // 因彈窗而停下：丟掉剩下的路徑，不要之後默默繼續走
     if (contact && !this.busy) {
       this.pending = undefined;
       this.busy = true;
