@@ -381,7 +381,7 @@ export async function openSettings(onReset?: () => void): Promise<void> {
     <div class="note">1＝看符號找一樣的（搭配聲音）；2＝聽聲音選符號（可要提示）；3＝混合複習。「依關卡」會隨冒險進度逐漸提高。</div>
     <div class="row">答得越快、攻擊越強（不顯示倒數，只有加成） ${sw('speedBonus', s.speedBonus)}</div>
     <div class="row">怪物會在地圖上走動（比較小的孩子可以關掉） ${sw('monstersMove', s.monstersMove)}</div>
-    <div class="row">用手指寫出注音才能打碎石頭（比較小的孩子可以關掉） ${sw('writeChallenge', s.writeChallenge)}</div>
+    <div class="row">用手指寫出注音才能使用招式機關（比較小的孩子可以關掉） ${sw('writeChallenge', s.writeChallenge)}</div>
     <div class="row">選項數量 ${seg('optionCount', ['auto', 2, 3], s.optionCount, ['自動', '2 個', '3 個'])}</div>
     <h3>學習紀錄</h3>
     <table class="stats"><tr><th>符號</th><th>獨立答對</th><th>協助後完成</th><th>答錯</th><th>提示</th></tr>${rows}</table>

@@ -82,6 +82,10 @@ export const SPECIES: Record<string, SpeciesDef> = {
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
+/** 這個招式能力綁定的注音（用來決定要寫哪個字）；沒有綁定就是 undefined */
+export function castSymbol(ability: string): string | undefined {
+  return Object.values(MOVES).find((m) => m.needAbility === ability)?.symbol;
+}
 /** 博士桌上的三隻初始夥伴 */
 export const STARTERS = ['bobo', 'momo', 'popo'];
 

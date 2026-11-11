@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
-import { BLOCKED_TILES, MAPS, TILE_KEY } from '../data/maps';
+import { BLOCKED_TILES, MAPS, TILE_KEY, abilityOf } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
 import { BATTLES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
-import { ENEMIES, ITEMS, SPECIES } from '../data/monsters';
+import { ENEMIES, ITEMS, SPECIES, castSymbol } from '../data/monsters';
+import { STROKES } from '../data/strokes';
 import {
   G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, saveGame, setFlag, spriteOf,
 } from '../core/save';
@@ -418,13 +419,13 @@ export class WorldScene extends Phaser.Scene {
       case 'gate': return this.useGate(d);
       case 'rock':
         if (!hasAbility('blast')) return say(STORY.rockLocked);
-        // 要先用手指照筆順寫出注音才會出招；「先不要」就什麼都不發生（石頭還在）
-        if (d.write && G.settings.writeChallenge && !(await openWriteSymbol(d.write))) return;
+        if (!(await this.castWrite(d))) return; // 要先用手指照筆順寫出注音才會出招；「先不要」就什麼都不發生（石頭還在）
         await this.breakRock(o);
         setFlag(`r:${m}:${d.id}`); this.refreshObjects();
         return say(STORY.rockBreak);
       case 'leaves':
         if (!hasAbility('gust')) return say(STORY.leavesLocked);
+        if (!(await this.castWrite(d))) return;
         audio.sfx('wind');
         await this.windPuff(o.spr.x + 8, o.spr.y + 8, 0xe8883a);
         setFlag(`l:${m}:${d.id}`); this.refreshObjects();
@@ -432,6 +433,7 @@ export class WorldScene extends Phaser.Scene {
       case 'windmill':
         if (flag('windmillOn')) return say([PROMPT_LINES.windmillOn]);
         if (!hasAbility('gust')) return say(STORY.windLocked);
+        if (!(await this.castWrite(d))) return;
         audio.sfx('wind');
         await this.windPuff(o.spr.x + 8, o.spr.y - 12, 0xffffff);
         setFlag('windmillOn'); this.refreshObjects();
@@ -440,12 +442,14 @@ export class WorldScene extends Phaser.Scene {
       case 'bell':
         if (flag('bellRung')) return say(STORY.bellDone);
         if (!hasAbility('hum')) return say(STORY.bellLocked);
+        if (!(await this.castWrite(d))) return;
         audio.sfx('chest');
         await this.ripple(o.spr.x + 8, o.spr.y + 8);
         setFlag('bellRung'); this.refreshObjects();
         return say(STORY.bellRing);
       case 'fog':
         if (!hasAbility('fog')) return say(STORY.fogLocked);
+        if (!(await this.castWrite(d))) return;
         audio.sfx('wind');
         await this.windPuff(o.spr.x + 8, o.spr.y + 8, 0xffffff);
         setFlag(`f:${m}:${d.id}`); this.refreshObjects();
@@ -467,10 +471,22 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 用招式啟動的機關（大鼓、乾花、泡泡球、小水壩…）：沒學會招式只會提示，學會了就會有特效，並可能冒出寶箱 */
+  /**
+   * 用招式之前先寫字：設定開、而且這個招式綁定的注音有筆順資料時，要先用手指寫出來。
+   * 回傳 false（按了「先不要」）就什麼都不發生。要寫哪個字由招式決定：物件需要的招式 → 綁定的注音。
+   */
+  private async castWrite(d: MapObj): Promise<boolean> {
+    if (!G.settings.writeChallenge) return true;
+    const ability = abilityOf(d);
+    const symbol = ability ? castSymbol(ability) : undefined;
+    if (!symbol || !STROKES[symbol]) return true;
+    return openWriteSymbol(symbol);
+  }
   private async useGimmick(o: Obj) {
     const d = o.def, key = `g:${this.map.id}:${d.id}`;
     if (flag(key)) return say((d.doneText ?? ['已經完成囉！']).map((text) => ({ text })));
     if (!hasAbility(d.ability!)) return say((d.lockText ?? []).map((text) => ({ text })));
+    if (!(await this.castWrite(d))) return;
     await this.gimmickFx(d.fx!, o.spr.x + 8, o.spr.y + 8);
     setFlag(key); this.refreshObjects();
     audio.sfx('chest');

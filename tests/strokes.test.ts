@@ -3,7 +3,8 @@ import { STROKES } from '../src/data/strokes';
 import type { StrokePoint } from '../src/data/strokes';
 import { DENSE_STEP, SAMPLE_STEP, TOLERANCE, densify, sampleStroke, strokeDone, strokeProgress } from '../src/core/strokes';
 import { ALL_SYMBOLS } from '../src/data/symbols';
-import { MAPS } from '../src/data/maps';
+import { MAPS, abilityOf } from '../src/data/maps';
+import { MOVES, castSymbol } from '../src/data/monsters';
 import { defaultSettings } from '../src/core/save';
 
 const BO: StrokePoint[] = STROKES['ㄅ'][0].points;
@@ -87,17 +88,45 @@ describe('strokeProgress / strokeDone：判定 ㄅ', () => {
   });
 });
 
-describe('寫字挑戰的資料', () => {
-  it('兩顆裂石都要求寫 ㄅ，且 ㄅ 有筆順資料', () => {
-    const rocks = Object.values(MAPS).flatMap((m) => m.objects.filter((o) => o.kind === 'rock').map((o) => ({ map: m.id, o })));
-    expect(rocks.map((r) => r.o.id).sort()).toEqual(['rock_a', 'rock_b']);
-    for (const { map, o } of rocks) {
-      expect(o.write, `${map}/${o.id}`).toBe('ㄅ');
-      expect(STROKES[o.write!], `${map}/${o.id}`).toBeDefined();
+describe('招式互動物件要寫的注音（由招式自動決定）', () => {
+  it('castSymbol：每一招綁定的注音', () => {
+    expect(castSymbol('blast')).toBe('ㄅ');
+    expect(castSymbol('gust')).toBe('ㄆ');
+    expect(castSymbol('hum')).toBe('ㄇ');
+    expect(castSymbol('fog')).toBe('ㄈ');
+    expect(castSymbol('drum')).toBe('ㄉ');
+    expect(castSymbol('splash')).toBe('ㄊ');
+    expect(castSymbol('nasal')).toBe('ㄋ');
+    expect(castSymbol('stream')).toBe('ㄌ');
+    expect(castSymbol('nope')).toBeUndefined();
+  });
+  it('每個需要能力的招式，綁定的注音都有筆順資料', () => {
+    for (const m of Object.values(MOVES)) {
+      if (!m.needAbility) continue;
+      const s = castSymbol(m.needAbility);
+      expect(s, m.id).toBeDefined();
+      expect(STROKES[s!], `${m.id} → ${s}`).toBeDefined();
     }
   });
-  it('只有裂石會要求寫字（其他機關這次不動）', () => {
-    for (const m of Object.values(MAPS)) for (const o of m.objects) if (o.write) expect(o.kind, `${m.id}/${o.id}`).toBe('rock');
+  it('每個招式互動物件都對得上一個有筆順資料的注音', () => {
+    const kinds = ['rock', 'leaves', 'windmill', 'bell', 'fog', 'gimmick'];
+    let count = 0;
+    for (const m of Object.values(MAPS)) {
+      for (const o of m.objects.filter((x) => kinds.includes(x.kind))) {
+        const ab = abilityOf(o);
+        expect(ab, `${m.id}/${o.id}`).toBeDefined();
+        const s = castSymbol(ab!);
+        expect(s, `${m.id}/${o.id}`).toBeDefined();
+        expect(STROKES[s!], `${m.id}/${o.id} → ${s}`).toBeDefined();
+        count++;
+      }
+    }
+    expect(count).toBeGreaterThanOrEqual(9); // 裂石 2、落葉、風車、鈴鐺、迷霧，加上島上 4 個機關物件
+  });
+  it('木門、告示牌、NPC 等不是招式互動物件：沒有對應招式', () => {
+    for (const k of ['woodgate', 'sign', 'npc', 'chest', 'monster', 'dock'] as const) {
+      expect(abilityOf({ id: 'x', kind: k, x: 0, y: 0 }), k).toBeUndefined();
+    }
   });
   it('「寫字挑戰」設定預設開', () => {
     expect(defaultSettings().writeChallenge).toBe(true);

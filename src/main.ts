@@ -3,7 +3,8 @@ import './style.css';
 import { VIEW_H, VIEW_W, computeFit, computeZoom, view } from './core/view';
 import { G, hasSave, loadGame, loadSettings, saveGame, startNewGame } from './core/save';
 import { audio } from './core/audio';
-import { applyBodyClasses, hooks, openSettings, setupHud, showHud, showTitle, ui } from './core/ui';
+import { applyBodyClasses, hooks, openSettings, openWriteSymbol, setupHud, showHud, showTitle, ui } from './core/ui';
+import { STROKES } from './data/strokes';
 import { generateTextures } from './gfx/sprites';
 import { WorldScene } from './scenes/World';
 import { BattleScene } from './scenes/Battle';
@@ -105,4 +106,5 @@ async function flow() {
 flow();
 
 // 供除錯與自動化測試使用
-(window as any).__game = { game, G, audio, world, ui, hasSave };
+// writeSymbol('ㄊ')：直接開那個注音的寫字畫布（檢查筆順用）；STROKES：筆順資料（端對端測試用它產生滑鼠軌跡）
+(window as any).__game = { game, G, audio, world, ui, hasSave, writeSymbol: openWriteSymbol, STROKES };
