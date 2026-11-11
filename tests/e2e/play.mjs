@@ -291,8 +291,27 @@ log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭
 await doTap(4, 18, '回村');
 
 // ───── 舌尖中音島（ㄉㄊㄋㄌ）─────
-await doTap(10, 17, '第四扇圓門（舌尖中音島）');
-if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島');
+await doTap(10, 17, '第四扇圓門（主島鼓聲港）');
+if ((await save()).mapId !== 'dh') throw new Error('沒有進入主島鼓聲港');
+f = await flags();
+if (!f['visited:dh'] || !f.dockOpen) throw new Error('到主島後應該記下去過、並開放起始村的碼頭 ' + JSON.stringify(f));
+await snap('hub');
+// 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+await doTap(6, 3, '旅館的門');
+if ((await save()).mapId !== 'dh_inn') throw new Error('沒有進入旅館');
+await doTap(6, 3, '旅館老闆（金幣不夠）');
+let inn = await save();
+if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+await ev(() => { window.__game.G.save.coins = 100; });
+await doTap(6, 3, '旅館老闆（住一晚）'); // choose() 彈窗由 pump 自動選第一個選項「住一晚」
+inn = await save();
+if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+log('✓ 主島旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+await doTap(4, 7, '離開旅館');
+if ((await save()).mapId !== 'dh') throw new Error('沒有走出旅館');
+await doTap(2, 10, '通往怪物島的出口');
+if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島（怪物島）');
 f = await flags();
 if (!f.dEntered) throw new Error('進島後應該開始教 ㄉㄊ');
 await snap('island');
@@ -348,8 +367,10 @@ if ((await save()).mapId !== 'dc1') throw new Error('沒有回到洞窟 1 樓');
 await doTap(1, 1, '回島的樓梯');
 if ((await save()).mapId !== 'd') throw new Error('沒有走回舌尖中音島');
 log('✓ 洞窟：樓層之間來回、走回島上');
-await doTap(4, 18, '回村');
-if ((await save()).mapId !== 'village') throw new Error('沒有從島回到村子');
+await doTap(4, 18, '回主島');
+if ((await save()).mapId !== 'dh') throw new Error('沒有從怪物島回到主島');
+await doTap(14, 18, '回起始村的圓門');
+if ((await save()).mapId !== 'village') throw new Error('沒有從主島回到起始村');
 
 // ───── 回家睡覺：HP／魔力回滿 ─────
 await ev(() => { const m = window.__game.G.save.party[0]; m.hp = 1; m.mp = 0; });
