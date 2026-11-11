@@ -103,3 +103,23 @@ describe('寫字挑戰的資料', () => {
     expect(defaultSettings().writeChallenge).toBe(true);
   });
 });
+
+describe('全部筆順資料的品質', () => {
+  const EXPECTED: Record<string, number> = { 'ㄅ': 1, 'ㄆ': 2, 'ㄇ': 2, 'ㄈ': 2, 'ㄉ': 2, 'ㄊ': 3, 'ㄋ': 1, 'ㄌ': 2 };
+  it('有筆順的符號和筆畫數，照筆順圖', () => {
+    expect(Object.keys(STROKES).sort()).toEqual(Object.keys(EXPECTED).sort());
+    for (const [ch, n] of Object.entries(EXPECTED)) expect(STROKES[ch], ch).toHaveLength(n);
+  });
+  for (const [ch, strokes] of Object.entries(STROKES)) {
+    it(`${ch}：每一畫照著描會過；方向反、或拿別畫來描，都不會過`, () => {
+      const targets = strokes.map((s) => sampleStroke(s.points));
+      strokes.forEach((s, i) => {
+        expect(strokeDone(trace(s.points), targets[i]), `${ch} 第 ${i + 1} 畫`).toBe(true);
+        expect(strokeDone(trace([...s.points].reverse() as StrokePoint[]), targets[i]), `${ch} 第 ${i + 1} 畫反向`).toBe(false);
+        strokes.forEach((o, j) => {
+          if (j !== i) expect(strokeDone(trace(o.points), targets[i]), `${ch} 用第 ${j + 1} 畫去描第 ${i + 1} 畫`).toBe(false);
+        });
+      });
+    });
+  }
+});
