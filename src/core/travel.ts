@@ -30,3 +30,8 @@ export function markArrival(save: { flags: Record<string, boolean>; homeMap?: st
   save.flags[`visited:${m.id}`] = true;
   save.homeMap = m.id;
 }
+
+/** 換地圖時，要不要讓已經打倒的野生怪重生：同一個洞窟（group 相同）的樓層之間不重生，從外面進來才重生。 */
+export function shouldRespawn(from: MapDef | undefined, to: MapDef): boolean {
+  return !(from?.group && from.group === to.group);
+}

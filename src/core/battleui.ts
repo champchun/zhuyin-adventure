@@ -58,7 +58,7 @@ export const bui = {
   chooseItem(): Promise<string | null> {
     return new Promise((resolve) => {
       this.msg('要用哪一個道具？');
-      const ids = Object.keys(ITEMS).filter((id) => itemCount(id) > 0);
+      const ids = Object.keys(ITEMS).filter((id) => itemCount(id) > 0 && (ITEMS[id].hp || ITEMS[id].mp)); // 鑰匙不能在戰鬥中用
       const body = root.querySelector<HTMLElement>('.body')!;
       body.innerHTML = `<div class="moves">${ids.map((id) => `<button class="btn primary" data-a="it" data-id="${id}">${ITEMS[id].icon} ${ITEMS[id].name} ×${itemCount(id)}<small>${ITEMS[id].desc}</small></button>`).join('')}
         <button class="btn" data-a="back">↩ 返回</button></div>`;
@@ -101,7 +101,7 @@ export const bui = {
       let mode: Mode = modes.only ?? (modes.avail && !noMp ? modes.cur : 'look');
       const name = SPECIES[me.species].name;
       const body = root.querySelector<HTMLElement>('.body')!;
-      const hasItems = Object.keys(ITEMS).some((id) => itemCount(id) > 0);
+      const hasItems = Object.keys(ITEMS).some((id) => itemCount(id) > 0 && (ITEMS[id].hp || ITEMS[id].mp));
       const off = (cond: boolean) => (cond ? 'disabled style="opacity:.35"' : '');
       const lookOff = !!modes.only && modes.only !== 'look';
       const listenOff = !modes.avail || noMp || (!!modes.only && modes.only !== 'listen');

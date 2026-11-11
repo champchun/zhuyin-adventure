@@ -55,6 +55,8 @@ export interface MapDef {
   respawn: { x: number; y: number };
   /** 主島：有碼頭可以搭船。dock＝搭船抵達時落腳的格子；defeat＝被打倒時改送去別的地方（例如起始村送回自己的房間） */
   hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number } };
+  /** 迷宮：同一個洞窟的各樓層設成同一個 group；樓層之間走動，野生怪不會重生（從外面進來才重生） */
+  group?: string;
 }
 
 /** 阻擋通行的地形字元 */

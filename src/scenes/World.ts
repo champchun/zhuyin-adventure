@@ -7,11 +7,11 @@ import type { BattleDef } from '../data/levels';
 import { ENEMIES, ITEMS, SPECIES, castSymbol } from '../data/monsters';
 import { STROKES } from '../data/strokes';
 import {
-  G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, saveGame, setFlag, spriteOf,
+  G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, itemCount, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
-import { defeatSpot, dockSpot, markArrival, visitedHubs } from '../core/travel';
+import { defeatSpot, dockSpot, markArrival, shouldRespawn, visitedHubs } from '../core/travel';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
@@ -147,6 +147,7 @@ export class WorldScene extends Phaser.Scene {
     if (o.kind === 'leaves' && flag(`l:${m}:${o.id}`)) return false;
     if (o.kind === 'fog' && flag(`f:${m}:${o.id}`)) return false;
     if (o.kind === 'gimmick' && o.vanish && flag(`g:${m}:${o.id}`)) return false;
+    if (o.kind === 'lockdoor' && flag(`k:${m}:${o.id}`)) return false; // 用鑰匙打開過的門就不見了
     return true;
   }
   private gateOpen(lv: string): boolean {
@@ -191,6 +192,9 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
+        case 'stairs': spr = this.add.image(px, py, 'stairs').setOrigin(0).setDepth(depth); break;
+        case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
+        case 'barrier': spr = this.add.image(px, py, 'barrier').setOrigin(0).setDepth(depth); break;
         case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
         case 'gimmick': spr = this.add.image(px, py, flag(`g:${m.id}:${def.id}`) && def.sprite2 ? def.sprite2 : def.sprite!).setOrigin(0).setDepth(depth); break;
         case 'sign': spr = this.add.image(px, py, def.sprite ?? 'sign').setOrigin(0).setDepth(depth); break;
@@ -457,7 +461,21 @@ export class WorldScene extends Phaser.Scene {
       case 'woodgate': return say(STORY.woodLocked);
       case 'gimmick': return this.useGimmick(o);
       case 'dock': return this.useDock();
+      case 'stairs': await this.travel(d.to!.map, d.to!.x, d.to!.y); return;
+      case 'lockdoor': return this.useLockdoor(o);
+      case 'barrier': return say((d.lockText ?? ['路被擋住了。']).map((text) => ({ text })));
     }
+  }
+
+  /** 鎖住的門：有小鑰匙就用掉一把打開，沒有就提示去找鑰匙 */
+  private async useLockdoor(o: Obj) {
+    const d = o.def;
+    if (itemCount('key') < 1) return say((d.lockText ?? ['門鎖住了。', '要先找到小鑰匙。']).map((text) => ({ text })));
+    addItem('key', -1);
+    setFlag(`k:${this.map.id}:${d.id}`);
+    this.refreshObjects();
+    audio.sfx('chest');
+    return say([{ text: '用小鑰匙打開了門！' }]);
   }
 
   /** 碼頭：列出去過的其他主島，選一個就免費搭船過去（沒有別的島時只說明一下） */
@@ -552,7 +570,8 @@ export class WorldScene extends Phaser.Scene {
     const lines = [`打開寶箱！得到 ${n} 顆 ⭐ 星星碎片！（共 ${G.save.stars} 顆）`];
     if (o.def.item) {
       addItem(o.def.item);
-      lines.push(`還有 ${ITEMS[o.def.item].icon} ${ITEMS[o.def.item].name}！戰鬥時可以用。`);
+      const it = ITEMS[o.def.item];
+      lines.push(it.key ? `還有 ${it.icon} ${it.name}！可以用來開鎖住的門。` : `還有 ${it.icon} ${it.name}！戰鬥時可以用。`);
     }
     await say(lines, { speak: true });
   }
@@ -573,7 +592,7 @@ export class WorldScene extends Phaser.Scene {
     cam.fadeOut(200, 0, 0, 0);
     await new Promise((r) => this.time.delayedCall(220, r));
     this.queue = [];
-    this.respawnWild(map);
+    if (shouldRespawn(this.map, MAPS[map])) this.respawnWild(map); // 洞窟的樓層之間走動不重生
     this.loadMap(map, x, y);
     saveGame();
     cam.fadeIn(200, 0, 0, 0);

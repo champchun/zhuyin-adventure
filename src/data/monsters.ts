@@ -27,12 +27,15 @@ export interface ItemDef {
   price?: number;
   /** 商店要這個旗標才會上架 */
   need?: string;
+  /** 鑰匙：用來開鎖住的門。不能買、也不能在戰鬥中使用 */
+  key?: boolean;
   desc: string;
 }
 export const ITEMS: Record<string, ItemDef> = {
   potion: { id: 'potion', name: '小藥水', icon: '🧪', hp: 8, price: 15, desc: '喝一口，回復 8 點 HP。' },
   berry: { id: 'berry', name: '魔力果', icon: '🍇', mp: 3, price: 20, desc: '甜甜的，回復 3 點魔力。' },
   bigpotion: { id: 'bigpotion', name: '大藥水', icon: '🧴', hp: 20, price: 40, need: 'boss_b', desc: '一大瓶，回復 20 點 HP。' },
+  key: { id: 'key', name: '小鑰匙', icon: '🗝️', key: true, desc: '可以打開洞窟裡鎖住的門，開一道門要用掉一把。' },
 };
 export interface SpeciesDef {
   id: string;
