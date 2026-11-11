@@ -176,7 +176,7 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
-        case 'woodgate': spr =this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
+        case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
         case 'gimmick': spr = this.add.image(px, py, flag(`g:${m.id}:${def.id}`) && def.sprite2 ? def.sprite2 : def.sprite!).setOrigin(0).setDepth(depth); break;
         case 'sign': spr = this.add.image(px, py, def.sprite ?? 'sign').setOrigin(0).setDepth(depth); break;
         case 'exit': spr = this.add.image(px, py, 'exit_tile').setOrigin(0).setDepth(depth); break;
