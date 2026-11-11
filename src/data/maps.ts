@@ -37,6 +37,10 @@ export interface MapObj {
   vanish?: boolean;
   hitText?: string[];
   doneText?: string[];
+  /** monster：怎麼移動。patrol＝沿 patrol 路線來回走；chase＝看到主角就追（最短路 ≤ 5 步）。沒有 ai 的怪物不會動 */
+  ai?: 'patrol' | 'chase';
+  /** monster：巡邏路線（不含起點，起點就是 x, y）；每一格要和前一格上下左右相鄰 */
+  patrol?: { x: number; y: number }[];
 }
 export interface MapDef {
   id: string;
@@ -289,12 +293,12 @@ MAPS.d = {
     { id: 'chest_drum', kind: 'chest', x: 3, y: 10, showIf: 'g:d:drum' },
     { id: 'plant', kind: 'gimmick', x: 9, y: 15, sprite: 'plant_dry', sprite2: 'plant_wet', ability: 'splash', fx: 'splash', lockText: ['一盆乾巴巴的花，葉子都垂下來了。', '好像需要一點水花……'], hitText: ['夥伴「ㄊ」地吐出水花，小花喝飽水，開出花來了！', '花盆旁邊出現了一個寶箱！'], doneText: ['小花開得好漂亮。'] },
     { id: 'chest_plant', kind: 'chest', x: 10, y: 15, showIf: 'g:d:plant' },
-    { id: 'm1', kind: 'monster', x: 9, y: 9, battle: 'd1' },
+    { id: 'm1', kind: 'monster', x: 9, y: 9, battle: 'd1', ai: 'patrol', patrol: [{ x: 10, y: 9 }, { x: 11, y: 9 }, { x: 12, y: 9 }] },
     { id: 'bubble', kind: 'gimmick', x: 6, y: 5, sprite: 'bubble_ball', ability: 'nasal', fx: 'bubble', vanish: true, lockText: ['一顆好大的泡泡球，擋在寶箱前面。', '用鼻子「嗯～」吹出的泡泡，也許能把它飄走……'], hitText: ['夥伴鼻子「嗯～」，吹出大泡泡，泡泡球飄走了！'] },
     { id: 'chest_bubble', kind: 'chest', x: 6, y: 4, showIf: 'g:d:bubble' },
-    { id: 'm2', kind: 'monster', x: 11, y: 4, battle: 'd2' },
+    { id: 'm2', kind: 'monster', x: 11, y: 4, battle: 'd2', ai: 'patrol', patrol: [{ x: 11, y: 5 }, { x: 11, y: 6 }] },
     { id: 'chest_2', kind: 'chest', x: 12, y: 2, item: 'berry' },
-    { id: 'm3', kind: 'monster', x: 19, y: 10, battle: 'd3' },
+    { id: 'm3', kind: 'monster', x: 19, y: 10, battle: 'd3', ai: 'chase' },
     { id: 'dam', kind: 'gimmick', x: 18, y: 15, sprite: 'dam', ability: 'stream', fx: 'stream', vanish: true, lockText: ['一座小木頭水壩，把水堵住了。', '舌尖輕輕彈的「ㄌ」，像水流一樣，也許能沖開它……'], hitText: ['夥伴「ㄌ」！水流衝出去，水壩被沖開了！'] },
     { id: 'chest_dam', kind: 'chest', x: 18, y: 16, showIf: 'g:d:dam' },
     { id: 'chest_3', kind: 'chest', x: 24, y: 12, item: 'potion' },

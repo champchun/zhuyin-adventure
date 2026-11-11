@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHASE_RANGE, STUN_TURNS, makeMon, stepMonsters, stunMon } from '../src/core/monsters';
+import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 
 /** 一個 w×h 的空地圖，walls 是牆；回傳 blocked(x, y) */
 const open = (w: number, h: number, walls: [number, number][] = []) => {
@@ -124,5 +125,34 @@ describe('撤退後暫停', () => {
       expect(r.moves).toEqual([]);
     }
     expect(stepMonsters([m], player, blocked).contact).toBe('c');
+  });
+});
+
+describe('會動的怪物資料', () => {
+  for (const m of Object.values(MAPS)) {
+    it(`${m.id}: 有 ai 的都是怪物；巡邏路線每一格都能走、前後相鄰，且不壓到別的物件`, () => {
+      for (const o of m.objects.filter((x) => x.ai || x.patrol)) {
+        expect(o.kind, `${m.id}/${o.id}`).toBe('monster');
+        const route = [{ x: o.x, y: o.y }, ...(o.patrol ?? [])];
+        route.forEach((p, i) => {
+          expect(BLOCKED_TILES.has(m.tiles[p.y]?.[p.x] ?? '#'), `${m.id}/${o.id} 第 ${i} 格 (${p.x},${p.y})`).toBe(false);
+          if (i > 0) expect(Math.abs(p.x - route[i - 1].x) + Math.abs(p.y - route[i - 1].y), `${m.id}/${o.id} 第 ${i} 格不相鄰`).toBe(1);
+          for (const other of m.objects) {
+            if (other.id !== o.id) expect(other.x === p.x && other.y === p.y, `${m.id}/${o.id} 壓到 ${other.id}`).toBe(false);
+          }
+        });
+      }
+    });
+  }
+  it('第 0 關的三張地圖沒有任何會動的怪物', () => {
+    for (const id of ['village', 'b', 'p']) expect(MAPS[id].objects.some((o) => o.ai || o.patrol), id).toBe(false);
+  });
+  it('舌尖中音島的小怪各有移動方式（兩隻巡邏、一隻追擊）', () => {
+    const d = MAPS.d.objects;
+    expect(d.find((o) => o.id === 'm1')!.ai).toBe('patrol');
+    expect(d.find((o) => o.id === 'm2')!.ai).toBe('patrol');
+    expect(d.find((o) => o.id === 'm3')!.ai).toBe('chase');
+    expect(d.find((o) => o.id === 'boss')!.ai).toBeUndefined();
+    expect(d.find((o) => o.id === 'dummy')!.ai).toBeUndefined();
   });
 });
