@@ -11,7 +11,7 @@ import {
 } from '../core/save';
 import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
-import { defeatSpot, dockSpot, markArrival, shouldRespawn, visitedHubs } from '../core/travel';
+import { defeatSpot, dockSpot, markArrival, respawnMapIds, shouldRespawn, visitedHubs } from '../core/travel';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
@@ -592,7 +592,7 @@ export class WorldScene extends Phaser.Scene {
     cam.fadeOut(200, 0, 0, 0);
     await new Promise((r) => this.time.delayedCall(220, r));
     this.queue = [];
-    if (shouldRespawn(this.map, MAPS[map])) this.respawnWild(map); // 洞窟的樓層之間走動不重生
+    if (shouldRespawn(this.map, MAPS[map])) for (const id of respawnMapIds(MAPS[map])) this.respawnWild(id); // 洞窟的樓層之間走動不重生
     this.loadMap(map, x, y);
     saveGame();
     cam.fadeIn(200, 0, 0, 0);

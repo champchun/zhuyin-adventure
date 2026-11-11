@@ -35,3 +35,10 @@ export function markArrival(save: { flags: Record<string, boolean>; homeMap?: st
 export function shouldRespawn(from: MapDef | undefined, to: MapDef): boolean {
   return !(from?.group && from.group === to.group);
 }
+
+/** 從外面進洞窟時要重生野生怪的地圖：目的地先，然後是同一個 group 的其他樓層。 */
+export function respawnMapIds(to: MapDef, maps: Record<string, MapDef> = MAPS): string[] {
+  const ids = [to.id];
+  if (to.group) for (const m of Object.values(maps)) if (m.group === to.group && !ids.includes(m.id)) ids.push(m.id);
+  return ids;
+}

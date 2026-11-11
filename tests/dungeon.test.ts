@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAPS } from '../src/data/maps';
 import type { MapDef, MapObj } from '../src/data/maps';
 import { ITEMS } from '../src/data/monsters';
-import { shouldRespawn } from '../src/core/travel';
+import { respawnMapIds, shouldRespawn } from '../src/core/travel';
 import { fromAscii } from '../src/data/ascii';
 import type { Legend } from '../src/data/ascii';
 import { reachReport } from '../src/core/dungeon';
@@ -178,14 +178,16 @@ describe('示範洞窟（舌尖中音島的小迷宮）', () => {
     expect(noDrum.unreachableObjects).toContain('dc2/chest_berry');
   });
   it('洞窟的怪物有自己的戰鬥與旗標，不會和島上的怪物共用', () => {
-    const ms = [...dc1.objects, ...dc2.objects].filter((o) => o.kind === 'monster');
-    expect(ms.length).toBeGreaterThanOrEqual(2);
-    const flags = ms.map((o) => `m:${o.id === 'm1' ? 'dc1' : 'dc2'}:${o.id}`);
-    for (const o of ms) {
-      const b = BATTLES[o.battle!];
-      expect(b, o.id).toBeDefined();
-      expect(b.reward.flag.startsWith('m:dc'), `${o.id} 的旗標 ${b.reward.flag}`).toBe(true);
+    const flags: string[] = [];
+    for (const m of [dc1, dc2]) {
+      for (const o of m.objects.filter((o) => o.kind === 'monster')) {
+        const b = BATTLES[o.battle!];
+        expect(b, `${m.id}/${o.id}`).toBeDefined();
+        expect(b.reward.flag).toBe(`m:${m.id}:${o.id}`);
+        flags.push(b.reward.flag);
+      }
     }
+    expect(flags.length).toBeGreaterThanOrEqual(2);
     expect(new Set(flags).size).toBe(flags.length);
   });
   it('一隻巡邏、一隻追擊', () => {
@@ -212,5 +214,21 @@ describe('示範洞窟（舌尖中音島的小迷宮）', () => {
       const ids = m.objects.map((o) => o.id);
       expect(new Set(ids).size, `${m.id}`).toBe(ids.length);
     }
+  });
+});
+
+describe('respawnMapIds', () => {
+  it('洞窟任一層：目的地在前，包含整個洞窟的所有樓層', () => {
+    expect(respawnMapIds(MAPS.dc1)).toEqual(['dc1', 'dc2']);
+    expect(respawnMapIds(MAPS.dc2)).toEqual(['dc2', 'dc1']);
+  });
+  it('沒有 group 的地圖只有自己', () => {
+    expect(respawnMapIds(MAPS.d)).toEqual(['d']);
+  });
+  it('只回傳同 group 的地圖', () => {
+    const m = (id: string, group?: string): MapDef => ({ ...MAPS.shop, id, name: id, group });
+    const maps = { a: m('a', 'g'), x: m('x'), b: m('b', 'g'), c: m('c', 'h') };
+    expect(respawnMapIds(maps.b, maps)).toEqual(['b', 'a']);
+    expect(respawnMapIds(maps.x, maps)).toEqual(['x']);
   });
 });
