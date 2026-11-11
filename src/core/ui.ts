@@ -185,15 +185,19 @@ export function openWriteSymbol(symbol: string): Promise<boolean> {
     const m = openModal(`<h2>✍️ 寫出「${symbol}」</h2><p id="wmsg" style="min-height:1.5em">照著箭頭，從圓點開始描一描。</p>
       <div style="display:flex;justify-content:center"><canvas id="writecv" width="${SIZE}" height="${SIZE}" style="width:${SIZE}px;height:${SIZE}px;touch-action:none;background:#fffaf0;border:4px solid var(--ink);border-radius:14px"></canvas></div>
       <div class="foot" style="justify-content:center"><button class="btn small" data-a="no">先不要</button></div>`);
-    audio.speak(`照著箭頭，把${symbol}寫出來`);
+    audio.speak('照著箭頭，從圓點開始描一描');
     const cv = m.querySelector<HTMLCanvasElement>('#writecv')!;
+    const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+    cv.width = Math.round(SIZE * dpr); cv.height = Math.round(SIZE * dpr);
     const ctx = cv.getContext('2d')!;
+    ctx.scale(dpr, dpr);
     const msg = (t: string) => { m.querySelector('#wmsg')!.textContent = t; };
     const px = (v: number) => (v / 100) * SIZE;
     const targets = strokes.map((s) => sampleStroke(s.points));
     let cur = 0; // 目前要寫第幾畫
     let trail: Pt[] = [];
     let drawing = false;
+    let activeId: number | null = null;
     let closed = false;
     const close = (ok: boolean) => { if (closed) return; closed = true; closeModal(); resolve(ok); };
 
@@ -242,11 +246,18 @@ export function openWriteSymbol(symbol: string): Promise<boolean> {
       const r = cv.getBoundingClientRect();
       return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 };
     };
-    cv.onpointerdown = (e) => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drawing = true; trail = [toUnit(e)]; draw(); };
-    cv.onpointermove = (e) => { if (!drawing) return; trail.push(toUnit(e)); draw(); };
+    cv.onpointerdown = (e) => {
+      if (closed || cur >= strokes.length || drawing) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId); drawing = true; activeId = e.pointerId; trail = [toUnit(e)]; draw();
+    };
+    cv.onpointermove = (e) => { if (!drawing || e.pointerId !== activeId) return; trail.push(toUnit(e)); draw(); };
     const finish = () => {
+      if (closed || cur >= strokes.length) return;
       if (!drawing) return;
-      drawing = false;
+      drawing = false; activeId = null;
+      let len = 0;
+      for (let i = 1; i < trail.length; i++) len += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
+      if (trail.length < 2 || len < 5) { trail = []; draw(); return; } // 只是點一下：當作沒事
       if (strokeDone(trail, targets[cur])) {
         cur++; trail = [];
         if (cur >= strokes.length) {
@@ -261,8 +272,8 @@ export function openWriteSymbol(symbol: string): Promise<boolean> {
       }
       draw();
     };
-    cv.onpointerup = finish;
-    cv.onpointercancel = finish;
+    cv.onpointerup = (e) => { if (e.pointerId === activeId) finish(); };
+    cv.onpointercancel = (e) => { if (e.pointerId === activeId) finish(); };
     delegate(m, (a) => { if (a === 'no') { audio.sfx('tap'); audio.stopSpeech(); close(false); } });
     draw();
   });
