@@ -319,6 +319,35 @@ await doTap(6, 5, '泡泡球（嗯嗯泡）'); await doTap(6, 4, '泡泡後寶�
 f = await flags();
 if (!f['g:d:dam'] || !f['c:d:chest_dam'] || !f['g:d:bubble'] || !f['c:d:chest_bubble']) throw new Error('水壩／泡泡機關失敗 ' + JSON.stringify(f));
 log('✓ 流水衝沖開水壩、嗯嗯泡飄走泡泡球，各取得寶箱');
+
+// ───── 試煉洞窟（階段 3 的迷宮元件）─────
+await doTap(3, 3, '洞窟入口');
+if ((await save()).mapId !== 'dc1') throw new Error('沒有進入洞窟 1 樓');
+await snap('cave-1f');
+await doTap(3, 4, '裂石（爆破拳）'); await doTap(3, 7, '隱藏房間的寶箱');
+f = await flags();
+if (!f['r:dc1:rock_f'] || !f['c:dc1:chest_f']) throw new Error('洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+await doTap(10, 7, '鑰匙寶箱');
+if (((await save()).items.key ?? 0) !== 1) throw new Error('沒有拿到小鑰匙');
+await doTap(17, 4, '鎖住的門');
+f = await flags();
+if (!f['k:dc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+log('✓ 洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+await doTap(17, 7, '往 2 樓的樓梯');
+if ((await save()).mapId !== 'dc2') throw new Error('沒有走到洞窟 2 樓');
+await snap('cave-2f');
+await doTap(17, 3, '機關開關（擊鼓拳）');
+f = await flags();
+if (!f['g:dc2:switch1']) throw new Error('2 樓的機關沒有啟動');
+await doTap(10, 7, '石牆後的寶箱');
+f = await flags();
+if (!f['c:dc2:chest_berry']) throw new Error('石牆打開後拿不到魔力果寶箱');
+log('✓ 洞窟 2 樓：啟動機關、石牆消失、取得寶箱');
+await doTap(1, 1, '回 1 樓的樓梯');
+if ((await save()).mapId !== 'dc1') throw new Error('沒有回到洞窟 1 樓');
+await doTap(1, 1, '回島的樓梯');
+if ((await save()).mapId !== 'd') throw new Error('沒有走回舌尖中音島');
+log('✓ 洞窟：樓層之間來回、走回島上');
 await doTap(4, 18, '回村');
 if ((await save()).mapId !== 'village') throw new Error('沒有從島回到村子');
 
