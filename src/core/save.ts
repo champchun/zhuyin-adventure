@@ -54,6 +54,8 @@ export interface SaveData {
   stars: number;
   cleared: string[];
   playSeconds: number;
+  /** 最近到過的主島；被打倒時送回這裡。舊存檔沒有時視為起始村 */
+  homeMap?: string;
 }
 
 export const PARTY_MAX = 3;

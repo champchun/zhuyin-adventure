@@ -1,5 +1,5 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
 export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
@@ -49,6 +49,8 @@ export interface MapDef {
   theme: 'village' | 'valley' | 'meadow' | 'island';
   /** 戰敗後恢復的位置 */
   respawn: { x: number; y: number };
+  /** 主島：有碼頭可以搭船。dock＝搭船抵達時落腳的格子；defeat＝被打倒時改送去別的地方（例如起始村送回自己的房間） */
+  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number } };
 }
 
 /** 阻擋通行的地形字元 */
