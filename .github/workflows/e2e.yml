@@ -3,6 +3,11 @@ name: E2E
 # 與「部署到 GitHub Pages」分開，失敗只會通知，不會擋住網站更新。
 on:
   push:
+    # 只改文件、規格、計畫、這個流程檔本身時不用跑（程式沒變，測了也一樣）
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/workflows/e2e.yml'
   workflow_dispatch:
 permissions:
   contents: read
