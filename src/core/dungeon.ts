@@ -21,8 +21,13 @@ const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const REMOVABLE = new Set(['rock', 'leaves', 'fog', 'lockdoor']);
 const removable = (o: MapObj) => REMOVABLE.has(o.kind) || (o.kind === 'gimmick' && !!o.vanish);
 
+/**
+ * 模擬走迷宮。注意：鑰匙不分彼此，鎖門依物件順序「貪心」地開，
+ * 所以抓不到「鑰匙開錯門、導致玩家被困住」的情況（設計時鑰匙數量要不少於鎖門數量）。
+ */
 export function reachReport(floors: MapDef[], entry: Cell, abilities: string[]): Report {
   const byId = new Map(floors.map((f) => [f.id, f]));
+  if (!byId.has(entry.map)) throw new Error(`入口的地圖「${entry.map}」不在 floors 裡`);
   const opened = new Set<string>(); // 已經移除（打開）的物件 `${map}/${id}`
   const collected = new Set<string>(); // 已經打開的寶箱
   const switched = new Set<string>(); // 已啟動的機關旗標 `g:${map}:${id}`
@@ -84,27 +89,12 @@ export function reachReport(floors: MapDef[], entry: Cell, abilities: string[]):
     if (acted) for (const k of reached) { const m = /^(.*):(\d+),(\d+)$/.exec(k)!; queue.push({ map: m[1], x: +m[2], y: +m[3] }); }
   }
 
-  // 只被「永久擋路的物件」（寶箱、樓梯、機關…）隔開的凹槽，是設計上本來就走不進去的，不算「應該走得到」。
-  // 被鎖門、裂石、石牆這類「可以打開」的東西隔開的才算。
-  const gated = (f: MapDef, x: number, y: number) => f.objects.some((o) => o.x === x && o.y === y && !ignored(o) && (removable(o) || !!o.hideIf));
-  const pocket = new Set<string>(reached);
-  const pq: Cell[] = [...reached].map((k) => { const m = /^(.*):(\d+),(\d+)$/.exec(k)!; return { map: m[1], x: +m[2], y: +m[3] }; });
-  while (pq.length) {
-    const c = pq.pop()!;
-    const f = byId.get(c.map)!;
-    for (const [dx, dy] of N4) {
-      const nx = c.x + dx, ny = c.y + dy;
-      if (!walkable(f, nx, ny) || gated(f, nx, ny) || pocket.has(key(c.map, nx, ny))) continue;
-      pocket.add(key(c.map, nx, ny));
-      pq.push({ map: c.map, x: nx, y: ny });
-    }
-  }
   const unreachableFloor: string[] = [];
   const unreachableObjects: string[] = [];
   for (const f of floors) {
     for (let y = 0; y < f.h; y++) {
       for (let x = 0; x < f.w; x++) {
-        if (!walkable(f, x, y) || pocket.has(key(f.id, x, y))) continue;
+        if (!walkable(f, x, y) || reached.has(key(f.id, x, y))) continue;
         const o = f.objects.find((p) => p.x === x && p.y === y && !ignored(p));
         // 這格有永久擋路的物件（寶箱、樓梯、機關…）就不算「應該走得到」；可移除的（裂石、鎖門、石牆）要走得到
         if (o && !removable(o) && !o.hideIf) continue;

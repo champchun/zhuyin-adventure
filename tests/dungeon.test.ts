@@ -115,7 +115,7 @@ describe('reachReport：迷宮驗證', () => {
 
   describe('樓梯連到另一層', () => {
     const a = floor('a', ['#####', '#..>#', '#####'], { '>': { id: 'down', kind: 'stairs', to: { map: 'b', x: 1, y: 1 } } });
-    const b = floor('b', ['#####', '#.C.#', '#####'], { C: { id: 'c', kind: 'chest', item: 'potion' } });
+    const b = floor('b', ['#####', '#...#', '#.C.#', '#####'], { C: { id: 'c', kind: 'chest', item: 'potion' } });
     it('走到樓梯旁，另一層的地方也走得到', () => {
       const r = reachReport([a, b], at('a', 1, 1), []);
       expect(r.unreachableFloor).toEqual([]);
@@ -128,12 +128,23 @@ describe('reachReport：迷宮驗證', () => {
   });
 
   it('怪物不算擋路；有 showIf 的物件被忽略', () => {
-    const f = floor('t', ['#####', '#...#', '#####'], {}, [
-      { id: 'm', kind: 'monster', x: 2, y: 1, battle: 'x' },
-      { id: 'hid', kind: 'chest', x: 3, y: 1, showIf: 'someFlag' },
+    const f = floor('t', ['######', '#....#', '######'], {}, [
+      { id: 'hid', kind: 'chest', x: 2, y: 1, showIf: 'someFlag' },
+      { id: 'm', kind: 'monster', x: 3, y: 1, battle: 'x' },
     ]);
     const r = reachReport([f], at('t', 1, 1), []);
     expect(r.unreachableFloor).toEqual([]);
     expect(r.unreachableObjects).toEqual([]);
+  });
+
+  it('寶箱堵住一格寬的走廊：後面的格子要被回報', () => {
+    const f = floor('t', ['#####', '#.C.#', '#####'], { C: { id: 'c', kind: 'chest', item: 'potion' } });
+    const r = reachReport([f], at('t', 1, 1), []);
+    expect(r.unreachableFloor).toContain('t:3,1');
+  });
+
+  it('入口的地圖不在 floors 裡：丟出清楚的錯誤', () => {
+    const f = floor('t', ['###', '#.#', '###']);
+    expect(() => reachReport([f], at('nope', 1, 1), [])).toThrow('nope');
   });
 });
