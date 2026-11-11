@@ -57,7 +57,9 @@ export interface MapDef {
   /** 戰敗後恢復的位置 */
   respawn: { x: number; y: number };
   /** 主島：有碼頭可以搭船。dock＝搭船抵達時落腳的格子；defeat＝被打倒時改送去別的地方（例如起始村送回自己的房間） */
-  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; /** 第一次到這座主島，起始村的碼頭才會出現 */ opensDock?: boolean };
+  hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; /** 這個旗標為真時，其他主島的碼頭就能選這座島（還沒去過也可以） */ unlockedBy?: string; /** 從這座主島的碼頭搭船可以去的怪物島（地圖 id） */ isles?: string[] };
+  /** 怪物島：有碼頭可以搭船回主島。hub＝回哪座主島；dock＝搭船抵達時落腳的格子 */
+  isle?: { hub: string; dock: { x: number; y: number } };
   /** 迷宮：同一個洞窟的各樓層設成同一個 group；樓層之間走動，野生怪不會重生（從外面進來才重生） */
   group?: string;
 }
@@ -99,7 +101,7 @@ const village = (() => {
   g.rect('=', 9, 7, 10, 5).rect('=', 4, 8, 5, 1).rect('=', 13, 12, 1, 5).rect('=', 3, 16, 21, 1);
   g.rect('=', 5, 4, 1, 4).rect('=', 14, 4, 1, 3);
   // 池塘
-  g.rect('~', 22, 10, 4, 4);
+  g.rect('~', 22, 10, 6, 4); // 池塘一路連到地圖外，看起來是海
   // 裂石小房間（隱藏寶箱）
   g.rect('#', 21, 2, 5, 1).set(21, 3, '#').set(25, 3, '#').rect('#', 21, 4, 2, 1).rect('#', 24, 4, 2, 1);
   // 零星樹木
@@ -133,7 +135,7 @@ const shop = (() => {
   g.rect('r', 3, 5, 4, 2);
   return g;
 })();
-const GATE_LEVELS = ['b', 'p', 'd', 'g'];
+const GATE_LEVELS = ['b', 'p']; // 新手關的兩扇圓門；之後的關卡都靠碼頭搭船
 const villageGates: MapObj[] = GATE_LEVELS.map((lv, i) => ({
   id: 'gate_' + lv, kind: 'gate' as const, x: 4 + 3 * i, y: 17, level: lv,
 }));
@@ -179,7 +181,7 @@ export const MAPS: Record<string, MapDef> = {
     start: { x: 5, y: 4 }, respawn: { x: 5, y: 4 },
     hub: { dock: { x: 20, y: 11 }, defeat: { map: 'room', x: 2, y: 3 } },
     objects: [
-      { id: 'dock', kind: 'dock', x: 21, y: 11, showIf: 'dockOpen' },
+      { id: 'dock', kind: 'dock', x: 21, y: 11, showIf: 'boss_p' },
       { id: 'door_home', kind: 'door', x: 5, y: 3, to: { map: 'room', x: 5, y: 6 } },
       { id: 'door_lab', kind: 'door', x: 14, y: 3, to: { map: 'lab', x: 5, y: 7 } },
       { id: 'door_shop', kind: 'door', x: 19, y: 14, to: { map: 'shop', x: 4, y: 6 } },
@@ -294,8 +296,9 @@ const island = (() => {
 MAPS.d = {
   id: 'd', name: '舌尖中音島（ㄉㄊㄋㄌ）', w: 28, h: 20, tiles: island.rows(), theme: 'island',
   start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
+  isle: { hub: 'dh', dock: { x: 4, y: 17 } },
   objects: [
-    { id: 'exit', kind: 'exit', x: 4, y: 18, to: { map: 'dh', x: 3, y: 10 }, label: '回主島' },
+    { id: 'dock', kind: 'dock', x: 4, y: 18 },
     { id: 'cave', kind: 'stairs', x: 3, y: 3, to: { map: 'dc1', x: 2, y: 1 }, label: '洞窟', showIf: 'dPractice' },
     { id: 'sign1', kind: 'sign', x: 7, y: 16, text: ['舌尖中音島。', '這座島的注音，都是舌尖頂著上牙齦後面發出來的：ㄉ ㄊ ㄋ ㄌ。', '島上有大鼓、水花和泡泡，學會新招式，也許就能叫醒它們！'] },
     { id: 'dummy', kind: 'monster', x: 6, y: 14, battle: 'dpractice', hideIf: 'dPractice' },
@@ -386,10 +389,8 @@ const dhGrid = (() => {
 MAPS.dh = {
   id: 'dh', name: '鼓聲港', w: 28, h: 20, tiles: dhGrid.rows(), theme: 'island',
   start: { x: 14, y: 17 }, respawn: { x: 7, y: 4 },
-  hub: { dock: { x: 22, y: 10 }, opensDock: true },
+  hub: { dock: { x: 22, y: 10 }, unlockedBy: 'boss_p', isles: ['d'] },
   objects: [
-    { id: 'back', kind: 'exit', x: 14, y: 18, to: { map: 'village', x: 10, y: 15 }, label: '回起始村' },
-    { id: 'isle_a', kind: 'exit', x: 2, y: 10, to: { map: 'd', x: 4, y: 17 }, label: '怪物島' },
     { id: 'isle_b', kind: 'sign', x: 24, y: 16, sprite: 'gate_off', text: ['南邊的怪物島，被濃濃的迷霧罩住了。', '等我們變得更強，也許就能過去！'] },
     { id: 'door_inn', kind: 'door', x: 6, y: 3, to: { map: 'dh_inn', x: 4, y: 6 } },
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'dh_shop', x: 4, y: 6 } },

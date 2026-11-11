@@ -75,8 +75,8 @@ describe('起始村是主島，第 0 關的行為不變', () => {
     expect(dock).toBeDefined();
     expect(Math.abs(dock.x - d.x) + Math.abs(dock.y - d.y)).toBe(1);
   });
-  it('碼頭預設看不到（階段 4 才會打開 dockOpen 旗標），所以第 0 關看起來沒變', () => {
-    expect(v.objects.find((o) => o.kind === 'dock')!.showIf).toBe('dockOpen');
+  it('碼頭要打倒草原頭目（boss_p）才看得到，所以第 0 關的玩法不變', () => {
+    expect(v.objects.find((o) => o.kind === 'dock')!.showIf).toBe('boss_p');
   });
   it('dockSpot 指向起始村的碼頭旁', () => {
     expect(dockSpot(v)).toEqual({ map: 'village', x: v.hub!.dock.x, y: v.hub!.dock.y });

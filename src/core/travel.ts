@@ -9,9 +9,21 @@ export function visitedHubs(flags: Record<string, boolean>, maps: Record<string,
   return Object.values(maps).filter((m) => m.hub && flags[`visited:${m.id}`]);
 }
 
-/** 搭船到這座主島時，落腳在碼頭旁。m 必須是主島（有 hub）。 */
+/** 搭船到這座島時，落腳在碼頭旁。m 必須是主島（有 hub）或有碼頭的怪物島（有 isle）。 */
 export function dockSpot(m: MapDef): Spot {
-  return { map: m.id, x: m.hub!.dock.x, y: m.hub!.dock.y };
+  const d = m.hub ? m.hub.dock : m.isle!.dock;
+  return { map: m.id, x: d.x, y: d.y };
+}
+
+/**
+ * 在 here 這張地圖的碼頭搭船可以去哪裡：
+ * 主島 → 其他主島（去過，或 hub.unlockedBy 的旗標已經成立）＋自己的怪物島（hub.isles）；
+ * 怪物島 → 只能回自己的主島。
+ */
+export function dockDestinations(here: MapDef, flags: Record<string, boolean>, maps: Record<string, MapDef> = MAPS): MapDef[] {
+  if (here.isle) return [maps[here.isle.hub]];
+  const hubs = Object.values(maps).filter((m) => m.hub && m.id !== here.id && (flags[`visited:${m.id}`] || (m.hub.unlockedBy && flags[m.hub.unlockedBy])));
+  return [...hubs, ...(here.hub?.isles ?? []).map((id) => maps[id])];
 }
 
 /**
@@ -29,7 +41,6 @@ export function markArrival(save: { flags: Record<string, boolean>; homeMap?: st
   if (!m.hub) return;
   save.flags[`visited:${m.id}`] = true;
   save.homeMap = m.id;
-  if (m.hub.opensDock) save.flags.dockOpen = true; // 到了這座主島，起始村的碼頭才會出現
 }
 
 /** 換地圖時，要不要讓已經打倒的野生怪重生：同一個洞窟（group 相同）的樓層之間不重生，從外面進來才重生。 */

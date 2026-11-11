@@ -11,7 +11,7 @@ import {
 } from '../core/save';
 import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWorldMap, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
-import { defeatSpot, dockSpot, markArrival, respawnMapIds, shouldRespawn, visitedHubs } from '../core/travel';
+import { defeatSpot, dockDestinations, dockSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
@@ -481,9 +481,9 @@ export class WorldScene extends Phaser.Scene {
     return say([{ text: '用小鑰匙打開了門！' }]);
   }
 
-  /** 碼頭：列出去過的其他主島，選一個就免費搭船過去（沒有別的島時只說明一下） */
+  /** 碼頭：列出可以去的島（其他主島、自己的怪物島；怪物島只能回主島），選一個就免費搭船過去 */
   private async useDock() {
-    const dests = visitedHubs(G.save.flags).filter((h) => h.id !== this.map.id);
+    const dests = dockDestinations(this.map, G.save.flags);
     if (!dests.length) { await say(STORY.dockEmpty.map((text) => ({ text }))); return; }
     const id = await openWorldMap(dests.map((h) => ({ id: h.id, name: h.name })));
     if (!id) return;
