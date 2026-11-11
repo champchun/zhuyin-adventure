@@ -205,7 +205,30 @@ if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('小徑裂石／�
 log('✓ 用爆破拳打碎小徑裂石並取得寶箱');
 await doTap(4, 18, '回村');
 if ((await save()).mapId !== 'village') throw new Error('沒有回村');
-await doTap(21, 7, '鈴鐺（哼哼波）'); await doTap(22, 8, '鈴鐺寶箱');
+// ───── 寫字施法（兩筆畫）：鈴鐺要先用滑鼠依筆順寫出 ㄇ ─────
+await ev(() => { window.__game.G.settings.writeChallenge = true; });
+await doTap(21, 6, '走到鈴鐺旁'); // 先走近，鈴鐺才在畫面內（(21,6) 是可以走的空格）
+await tapTile(21, 7);
+await page.waitForSelector('#writecv');
+await snap('write-bell');
+const bellStrokes = await ev(() => window.__game.STROKES['ㄇ'].map((s) => s.points));
+if (bellStrokes.length !== 2) throw new Error('ㄇ 應該是兩畫');
+const wbox = await page.locator('#writecv').boundingBox();
+const wat = ([x, y]) => [wbox.x + (x / 100) * wbox.width, wbox.y + (y / 100) * wbox.height];
+for (const pts of bellStrokes) { // 每一畫：按下、依序經過各點（每段補 6 步）、放開
+  await page.mouse.move(...wat(pts[0])); await page.mouse.down();
+  for (let i = 1; i < pts.length; i++) for (let k = 1; k <= 6; k++) {
+    const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
+    await page.mouse.move(...wat([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
+  }
+  await page.mouse.up();
+}
+await pump(() => ev(() => !!window.__game.G.save.flags.bellRung), '寫完 ㄇ 後鈴鐺響了');
+await pump(idle, '鈴鐺響了之後的對話'); // 旗標一設好 pump 就會回來，但對話還開著，要先按掉才能繼續點地面
+await snap('write-bell-done');
+log('✓ 寫字施法（兩筆畫）：照筆順寫出 ㄇ，鈴鐺響了');
+await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
+await doTap(22, 8, '鈴鐺寶箱');
 await doTap(10, 4, '迷霧（吹霧）'); await doTap(10, 2, '霧後寶箱');
 f = await flags();
 if (!f.bellRung || !f['c:village:chest_bell'] || !f['f:village:fog_a'] || !f['c:village:chest_fog']) throw new Error('鈴鐺／迷霧互動失敗 ' + JSON.stringify(f));
