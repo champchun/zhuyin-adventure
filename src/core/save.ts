@@ -17,7 +17,7 @@ export interface Settings {
   speedBonus: boolean;
   /** 怪物會在地圖上走動（給比較小的孩子可以關掉） */
   monstersMove: boolean;
-  /** 要先用手指寫出注音，裂石才會被打碎（比較小的孩子可以關掉） */
+  /** 要先用手指寫出注音，招式機關與障礙物（裂石、落葉、風車、鈴鐺、迷霧、島上的機關）才會執行（比較小的孩子可以關掉） */
   writeChallenge: boolean;
   /** 家長手動選的語音（voiceURI）；空字串＝自動 */
   voiceURI: string;

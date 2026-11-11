@@ -470,7 +470,6 @@ export class WorldScene extends Phaser.Scene {
     await this.travel(spot.map, spot.x, spot.y);
   }
 
-  /** 用招式啟動的機關（大鼓、乾花、泡泡球、小水壩…）：沒學會招式只會提示，學會了就會有特效，並可能冒出寶箱 */
   /**
    * 用招式之前先寫字：設定開、而且這個招式綁定的注音有筆順資料時，要先用手指寫出來。
    * 回傳 false（按了「先不要」）就什麼都不發生。要寫哪個字由招式決定：物件需要的招式 → 綁定的注音。
@@ -482,6 +481,8 @@ export class WorldScene extends Phaser.Scene {
     if (!symbol || !STROKES[symbol]) return true;
     return openWriteSymbol(symbol);
   }
+
+  /** 用招式啟動的機關（大鼓、乾花、泡泡球、小水壩…）：沒學會招式只會提示，學會了就會有特效，並可能冒出寶箱 */
   private async useGimmick(o: Obj) {
     const d = o.def, key = `g:${this.map.id}:${d.id}`;
     if (flag(key)) return say((d.doneText ?? ['已經完成囉！']).map((text) => ({ text })));
