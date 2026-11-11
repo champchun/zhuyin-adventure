@@ -106,7 +106,7 @@ await page.goto(URL);
 await page.waitForSelector('#screen .menu');
 await snap('title');
 await page.click('#screen [data-a=new]');
-await ev(() => { window.__game.G.settings.monstersMove = false; }); // 機器人用座標點擊走路：怪物不動，流程才穩定
+await ev(() => { const s = window.__game.G.settings; s.monstersMove = false; s.writeChallenge = false; }); // 機器人用座標點擊走路：怪物不動、也不用寫字，流程才穩定
 await page.waitForFunction(() => !document.querySelector('#screen .menu'));
 await pump(idle, 'intro');
 await snap('room-start');
@@ -153,7 +153,31 @@ if (!f.practiceDone) throw new Error('練習戰沒有完成');
 await snap('practice-done');
 if (!(await save()).abilities.includes('blast') || !(await save()).abilities.includes('gust')) throw new Error('練習戰後沒有爆破拳／噴風');
 log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
-await doTap(23, 4, '村裡裂石'); await doTap(23, 3, '隱藏寶箱');
+// ───── 寫字施法：開啟寫字挑戰，用滑鼠依筆順描出 ㄅ，石頭才會碎 ─────
+await ev(() => { window.__game.G.settings.writeChallenge = true; });
+await tapTile(23, 4); // 走到石頭旁並點它。不能用 doTap：寫字畫布開著時不會自己結束，doTap 會一直等
+await page.waitForSelector('#writecv');
+await snap('write-overlay');
+const box = await page.locator('#writecv').boundingBox();
+const BO = [[31, 14], [19, 40], [78, 31], [76, 50], [66, 72], [55, 86], [49, 87]]; // 與 src/data/strokes.ts 的 ㄅ 相同
+const at = ([x, y]) => [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height];
+// 先故意寫錯（隨便劃一條短線）：畫布不該關閉，也不該打碎石頭
+await page.mouse.move(...at([20, 80])); await page.mouse.down(); await page.mouse.move(...at([30, 85])); await page.mouse.up();
+if (!(await page.locator('#writecv').count())) throw new Error('寫錯了畫布不該關閉');
+if ((await flags())['r:village:rock_a']) throw new Error('寫錯了石頭不該碎');
+// 再照筆順描一次
+await page.mouse.move(...at(BO[0])); await page.mouse.down();
+for (let i = 1; i < BO.length; i++) for (let k = 1; k <= 6; k++) {
+  const [ax, ay] = BO[i - 1], [bx, by] = BO[i];
+  await page.mouse.move(...at([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
+}
+await page.mouse.up();
+await pump(() => ev(() => !!window.__game.G.save.flags['r:village:rock_a']), '寫完 ㄅ 後石頭碎掉');
+await pump(idle, '石頭碎掉之後的對話'); // 旗標一設好 pump 就會回來，但「碎石四散」的對話還開著，要先按掉才能繼續點地面
+await snap('write-done');
+log('✓ 寫字施法：寫錯不會碎，照筆順描出 ㄅ 後石頭碎了');
+await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
+await doTap(23, 3, '隱藏寶箱');
 f = await flags();
 if (!f['r:village:rock_a'] || !f['c:village:chest_hidden']) throw new Error('村裡裂石／隱藏寶箱失敗');
 log('✓ 村莊裂石與隱藏寶箱（爆破拳）');
