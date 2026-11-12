@@ -391,7 +391,6 @@ MAPS.dh = {
   start: { x: 14, y: 17 }, respawn: { x: 7, y: 4 },
   hub: { dock: { x: 22, y: 10 } },
   objects: [
-    { id: 'isle_b', kind: 'sign', x: 24, y: 16, sprite: 'gate_off', text: ['南邊的怪物島，被濃濃的迷霧罩住了。', '等我們變得更強，也許就能過去！'] },
     { id: 'door_inn', kind: 'door', x: 6, y: 3, to: { map: 'dh_inn', x: 4, y: 6 } },
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'dh_shop', x: 4, y: 6 } },
     { id: 'dock_village', kind: 'dock', x: 23, y: 10, dockTo: { map: 'village', x: 20, y: 11 } }, // 東邊：回起始村

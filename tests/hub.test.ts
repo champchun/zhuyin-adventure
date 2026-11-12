@@ -58,11 +58,6 @@ describe('主島「鼓聲港」', () => {
   it('起始村只留兩扇新手圓門，不再有第四扇', () => {
     expect(MAPS.village.objects.filter((o) => o.kind === 'gate').map((o) => o.id)).toEqual(['gate_b', 'gate_p']);
   });
-  it('怪物島 B 的入口先封著：只是一個告示牌', () => {
-    const b = dh.objects.find((o) => o.id === 'isle_b')!;
-    expect(b.kind).toBe('sign');
-    expect((b.text ?? []).length).toBeGreaterThan(0);
-  });
   it('至少三位島民，每位都有依進度的對話', () => {
     const npcs = dh.objects.filter((o) => o.kind === 'npc' && o.talk);
     expect(npcs.length).toBeGreaterThanOrEqual(3);
