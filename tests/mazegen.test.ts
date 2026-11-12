@@ -111,3 +111,14 @@ describe('generateFloor：確定性', () => {
     expect(generateFloor(cfg1).rows).not.toEqual(generateFloor({ ...cfg1, seed: 12 }).rows);
   });
 });
+
+// @ts-ignore 專案沒裝 @types/node，只有這個測試要讀檔
+import { readFileSync } from 'node:fs';
+import { renderMazes } from '../tools/gen-dungeon.mjs';
+
+describe('src/data/mazes.ts 與產生器同步', () => {
+  it('檔案內容和現在產生器的輸出一模一樣（改了種子或演算法記得重跑 node tools/gen-dungeon.mjs）', () => {
+    const file = readFileSync(new URL('../src/data/mazes.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+    expect(file).toBe(renderMazes());
+  });
+});

@@ -233,3 +233,22 @@ export function generateFloor(cfg) {
 
   return { w: W, h: H, rows: grid.map((r) => r.join('')), objects, arrive, downArrive };
 }
+
+// 回音洞窟（回音森林）兩層的設定與種子。要換迷宮：改種子，重跑 `node tools/gen-dungeon.mjs`
+export const FLOORS = {
+  gc1: { seed: 11, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } },
+  gc2: { seed: 23, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } },
+};
+/** 產生 src/data/mazes.ts 的內容（字串）。測試用它比對檔案有沒有和產生器同步。 */
+export function renderMazes() {
+  const out = Object.fromEntries(Object.entries(FLOORS).map(([id, cfg]) => [id, generateFloor(cfg)]));
+  return `// 由 tools/gen-dungeon.mjs 產生，不要手改。要換迷宮：改 tools/gen-dungeon.mjs 裡的種子，重跑 node tools/gen-dungeon.mjs\n` +
+    `import type { Floor } from '../../tools/gen-dungeon.mjs';\n\nexport const MAZES: Record<'gc1' | 'gc2', Floor> = ${JSON.stringify(out, null, 2)};\n`;
+}
+import { fileURLToPath } from 'node:url';
+import { writeFileSync } from 'node:fs';
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const target = new URL('../src/data/mazes.ts', import.meta.url);
+  writeFileSync(target, renderMazes(), 'utf8');
+  console.log('已寫入', fileURLToPath(target));
+}
