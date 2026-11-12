@@ -3,6 +3,8 @@ import { BATTLES, LEVELS } from '../src/data/levels';
 import { ENEMIES, MOVES, SPECIES, moveFor } from '../src/data/monsters';
 import { LEARN_STEPS } from '../src/data/symbols';
 import { MONSTER_ART, monsterSize } from '../src/gfx/monsterArt';
+import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { reachReport } from '../src/core/dungeon';
 
 describe('第三關（舌根音）的資料', () => {
   it('ㄍㄎ 進森林才開始教，ㄏ 要打完練習戰才出現', () => {
@@ -57,5 +59,65 @@ describe('第三關（舌根音）的資料', () => {
       expect(b.focus.every((s) => ['ㄍ', 'ㄎ', 'ㄏ'].includes(s)), `${id} 主題只能是 ㄍㄎㄏ`).toBe(true);
     }
     expect(BATTLES.g3.focus).toContain('ㄏ');
+  });
+});
+
+describe('第三關的地圖', () => {
+  const gh = MAPS.gh, g = MAPS.g, gc1 = MAPS.gc1, gc2 = MAPS.gc2;
+  it('蛙鳴灣是主島：被打倒送回自己的 respawn；沒有 exit 物件；兩個碼頭各通一個地方', () => {
+    expect(gh.hub).toBeDefined();
+    expect(gh.objects.some((o) => o.kind === 'exit')).toBe(false);
+    expect(g.objects.some((o) => o.kind === 'exit')).toBe(false);
+    expect(gh.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map).sort()).toEqual(['dh', 'g']);
+    expect(g.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['gh']);
+  });
+  it('鼓聲港的南邊碼頭要打倒鼓王才出現，通往蛙鳴灣', () => {
+    const d = MAPS.dh.objects.find((o) => o.id === 'dock_gh')!;
+    expect(d.showIf).toBe('boss_d');
+    expect(d.dockTo!.map).toBe('gh');
+  });
+  it('旅館收 25 金幣；商店有店員 clerk；門互相對得上', () => {
+    expect(MAPS.gh_inn.objects.find((o) => o.kind === 'innkeeper')!.price).toBe(25);
+    expect(MAPS.gh_shop.objects.find((o) => o.id === 'clerk')!.kind).toBe('npc');
+    const di = gh.objects.find((o) => o.id === 'door_inn')!, ds = gh.objects.find((o) => o.id === 'door_shop')!;
+    expect(MAPS.gh_inn.objects.find((o) => o.id === 'door')!.to).toEqual({ map: 'gh', x: di.x, y: di.y + 1 });
+    expect(MAPS.gh_shop.objects.find((o) => o.id === 'door')!.to).toEqual({ map: 'gh', x: ds.x, y: ds.y + 1 });
+  });
+  it('至少三位島民，每位的對話最後一句不設條件', () => {
+    const npcs = gh.objects.filter((o) => o.kind === 'npc' && o.talk);
+    expect(npcs.length).toBeGreaterThanOrEqual(3);
+    for (const n of npcs) {
+      const last = n.talk![n.talk!.length - 1];
+      expect(last.if === undefined && last.not === undefined, `${n.id} 最後一句不能有條件`).toBe(true);
+    }
+  });
+  it('森林：三個機關各有寶箱、洞窟入口練習完才出現、三隻小怪的戰鬥存在', () => {
+    for (const id of ['tree', 'hole', 'ice']) expect(g.objects.find((o) => o.id === id)!.kind).toBe('gimmick');
+    expect(g.objects.find((o) => o.id === 'cave')!.showIf).toBe('gPractice');
+    expect(g.objects.find((o) => o.id === 'cave')!.to).toEqual({ map: 'gc1', x: 2, y: 1 });
+    for (const m of g.objects.filter((o) => o.kind === 'monster' && o.id !== 'dummy')) expect(Boolean(BATTLES[m.battle!])).toBe(true);
+  });
+  it('森林的冰塊：沒有 breath 到不了冰後面的寶箱，有 breath 就到得了', () => {
+    const no = reachReport([g], { map: 'g', x: 4, y: 17 }, ['croak', 'knock']);
+    expect(no.unreachableObjects).toContain('g/chest_ice');
+    const yes = reachReport([g], { map: 'g', x: 4, y: 17 }, ['croak', 'knock', 'breath']);
+    expect(yes.unreachableObjects, yes.unreachableObjects.join(' ')).not.toContain('g/chest_ice');
+  });
+  it('洞窟：兩層同一個 group、樓梯互相對得上、出口回森林', () => {
+    expect(gc1.group).toBe('gc');
+    expect(gc2.group).toBe('gc');
+    expect(gc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('gc2');
+    expect(gc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('gc1');
+    expect(gc1.objects.find((o) => o.id === 'up')!.to!.map).toBe('g');
+  });
+  it('洞窟：學會四招之後每個地方、每個物件都走得到，鑰匙剛好用完；缺招式會被擋住', () => {
+    const r = reachReport([gc1, gc2], { map: 'gc1', x: 2, y: 1 }, ['blast', 'gust', 'croak', 'knock']);
+    expect(r.unreachableFloor, r.unreachableFloor.join(' ')).toEqual([]);
+    expect(r.unreachableObjects, r.unreachableObjects.join(' ')).toEqual([]);
+    expect(r.keysLeft).toBe(0);
+    expect(reachReport([gc1, gc2], { map: 'gc1', x: 2, y: 1 }, ['blast', 'gust', 'croak']).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('每張新地圖：起點不在被阻擋的地形上', () => {
+    for (const m of [gh, g, gc1, gc2]) expect(BLOCKED_TILES.has(m.tiles[m.start.y][m.start.x]), `${m.id} 起點不能走`).toBe(false);
   });
 });

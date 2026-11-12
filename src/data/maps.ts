@@ -395,12 +395,13 @@ MAPS.dh = {
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'dh_shop', x: 4, y: 6 } },
     { id: 'dock_village', kind: 'dock', x: 23, y: 10, dockTo: { map: 'village', x: 20, y: 11 } }, // 東邊：回起始村
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'd', x: 4, y: 17 } }, // 西邊：去舌尖中音島
+    { id: 'dock_gh', kind: 'dock', x: 14, y: 18, showIf: 'boss_d', dockTo: { map: 'gh', x: 14, y: 17 } }, // 南邊：去蛙鳴灣（打倒鼓王後）
     {
       id: 'drummer', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '小鼓手',
       talk: [
         { not: 'dPractice', lines: ['歡迎來到鼓聲港！', '這座島的注音，都是舌尖頂著上牙齦後面發出來的。', '怪物島要搭船去：西邊的碼頭，船會載你過去。島上有稻草布偶，先去練習看看吧！'] },
         { not: 'boss_d', lines: ['聽說怪物島上的洞窟，要先找到小鑰匙才能走到更深的地方。', '西邊的碼頭可以去怪物島，累了就來旅館住一晚。'] },
-        { lines: ['鼓聲回來了！謝謝你！', '南邊還有一座更遠的怪物島，現在迷霧還很濃……'] },
+        { lines: ['鼓聲回來了！謝謝你！', '南邊的碼頭現在可以搭船了，去下一座島看看吧！'] },
       ],
     },
     {
@@ -433,6 +434,148 @@ MAPS.dh_shop = {
     { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'dh', x: 21, y: 4 } },
   ],
+};
+
+// ───────── 蛙鳴灣：舌根音這一關的主島（階段 5a）─────────
+// 照鼓聲港：北邊旅館（左）與商店（右），橫路接兩扇門，直路通到南邊碼頭；只有西邊一個海灣（通往回音森林）。
+const ghGrid = (() => {
+  const g = new Grid(28, 20, 'a').border('~');
+  g.rect('~', 0, 8, 3, 5); // 西邊的海灣（通往回音森林）
+  g.many(',', [[3, 14], [9, 16], [12, 7], [18, 15], [21, 8]]);
+  g.many('#', [[2, 3], [11, 2], [16, 2], [3, 17], [24, 17], [10, 12], [19, 7], [8, 9]]);
+  g.rect('h', 4, 2, 5, 1).rect('H', 4, 3, 5, 1).set(6, 3, 'D'); // 旅館：門在 (6,3)
+  g.rect('h', 19, 2, 5, 1).rect('H', 19, 3, 5, 1).set(21, 3, 'D'); // 商店：門在 (21,3)
+  g.rect('=', 6, 4, 16, 1).rect('=', 14, 5, 1, 13); // 橫路（y=4）與直路（x=14）
+  return g;
+})();
+MAPS.gh = {
+  id: 'gh', name: '蛙鳴灣', w: 28, h: 20, tiles: ghGrid.rows(), theme: 'island',
+  start: { x: 14, y: 17 }, respawn: { x: 7, y: 4 },
+  hub: { dock: { x: 14, y: 17 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 6, y: 3, to: { map: 'gh_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'gh_shop', x: 4, y: 6 } },
+    { id: 'dock_dh', kind: 'dock', x: 14, y: 18, dockTo: { map: 'dh', x: 14, y: 17 } }, // 南邊：回鼓聲港
+    { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'g', x: 4, y: 17 } }, // 西邊：去回音森林
+    {
+      id: 'frog_fan', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '小青蛙迷',
+      talk: [
+        { not: 'gPractice', lines: ['歡迎來到蛙鳴灣！', '這座島的注音，都是從喉嚨深處發出來的：ㄍ ㄎ ㄏ。', '西邊的碼頭可以搭船去回音森林，島上有稻草布偶，先去練習看看吧！'] },
+        { not: 'boss_g', lines: ['森林裡有會「呱呱」叫的樹，聽說用「ㄍ」的聲音就能搖落果子。', '洞窟裡的蝙蝠王很會躲，聽說只有「聽聲音」的魔法才打得到牠！'] },
+        { lines: ['回音回來了！謝謝你！', '蝙蝠王嗡嗡飛走以後，山谷又熱鬧起來了。'] },
+      ],
+    },
+    {
+      id: 'captain', kind: 'npc', x: 18, y: 12, sprite: 'npc_elder', label: '老船長',
+      talk: [
+        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，搭船回起始村的家睡覺，是免費的喔！', '南邊的碼頭回鼓聲港，西邊的碼頭去回音森林。'] },
+      ],
+    },
+    {
+      id: 'angler', kind: 'npc', x: 8, y: 15, sprite: 'npc_girl', label: '小漁夫',
+      talk: [
+        { lines: ['魔力用完的時候，蝙蝠王的護盾就打不破了。', '帶著魔力果，或回旅館睡一覺吧！'] },
+      ],
+    },
+  ],
+};
+MAPS.gh_inn = {
+  id: 'gh_inn', name: '蛙鳴灣旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'gh', x: 6, y: 4 } },
+  ],
+};
+MAPS.gh_shop = {
+  id: 'gh_shop', name: '蛙鳴灣商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'gh', x: 21, y: 4 } },
+  ],
+};
+
+// ───────── ㄍㄎㄏ：回音森林 ─────────
+const forest = (() => {
+  const g = new Grid(28, 20, '.').border('~');
+  g.many(',', [[3, 14], [6, 11], [10, 15], [18, 13], [14, 3], [26, 15]]);
+  g.many('#', [[8, 12], [13, 9], [16, 12], [19, 5], [4, 12], [15, 16], [25, 12], [9, 6]]);
+  g.many('#', [[21, 8], [23, 8], [22, 7]]); // 冰塊後面的小凹槽：只能從冰塊的位置進去
+  return g;
+})();
+MAPS.g = {
+  id: 'g', name: '回音森林（ㄍㄎㄏ）', w: 28, h: 20, tiles: forest.rows(), theme: 'meadow',
+  start: { x: 4, y: 17 }, respawn: { x: 4, y: 17 },
+  objects: [
+    { id: 'dock', kind: 'dock', x: 4, y: 18, dockTo: { map: 'gh', x: 4, y: 10 } }, // 回主島的西邊碼頭
+    { id: 'cave', kind: 'stairs', x: 24, y: 4, to: { map: 'gc1', x: 2, y: 1 }, label: '洞窟', showIf: 'gPractice' },
+    { id: 'sign1', kind: 'sign', x: 6, y: 16, text: ['回音森林。', '這座島的注音，都是舌根靠近喉嚨發出來的：ㄍ ㄎ ㄏ。', '島上有會搖的樹、樹洞和結冰的石頭，學會新招式，也許就能打開它們！'] },
+    { id: 'dummy', kind: 'monster', x: 7, y: 14, battle: 'gpractice', hideIf: 'gPractice' },
+    { id: 'chest_1', kind: 'chest', x: 9, y: 17, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 10, y: 12, battle: 'g1', ai: 'patrol', patrol: [{ x: 11, y: 12 }, { x: 12, y: 12 }] },
+    { id: 'tree', kind: 'gimmick', x: 6, y: 9, sprite: 'tree_shake', sprite2: 'tree_shake_bare', ability: 'croak', fx: 'croak', lockText: ['一棵結滿果子的樹，好像搖一搖就會掉下來。', '用「ㄍ」的聲音震一震，也許會有回音……'], hitText: ['夥伴喉嚨一震「ㄍ」，樹被搖得嘩啦啦響！', '果子掉下來了，樹下面出現了一個寶箱！'], doneText: ['樹上的果子都掉光了。'] },
+    { id: 'chest_tree', kind: 'chest', x: 6, y: 8, showIf: 'g:g:tree', item: 'berry' },
+    { id: 'hole', kind: 'gimmick', x: 12, y: 5, sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'knock', fx: 'knock', lockText: ['一棵有樹洞的老樹，洞口緊緊關著。', '用啄木鳥「ㄎ」的敲擊，也許能打開它……'], hitText: ['夥伴「ㄎ」地輕輕一敲，樹洞「喀」地打開了！', '樹洞裡藏著一個寶箱！'], doneText: ['樹洞開著，裡面空空的。'] },
+    { id: 'chest_hole', kind: 'chest', x: 12, y: 4, showIf: 'g:g:hole', item: 'potion' },
+    { id: 'm2', kind: 'monster', x: 16, y: 8, battle: 'g2', ai: 'patrol', patrol: [{ x: 17, y: 8 }, { x: 18, y: 8 }] },
+    { id: 'ice', kind: 'gimmick', x: 22, y: 9, sprite: 'ice_block', ability: 'breath', fx: 'breath', vanish: true, lockText: ['一大塊冰，擋住了小路。', '用「ㄏ」呼出的熱氣，也許能把它融化……'], hitText: ['夥伴張大嘴巴「ㄏ～」，冰塊慢慢融化了！'] },
+    { id: 'chest_ice', kind: 'chest', x: 22, y: 8, item: 'bigpotion' },
+    { id: 'm3', kind: 'monster', x: 20, y: 15, battle: 'g3', ai: 'patrol', patrol: [{ x: 21, y: 15 }, { x: 22, y: 15 }] },
+  ],
+};
+
+// ───────── 回音洞窟（兩層，每層 21×9）─────────
+const GC1 = fromAscii([
+  '#####################',
+  '#<....##.....##.....#',
+  '#...................#',
+  '#.....##.....##.....#',
+  '###R######.######D###',
+  '#.....##.....##.....#',
+  '#.....##.....##.....#',
+  '#..C..##..K..##..>..#',
+  '#####################',
+], {
+  '<': { id: 'up', kind: 'stairs', to: { map: 'g', x: 24, y: 5 }, label: '出口' },
+  '>': { id: 'down', kind: 'stairs', to: { map: 'gc2', x: 2, y: 1 }, label: '往下' },
+  R: { id: 'rock_f', kind: 'rock' },
+  C: { id: 'chest_f', kind: 'chest', item: 'berry' },
+  K: { id: 'chest_key', kind: 'chest', item: 'key' },
+  D: { id: 'door', kind: 'lockdoor', lockText: ['門被鎖住了。', '要先找到小鑰匙。'] },
+});
+MAPS.gc1 = {
+  id: 'gc1', name: '回音洞窟 1F', w: GC1.w, h: GC1.h, tiles: GC1.tiles, theme: 'valley', group: 'gc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: [...GC1.objects, { id: 'm1', kind: 'monster', x: 9, y: 1, battle: 'gc1m', ai: 'patrol', patrol: [{ x: 10, y: 1 }, { x: 11, y: 1 }] }],
+};
+const GC2 = fromAscii([
+  '#####################',
+  '#<....##.....##.....#',
+  '#...................#',
+  '#.....##...H.##..W..#',
+  '##########B##########',
+  '########.....########',
+  '########..X..########',
+  '########..C..########',
+  '#####################',
+], {
+  '<': { id: 'up', kind: 'stairs', to: { map: 'gc1', x: 17, y: 6 }, label: '回 1 樓' },
+  H: { id: 'm2', kind: 'monster', battle: 'gc2m', ai: 'chase' },
+  W: {
+    id: 'switch1', kind: 'gimmick', sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'knock', fx: 'knock',
+    lockText: ['一個樹洞，洞口緊緊關著。', '用啄木鳥「ㄎ」的敲擊，也許會有回音……'],
+    hitText: ['夥伴「ㄎ」地輕輕一敲，樹洞「喀」地打開了！', '遠處傳來「轟隆」一聲，好像有一道牆打開了！'],
+    doneText: ['樹洞開著，裡面空空的。'],
+  },
+  B: { id: 'barrier1', kind: 'barrier', hideIf: 'g:gc2:switch1', lockText: ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'] },
+  X: { id: 'boss', kind: 'monster', battle: 'boss_g', hideIf: 'boss_g' },
+  C: { id: 'chest_boss', kind: 'chest', item: 'bigpotion', showIf: 'boss_g' },
+});
+MAPS.gc2 = {
+  id: 'gc2', name: '回音洞窟 2F', w: GC2.w, h: GC2.h, tiles: GC2.tiles, theme: 'valley', group: 'gc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: GC2.objects,
 };
 
 export const TILE_KEY: Record<string, string> = {
