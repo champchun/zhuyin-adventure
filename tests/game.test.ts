@@ -64,7 +64,7 @@ describe('maps', () => {
       if (m.group) return; // 迷宮樓層有鎖門、機關、裂石，由 tests/dungeon.test.ts 用模擬來驗證
       const solid = new Set(m.objects.map((o) => `${o.x},${o.y}`));
       const seen = reach(m.id, m.start, solid);
-      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog']);
+      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice']);
       for (const o of m.objects) {
         if (['rock', 'woodgate', 'leaves', 'fog'].includes(o.kind) || sealed.has(o.id)) continue;
         expect(adjReach(seen, o), `${m.id}/${o.id} 無法抵達`).toBe(true);

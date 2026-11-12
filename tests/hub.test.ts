@@ -38,9 +38,9 @@ describe('主島「鼓聲港」', () => {
   it('沒有傳送點：主島、怪物島都沒有 exit 物件，往來都靠碼頭', () => {
     for (const id of ['dh', 'd']) expect(MAPS[id].objects.some((o) => o.kind === 'exit')).toBe(false);
   });
-  it('一個碼頭只通往一個地方：主島有兩個碼頭，一個去起始村、一個去怪物島', () => {
+  it('一個碼頭只通往一個地方：主島有三個碼頭：去起始村、去怪物島、去下一關的蛙鳴灣', () => {
     const docks = dh.objects.filter((o) => o.kind === 'dock');
-    expect(docks.map((o) => o.dockTo!.map).sort()).toEqual(['d', 'village']);
+    expect(docks.map((o) => o.dockTo!.map).sort()).toEqual(['d', 'gh', 'village']);
     expect(MAPS.d.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['dh']);
   });
   it('每個碼頭都有抵達位置：可以走、旁邊是水，而且抵達位置旁邊就有對面那個碼頭可以搭回去', () => {
