@@ -115,6 +115,7 @@ export class WorldScene extends Phaser.Scene {
     setHudInfo(m.name);
     audio.playBgm(m.theme);
     if (m.id === 'd' && !flag('dEntered')) setFlag('dEntered'); // 進到舌尖中音島：開始教 ㄉㄊ
+    if (m.id === 'g' && !flag('gEntered')) setFlag('gEntered'); // 進到回音森林：開始教 ㄍㄎ
     markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
@@ -666,6 +667,25 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx('bubble');
       for (let i = 0; i < 6; i++) {
         const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xbfe6ff);
+        this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'croak') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0x5ccf5c).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 600, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(150, 0.003);
+    } else if (fx === 'knock') {
+      audio.sfx('hint');
+      for (let i = 0; i < 2; i++) {
+        const c = this.add.circle(x, y, 3, 0xffffff, 0).setStrokeStyle(2, 0xb9824f).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 14, alpha: 0, duration: 350, delay: i * 200, onComplete: () => c.destroy() });
+      }
+    } else if (fx === 'breath') {
+      audio.sfx('wind');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffb36b);
         this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
       }
     } else {

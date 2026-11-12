@@ -177,6 +177,35 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'drop', 8, 30, 400);
         break;
       }
+      case 'croak': {
+        audio.sfx('drum');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(4, 0x5ccf5c).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 40, alpha: 0, duration: 420, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        this.burst(to.x, to.y, 'spark', 6, 34, 450);
+        break;
+      }
+      case 'knock': {
+        audio.sfx('hint');
+        for (let i = 0; i < 3; i++) {
+          const b = this.add.circle(from.x + 20, from.y, 4, 0xb9824f, 0.9).setDepth(40);
+          this.tweens.add({ targets: b, x: to.x, y: to.y + (i - 1) * 8, duration: 300, delay: i * 120, onComplete: () => b.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'spark', 6, 28, 400);
+        break;
+      }
+      case 'breath': {
+        audio.sfx('wind');
+        for (let i = 0; i < 6; i++) {
+          const l = this.add.image(from.x, from.y - 14 + i * 6, 'windline').setDepth(40).setTint(0xffb36b).setAlpha(0.9);
+          this.tweens.add({ targets: l, x: to.x, duration: 380, delay: i * 50, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'puff', 6, 24, 400);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');
