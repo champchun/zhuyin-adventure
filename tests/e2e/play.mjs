@@ -65,7 +65,7 @@ async function pump(cond, label, maxMs = 900000) {
       const itemPick = document.querySelector('#battleui [data-a=it]');
       const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
       const lesson = document.querySelector('#modal[data-lesson-target]')?.dataset.lessonTarget ?? ''; // 第一次認識符號的小課程
-      return { bhidden: document.querySelector('#battleui')?.hidden ?? true, lesson, low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      return { enemy: document.querySelector('#battleui .hpbar.enemy .n')?.textContent ?? '', bhidden: document.querySelector('#battleui')?.hidden ?? true, lesson, low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     // 頭目護盾：訊息只會閃一下（之後被「反擊了」蓋掉），所以記起來，直到看到「護盾被魔法打破了」或戰鬥結束
     if (/護盾擋住了|攻擊被彈開/.test(st.msg)) shieldUp = true;
@@ -77,7 +77,7 @@ async function pump(cond, label, maxMs = 900000) {
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
     else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
-    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? (shieldUp && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
@@ -578,7 +578,7 @@ if (run('lv4')) {
   if (!f['g:x:pile'] || !f['c:x:chest_snow'] || !f['g:x:rock'] || !f['c:x:chest_slide']) throw new Error('雪堆／冰石機關失敗 ' + JSON.stringify(f));
   await snap('icefield-gimmicks');
   log('✓ ㄒ吹開雪堆、ㄑ滑走冰石，各取得寶箱（河上的冰橋要等學會 ㄐ）');
-  for (const m of ['m1', 'm2', 'm3']) await tapObj(m, '冰原小怪 ' + m);
+  for (const m of ['m1', 'm2', 'm3']) if (await hasObj(m)) await tapObj(m, '冰原小怪 ' + m); // 有的小怪可能已經被前面的步驟順手打掉
 
   // ───── 冰晶洞窟（冰晶王有護盾，要用魔法才打得到）─────
   await tapObj('cave', '洞窟入口');
