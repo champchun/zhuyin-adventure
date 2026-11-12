@@ -63,6 +63,15 @@ export interface SaveData {
   homeMap?: string;
   /** 已經上過「第一次認識」小課程的符號。舊存檔沒有這個欄位時，載入會依已學會的招式補上 */
   introduced?: string[];
+  /** 已經花掉的星星（可用星星 = stars − starsSpent；stars 仍是累計） */
+  starsSpent?: number;
+  /** 已擁有的稱號（獎勵 id）與飾品（'bow'|'crown'） */
+  titles?: string[];
+  accessories?: string[];
+  /** 目前戴的飾品，沒有＝未戴 */
+  equipped?: string;
+  /** 目前顯示的稱號（獎勵 id） */
+  title?: string;
 }
 
 export const PARTY_MAX = 3;
@@ -89,6 +98,7 @@ export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assiste
 export const newSave = (): SaveData => ({
   v: 1, mapId: 'room', x: 2, y: 3, party: [], active: 0, flags: {}, abilities: [], items: {}, coins: 0,
   stats: Object.fromEntries(ALL_SYMBOLS.map((s) => [s, emptyStat()])), stars: 0, cleared: [], playSeconds: 0, introduced: [],
+  starsSpent: 0, titles: [], accessories: [],
 });
 
 export const G: { save: SaveData; settings: Settings } = { save: newSave(), settings: defaultSettings() };
@@ -132,6 +142,10 @@ export function loadGame(): boolean {
     // 舊存檔沒有 introduced：已經學會的招式綁定的符號都算已認識，老玩家不用重新上課
     // （要看原始的 d：G.save 已經先被 newSave() 的 introduced: [] 補上，不能用它判斷）
     if (!d.introduced) G.save.introduced = introducedFromAbilities(G.save.abilities, castSymbol);
+    // 星星婆婆的欄位同理：看原始的 d，缺的才補（不要覆蓋 newSave 已填的預設值之外的東西）
+    if (d.starsSpent === undefined) G.save.starsSpent = 0;
+    if (!d.titles) G.save.titles = [];
+    if (!d.accessories) G.save.accessories = [];
     G.save.party.forEach(ensureVitals);
     return true;
   } catch { return false; }
