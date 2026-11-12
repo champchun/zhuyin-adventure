@@ -109,9 +109,9 @@ export const ENEMIES: Record<string, EnemyDef> = {
   drippy: { id: 'drippy', name: '水滴怪', sprite: 'en_drippy', hp: 16, atk: 3, scale: 2.25 },
   crabby: { id: 'crabby', name: '橫行蟹', sprite: 'en_crabby', hp: 18, atk: 3, scale: 2.25 },
   drumking: { id: 'drumking', name: '鼓王咚咚', sprite: 'en_drumking', hp: 20, atk: 4, scale: 2.75 },
-  froggy: { id: 'froggy', name: '青蛙', sprite: 'en_froggy', hp: 16, atk: 3, scale: 2.25 },
-  pecker: { id: 'pecker', name: '啄木鳥', sprite: 'en_pecker', hp: 18, atk: 3, scale: 2.25 },
-  bat: { id: 'bat', name: '蝙蝠', sprite: 'en_bat', hp: 18, atk: 3, scale: 2.25, echo: true },
-  batking: { id: 'batking', name: '蝙蝠王嗡嗡', sprite: 'en_batking', hp: 22, atk: 4, scale: 2.75 },
+  froggy: { id: 'froggy', name: '青蛙', sprite: 'en_froggy', hp: 20, atk: 3, scale: 2.25 },
+  pecker: { id: 'pecker', name: '啄木鳥', sprite: 'en_pecker', hp: 22, atk: 3, scale: 2.25 },
+  bat: { id: 'bat', name: '蝙蝠', sprite: 'en_bat', hp: 22, atk: 4, scale: 2.25, echo: true },
+  batking: { id: 'batking', name: '蝙蝠王嗡嗡', sprite: 'en_batking', hp: 28, atk: 5, scale: 2.75 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };
