@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       section:
-        description: '要測哪一段（lv0 / lv2 / lv3 / all）'
+        description: '要測哪一段（lv0 / lv2 / lv3 / lv4 / all）'
         default: all
   schedule:
     - cron: '0 20 * * *'  # 每天台灣時間早上 4 點，從頭玩到尾
@@ -29,8 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # push：三段並行；手動或每天排程：只跑指定的那一個（排程預設 all）
-        section: ${{ (github.event_name == 'push') && fromJSON('["lv0","lv2","lv3"]') || fromJSON(format('["{0}"]', github.event.inputs.section || 'all')) }}
+        # push：四段並行；手動或每天排程：只跑指定的那一個（排程預設 all）
+        section: ${{ (github.event_name == 'push') && fromJSON('["lv0","lv2","lv3","lv4"]') || fromJSON(format('["{0}"]', github.event.inputs.section || 'all')) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

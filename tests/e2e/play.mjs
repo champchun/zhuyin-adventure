@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、all（預設，從頭玩到尾）。
+// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、all（預設，從頭玩到尾）。
 // 分段時前面的進度用「直接寫存檔」補上，不重打前面的戰鬥，所以只測被動到的那一段、跑得快很多。
 const SECTION = process.env.SECTION ?? 'all';
 const run = (...n) => SECTION === 'all' || n.includes(SECTION);
@@ -338,14 +338,21 @@ if (!run('lv0')) {
     S.cleared.push('b', 'p');
     S.coins = 150; S.items.potion = 4; S.items.berry = 2;
     m.stage = 1; m.level = 4; m.hp = 99; m.mp = 99;
-    if (sec === 'lv3') {
+    if (sec === 'lv3' || sec === 'lv4') {
       add('dEntered', 'dPractice', 'boss_d', 'visited:dh', 'visited:d');
       ab('drum', 'splash', 'nasal', 'stream');
       intro('ㄉ', 'ㄊ', 'ㄋ', 'ㄌ');
       S.cleared.push('d');
       m.level = 6; m.hp = 99; m.mp = 99;
     }
-    window.__game.world().loadMap(sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' ? 14 : 20, sec === 'lv3' ? 17 : 11);
+    if (sec === 'lv4') {
+      add('gEntered', 'gPractice', 'boss_g', 'visited:gh', 'visited:g');
+      ab('croak', 'knock', 'breath');
+      intro('ㄍ', 'ㄎ', 'ㄏ');
+      S.cleared.push('g');
+      m.level = 8; m.hp = 99; m.mp = 99;
+    }
+    window.__game.world().loadMap(sec === 'lv4' ? 'gh' : sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' || sec === 'lv4' ? 14 : 20, sec === 'lv3' || sec === 'lv4' ? 17 : 11);
   }, SECTION);
   await pump(idle, '直接寫進度後');
   log('✓ 分段：' + SECTION + '，已補上前面關卡的進度');
@@ -516,12 +523,101 @@ if (run('lv3')) {
   log('✓ ㄏ的熱氣融化冰塊，取得寶箱');
   await doTap(4, 18, '森林的碼頭（回蛙鳴灣）');
   if ((await save()).mapId !== 'gh') throw new Error('沒有從森林回到蛙鳴灣');
-  await doTap(14, 18, '蛙鳴灣南邊的碼頭（回鼓聲港）');
-  if ((await save()).mapId !== 'dh') throw new Error('沒有從蛙鳴灣回到鼓聲港');
-  log('✓ 第三關走完：蛙鳴灣、回音森林、洞窟、回到鼓聲港');
+  if (!run('lv4')) { // 從頭玩到尾（all）時直接接著第四關，不用先繞回鼓聲港
+    await doTap(14, 18, '蛙鳴灣南邊的碼頭（回鼓聲港）');
+    if ((await save()).mapId !== 'dh') throw new Error('沒有從蛙鳴灣回到鼓聲港');
+  }
+  log('✓ 第三關走完：蛙鳴灣、回音森林、洞窟');
 
 }
-if (run('lv2', 'lv3')) {
+if (run('lv4')) {
+  // ───── 雪花鎮與企鵝冰原（ㄒㄑㄐ）─────
+  await tapObj('dock_xh', '蛙鳴灣東邊的碼頭（去雪花鎮，打倒蝙蝠王後出現）');
+  if ((await save()).mapId !== 'xh') throw new Error('沒有搭船到雪花鎮');
+  f = await flags();
+  if (!f['visited:xh']) throw new Error('到雪花鎮後應該記下去過 ' + JSON.stringify(f));
+  await snap('hub-x');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await tapObj('door_inn', '雪花鎮旅館的門');
+  if ((await save()).mapId !== 'xh_inn') throw new Error('沒有進入雪花鎮旅館');
+  await tapObj('keeper', '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('雪花鎮：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await tapObj('keeper', '旅館老闆（住一晚）');
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('雪花鎮：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 雪花鎮旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await tapObj('door', '離開雪花鎮旅館');
+  if ((await save()).mapId !== 'xh') throw new Error('沒有走出雪花鎮旅館');
+  await tapObj('dock_isle', '東南邊的碼頭（去企鵝冰原）');
+  if ((await save()).mapId !== 'x') throw new Error('沒有進入企鵝冰原');
+  f = await flags();
+  if (!f.xEntered) throw new Error('進冰原後應該開始教 ㄒㄑ ' + JSON.stringify(f));
+  await snap('icefield');
+  await tapObj('dummy', '冰原練習布偶');
+  s = await save();
+  if (!s.flags.xPractice || !s.abilities.includes('snow') || !s.abilities.includes('slide')) throw new Error('練習戰後沒有學到雪花飄／企鵝滑 ' + JSON.stringify(s.abilities));
+  const intro4 = s.introduced; if (!intro4 || !intro4.includes('ㄒ') || !intro4.includes('ㄑ')) throw new Error('練習戰之後 ㄒㄑ 應該已經上過課 ' + JSON.stringify(intro4));
+  log('✓ 冰原練習戰完成，學會 snow（ㄒ）與 slide（ㄑ）');
+  await tapObj('chest_1', '冰原寶箱');
+  await tapObj('pile', '雪堆（ㄒ）'); await tapObj('chest_snow', '雪堆下的寶箱');
+  await tapObj('rock', '冰面石頭（ㄑ）'); await tapObj('chest_slide', '石頭後的寶箱');
+  f = await flags();
+  if (!f['g:x:pile'] || !f['c:x:chest_snow'] || !f['g:x:rock'] || !f['c:x:chest_slide']) throw new Error('雪堆／冰石機關失敗 ' + JSON.stringify(f));
+  await snap('icefield-gimmicks');
+  log('✓ ㄒ吹開雪堆、ㄑ滑走冰石，各取得寶箱（河上的冰橋要等學會 ㄐ）');
+  for (const m of ['m1', 'm2', 'm3']) await tapObj(m, '冰原小怪 ' + m);
+
+  // ───── 冰晶洞窟（冰晶王有護盾，要用魔法才打得到）─────
+  await tapObj('cave', '洞窟入口');
+  if ((await save()).mapId !== 'xc1') throw new Error('沒有進入冰晶洞窟 1 樓');
+  await snap('xcave-1f');
+  // 順序：鑰匙 → 鎖門 → 裂石（產生的迷宮裡裂石可能在鎖門後面）
+  await tapObj('chest_key', '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('冰晶洞窟沒有拿到小鑰匙');
+  await tapObj('door', '鎖住的門');
+  f = await flags();
+  if (!f['k:xc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('冰晶洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:xc1:rock_h'] || !f['c:xc1:chest_h']) throw new Error('冰晶洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  log('✓ 冰晶洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await tapObj('down', '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'xc2') throw new Error('沒有走到冰晶洞窟 2 樓');
+  await snap('xcave-2f');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：企鵝、冰晶蝙蝠是回音怪，要用魔法攻擊才有傷害
+  await tapObj('switch1', '冰石開關（ㄑ）');
+  f = await flags();
+  if (!f['g:xc2:switch1']) throw new Error('冰晶洞窟 2 樓的冰石機關沒有啟動 ' + JSON.stringify(f));
+  log('✓ 冰晶洞窟 2 樓：滑走冰石、冰牆消失');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力讓它破得了冰晶王的護盾
+  await tapObj('boss', '冰晶王');
+  s = await save();
+  if (!s.flags.boss_x || !s.abilities.includes('freeze')) throw new Error('冰晶王沒有打贏，或沒有學到 freeze（ㄐ） ' + JSON.stringify({ flags: s.flags.boss_x, abilities: s.abilities }));
+  await snap('after-boss-x');
+  log('✓ 冰晶王打贏了（護盾被魔法打破），學會 freeze（ㄐ）');
+  const intro5 = (await save()).introduced; if (!intro5 || !intro5.includes('ㄐ')) throw new Error('冰晶王之後 ㄐ 應該已經上過課 ' + JSON.stringify(intro5));
+  await tapObj('chest_boss', '頭目寶箱');
+  if (!(await flags())['c:xc2:chest_boss']) throw new Error('冰晶王的寶箱沒拿到');
+  await tapObj('up', '回 1 樓的樓梯');
+  if ((await save()).mapId !== 'xc1') throw new Error('沒有回到冰晶洞窟 1 樓');
+  await tapObj('up', '回冰原的出口');
+  if ((await save()).mapId !== 'x') throw new Error('沒有走回企鵝冰原');
+  await tapObj('bridge', '河面（ㄐ）');
+  await tapObj('chest_bridge1', '對岸寶箱 1'); await tapObj('chest_bridge2', '對岸寶箱 2');
+  f = await flags();
+  if (!f['g:x:bridge'] || !f['c:x:chest_bridge1'] || !f['c:x:chest_bridge2']) throw new Error('冰橋機關失敗 ' + JSON.stringify(f));
+  await snap('icefield-bridge');
+  log('✓ ㄐ把河水凍成冰橋，取得對岸的寶箱');
+  await tapObj('dock', '冰原的碼頭（回雪花鎮）');
+  if ((await save()).mapId !== 'xh') throw new Error('沒有從冰原回到雪花鎮');
+  await tapObj('trail', '雪地小路（打倒冰晶王後出現）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有從雪地小路走回起始村');
+  log('✓ 第四關走完：雪花鎮、企鵝冰原、冰晶洞窟、走雪地小路回到起始村');
+}
+if (SECTION === 'lv2' || SECTION === 'lv3') {
   await doTap(23, 10, '主島東邊的碼頭（回起始村）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從主島回到起始村');
 
