@@ -266,6 +266,34 @@ export function generateTextures(scene: Phaser.Scene) {
     for (let i = 0; i < 4; i++) { px(c, '#2b2140', 1, 2 + i * 3, 14, 4); px(c, i % 2 ? '#8b5a3c' : '#b9824f', 2, 3 + i * 3, 12, 2); px(c, '#d9a26a', 2, 3 + i * 3, 12, 1); }
   });
   make('drop', 4, 5, (c) => { px(c, '#bfe6ff', 1, 0, 2, 1); px(c, '#4aa8f0', 0, 1, 4, 3); px(c, '#2f7ad0', 1, 4, 2, 1); px(c, '#ffffff', 1, 1, 1, 1); });
+  // 舌根音島的機關：搖搖樹、樹洞、冰塊
+  const treeBase = (c: CanvasRenderingContext2D) => {
+    px(c, '#2b2140', 5, 10, 6, 6); px(c, '#8b5a3c', 6, 10, 4, 6); px(c, '#5c3a24', 6, 14, 4, 2);
+    px(c, '#2b2140', 3, 0, 10, 11); px(c, '#2b2140', 1, 2, 14, 7);
+    px(c, '#2f9a45', 4, 1, 8, 9); px(c, '#2f9a45', 2, 3, 12, 5); px(c, '#5ccf5c', 4, 1, 8, 5); px(c, '#5ccf5c', 2, 3, 6, 3); px(c, '#b8f58a', 4, 2, 3, 1);
+  };
+  make('tree_shake', 16, 16, (c) => {
+    treeBase(c);
+    [[3, 4], [9, 2], [6, 6], [11, 5], [4, 8]].forEach(([x, y]) => { px(c, '#e8514a', x, y, 2, 2); px(c, '#ffffff', x, y, 1, 1); });
+  });
+  make('tree_shake_bare', 16, 16, (c) => {
+    treeBase(c);
+    px(c, '#e8514a', 1, 14, 2, 2); px(c, '#ffffff', 1, 14, 1, 1); px(c, '#e8514a', 12, 14, 2, 2); px(c, '#ffffff', 12, 14, 1, 1);
+  });
+  make('tree_hole', 16, 16, (c) => {
+    treeBase(c);
+    px(c, '#2b2140', 6, 11, 4, 4); px(c, '#120a1e', 7, 12, 2, 3);
+  });
+  make('tree_hole_open', 16, 16, (c) => {
+    treeBase(c);
+    px(c, '#2b2140', 6, 11, 4, 4); px(c, '#ffd84a', 7, 12, 2, 3); px(c, '#fff6c0', 7, 12, 1, 1);
+    px(c, '#ffe27a', 5, 15, 1, 1); px(c, '#ffe27a', 10, 15, 1, 1);
+  });
+  make('ice_block', 16, 16, (c) => {
+    px(c, '#2b2140', 1, 3, 14, 12); px(c, '#2b2140', 2, 2, 12, 13);
+    px(c, '#bfe6ff', 2, 3, 12, 11); px(c, '#8ad0ff', 2, 11, 12, 3); px(c, '#8ad0ff', 11, 3, 3, 8);
+    px(c, '#ffffff', 3, 4, 4, 1); px(c, '#ffffff', 3, 5, 1, 4); px(c, '#ffffff', 8, 7, 1, 1); px(c, '#ffffff', 7, 8, 1, 1);
+  });
   // 迷宮的零件：樓梯口、鎖住的門、擋路的石牆
   make('stairs', 16, 16, (c) => {
     px(c, '#2b2140', 1, 1, 14, 14); px(c, '#6a6a84', 2, 2, 12, 12);

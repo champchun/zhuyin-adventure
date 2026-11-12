@@ -327,7 +327,87 @@ function drumking(): Pix {
   return p;
 }
 
+// 呱呱蛙：綠色青蛙，頭上兩顆大眼睛，寬寬的嘴
+const FROG: Pal = { O: OUT, a: '#5ccf5c', b: '#2f9a45', h: '#b8f58a', c: '#e6f2a0', d: EYE, w: '#ffffff', r: '#e8514a' };
+function froggy(): Pix {
+  const p = new Pix();
+  // 後腿與腳掌
+  p.chunk(3, 20, 8, 8, 'b'); p.chunk(21, 20, 8, 8, 'b'); p.r(2, 27, 9, 2, 'b'); p.r(21, 27, 9, 2, 'b');
+  // 身體、肚皮、背上的斑點
+  p.chunk(6, 12, 20, 16, 'a'); p.r(6, 24, 20, 4, 'b'); p.r(9, 21, 14, 6, 'c');
+  p.r(13, 14, 3, 2, 'b'); p.r(19, 15, 3, 2, 'b'); p.r(9, 15, 2, 1, 'h');
+  // 兩顆凸出的大眼睛
+  p.chunk(5, 3, 10, 10, 'a'); p.chunk(17, 3, 10, 10, 'a');
+  p.r(6, 4, 8, 8, 'w'); p.r(18, 4, 8, 8, 'w'); p.r(6, 6, 5, 5, 'd'); p.r(18, 6, 5, 5, 'd'); p.r(7, 7, 2, 2, 'w'); p.r(19, 7, 2, 2, 'w');
+  // 大嘴與舌頭
+  p.r(9, 18, 14, 1, 'd'); p.r(8, 17, 1, 1, 'd'); p.r(23, 17, 1, 1, 'd'); p.r(13, 19, 6, 1, 'r');
+  p.outline('O');
+  return p;
+}
+
+// 啄木鳥：紅頭、黑白相間的羽毛，一支又長又尖的嘴
+const PECK: Pal = { O: OUT, r: '#e8514a', R: '#a83030', a: '#4a4f6a', k: '#2e2f44', w: '#ffffff', y: '#e8b44a', Y: '#a87a2a', d: EYE };
+function pecker(): Pix {
+  const p = new Pix();
+  // 尾巴（往右下撐住身體）與腳
+  p.t(18, 24, 26, 27, 22, 29, 'k'); p.r(14, 27, 2, 2, 'y'); p.r(19, 27, 2, 2, 'y'); p.r(12, 29, 4, 1, 'y'); p.r(18, 29, 4, 1, 'y');
+  // 身體、白色肚子、翅膀
+  p.chunk(10, 12, 14, 16, 'a'); p.r(10, 16, 6, 10, 'w'); p.chunk(17, 14, 7, 13, 'k');
+  p.r(19, 16, 2, 1, 'w'); p.r(18, 19, 2, 1, 'w'); p.r(20, 22, 2, 1, 'w'); p.r(18, 25, 2, 1, 'w');
+  // 頭、紅色頭頂與往後翹的紅羽冠
+  p.chunk(8, 3, 13, 12, 'a'); p.r(8, 8, 6, 6, 'w'); p.chunk(9, 1, 11, 6, 'r'); p.t(18, 1, 26, 5, 17, 7, 'r'); p.r(18, 5, 4, 1, 'R');
+  // 眼睛
+  p.r(10, 7, 3, 3, 'w'); p.r(10, 8, 2, 2, 'd');
+  // 又長又尖的嘴（朝左）
+  p.t(9, 9, 0, 11, 9, 13, 'y'); p.r(2, 11, 7, 1, 'Y');
+  p.outline('O');
+  return p;
+}
+
+// 蝙蝠：紫色的小蝙蝠，翅膀張得開開的，露出兩顆小尖牙
+const BAT: Pal = { O: OUT, a: '#8a5ad0', b: '#5a3a9a', h: '#c4a8f0', d: EYE, w: '#ffffff', y: '#ffd84a' };
+function bat(): Pix {
+  const p = new Pix();
+  // 翅膀（後層深色、前層淺色，下緣呈鋸齒）
+  p.t(1, 6, 12, 9, 12, 21, 'b'); p.t(30, 6, 19, 9, 19, 21, 'b');
+  p.t(4, 10, 12, 11, 12, 20, 'a'); p.t(27, 10, 19, 11, 19, 20, 'a');
+  p.t(1, 6, 4, 16, 1, 14, 'b'); p.t(30, 6, 27, 16, 30, 14, 'b');
+  p.r(5, 12, 2, 1, 'h'); p.r(25, 12, 2, 1, 'h');
+  // 身體與腳
+  p.chunk(12, 12, 8, 10, 'a'); p.r(14, 17, 4, 4, 'h'); p.r(13, 22, 2, 2, 'b'); p.r(17, 22, 2, 2, 'b');
+  // 頭與尖耳朵
+  p.chunk(11, 6, 10, 8, 'a'); p.t(11, 1, 15, 7, 11, 7, 'a'); p.t(21, 1, 17, 7, 21, 7, 'a');
+  // 臉
+  p.r(13, 9, 2, 2, 'w'); p.r(17, 9, 2, 2, 'w'); p.r(13, 10, 1, 1, 'd'); p.r(17, 10, 1, 1, 'd');
+  p.r(14, 12, 4, 1, 'd'); p.r(14, 13, 1, 1, 'w'); p.r(17, 13, 1, 1, 'w');
+  p.outline('O');
+  return p;
+}
+
+// 蝙蝠王嗡嗡：體型較大、顏色更深的蝙蝠，戴著小王冠，橘紅色的眼睛
+const BATK: Pal = { O: OUT, a: '#5a3a8a', b: '#3a2468', h: '#8a6ac0', d: EYE, w: '#ffffff', y: '#ffd84a', e: '#ff6a3a' };
+function batking(): Pix {
+  const p = new Pix();
+  // 大翅膀
+  p.t(1, 8, 11, 12, 11, 27, 'b'); p.t(30, 8, 21, 12, 21, 27, 'b');
+  p.t(5, 13, 11, 15, 11, 26, 'a'); p.t(26, 13, 21, 15, 21, 26, 'a');
+  p.t(1, 8, 4, 20, 1, 17, 'b'); p.t(30, 8, 27, 20, 30, 17, 'b');
+  p.r(6, 16, 3, 1, 'h'); p.r(23, 16, 3, 1, 'h');
+  // 身體、胸前的淺毛與腳
+  p.chunk(11, 14, 10, 13, 'a'); p.r(13, 19, 6, 6, 'h'); p.r(12, 27, 3, 3, 'b'); p.r(17, 27, 3, 3, 'b');
+  // 頭與尖耳朵
+  p.chunk(10, 8, 12, 9, 'a'); p.t(9, 2, 14, 9, 9, 9, 'a'); p.t(23, 2, 18, 9, 23, 9, 'a');
+  // 小王冠
+  p.r(11, 5, 10, 3, 'y'); p.t(11, 5, 14, 5, 12, 2, 'y'); p.t(14, 5, 18, 5, 16, 1, 'y'); p.t(18, 5, 21, 5, 20, 2, 'y');
+  // 橘紅色的眼睛、尖牙
+  p.r(12, 11, 3, 3, 'e'); p.r(17, 11, 3, 3, 'e'); p.r(13, 12, 1, 2, 'd'); p.r(18, 12, 1, 2, 'd');
+  p.r(14, 15, 4, 1, 'd'); p.r(14, 16, 1, 2, 'w'); p.r(17, 16, 1, 2, 'w');
+  p.outline('O');
+  return p;
+}
+
 export const MONSTER_ART: Record<string, { pix: () => Pix; pal: Pal }> = {
+  en_froggy: { pix: froggy, pal: FROG }, en_pecker: { pix: pecker, pal: PECK }, en_bat: { pix: bat, pal: BAT }, en_batking: { pix: batking, pal: BATK },
   en_drippy: { pix: drippy, pal: DROP }, en_crabby: { pix: crabby, pal: CRAB }, en_drumking: { pix: drumking, pal: DRUM },
   mon_bobo: { pix: bobo0, pal: IMP }, mon_bobo2: { pix: bobo1, pal: IMP },
   mon_momo: { pix: momo0, pal: JELLY }, mon_momo2: { pix: momo1, pal: JELLY },
