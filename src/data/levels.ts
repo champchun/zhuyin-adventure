@@ -92,7 +92,7 @@ export const BATTLES: Record<string, BattleDef> = {
   d2: { ...wild('d2', 'crabby', 2, ['ㄋ', 'ㄌ'], ['ㄉ', 'ㄊ'], 'm:d:m2'), intro: ['橫行蟹擋住了路！', '牠會考新的注音：「ㄋ」和「ㄌ」。'] },
   d3: wild('d3', 'drippy', 3, ['ㄋ', 'ㄌ'], ['ㄉ', 'ㄊ', 'ㄅ', 'ㄆ'], 'm:d:m3'),
   boss_d: {
-    id: 'boss_d', enemy: 'drumking', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄋ', 'ㄌ', 'ㄉ', 'ㄊ'], review: ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'],
+    id: 'boss_d', enemy: 'drumking', penalty: true, phases: 3, tier: 3, focus: ['ㄋ', 'ㄌ', 'ㄉ', 'ㄊ'], review: ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'],
     intro: ['咚咚咚咚～鼓王咚咚被迷霧罩住，把全島的鼓聲都偷走了！', '一共三個小回合，把學過的注音都用上！'],
     reward: {
       flag: 'boss_d', exp: 16, coins: 60, abilities: ['nasal', 'stream'], items: { potion: 2, berry: 2 },

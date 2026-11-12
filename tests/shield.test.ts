@@ -57,8 +57,11 @@ describe('resolveHit：一次答對之後的傷害', () => {
 });
 
 describe('戰鬥資料與護盾、回音怪', () => {
-  it('鼓王咚咚有護盾', () => {
-    expect(BATTLES.boss_d.shield).toBe(true);
+  it('鼓王咚咚以前的戰鬥（含鼓王）先不使用護盾與回音怪，從第三關才開始', () => {
+    for (const b of Object.values(BATTLES)) {
+      expect(b.shield, `${b.id} 不該有護盾`).toBeFalsy();
+      expect(ENEMIES[b.enemy].echo, `${b.id} 的敵人不該是回音怪`).toBeFalsy();
+    }
   });
   it('只有頭目戰（多個小回合）可以有護盾；教學戰不可以有護盾，也不可以對上回音怪', () => {
     for (const b of Object.values(BATTLES)) {

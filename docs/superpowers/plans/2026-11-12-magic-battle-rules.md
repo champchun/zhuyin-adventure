@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 讓孩子自然地用到「🪄 魔法攻擊（聽聲音）」：新增回音怪（普通攻擊只有 1 點傷害）與頭目護盾（要先用魔法打破），鼓王咚咚先套用護盾。
+**Goal:** 讓孩子自然地用到「🪄 魔法攻擊（聽聲音）」：新增回音怪（普通攻擊只有 1 點傷害）與頭目護盾（要先用魔法打破），本階段只做規則本身；使用者決定**鼓王以前的戰鬥先不套用**，第三關才開始用。
 
 **Architecture:** 傷害判定寫成純函式 `src/core/shield.ts`（可用 Vitest 覆蓋）；Battle 場景只負責在出招時呼叫它、顯示訊息。規則在「教學戰、沒有音檔、家長固定只看符號、魔力用完」時一律停用，戰鬥退回現在的規則，不會卡關。
 
