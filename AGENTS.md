@@ -11,7 +11,7 @@
 
 ## 結構與慣例
 - `src/data/*` 資料驅動：symbols（`LEARN_STEPS` 學習進度）、monsters（招式、敵人）、maps（程式建格）、levels（戰鬥/獎勵/劇情）、audioMap、strokes（寫字筆順，以教育部標準為準）、ascii（`fromAscii` 手寫迷宮文字圖）、mazes（**產生出來的，不要手改**）。
-- `src/core/*`：save（存檔＋設定）、learning（純邏輯出題/提示/統計）、audio（TTS/注音音檔/BGM/音效）、ui + battleui（DOM）、view（整數縮放）；純邏輯（不依賴 Phaser、可用 Vitest 測）：monsters（巡邏/追擊）、travel（主島與碼頭）、inn（旅館）、dungeon（`reachReport` 迷宮驗證）、strokes（寫字判定）、shield（回音怪與頭目護盾）、frogquiz（青蛙聽音石）。
+- `src/core/*`：save（存檔＋設定）、learning（純邏輯出題/提示/統計）、audio（TTS/注音音檔/BGM/音效）、ui + battleui（DOM）、view（整數縮放）；純邏輯（不依賴 Phaser、可用 Vitest 測）：monsters（巡邏/追擊）、travel（主島與碼頭）、inn（旅館）、dungeon（`reachReport` 迷宮驗證）、strokes（寫字判定）、shield（回音怪與頭目護盾）、frogquiz（青蛙聽音石）、stars（星星婆婆的兌換：可用星星＝累計星星−`starsSpent`，兌換／裝備／稱號）。獎勵清單在 `src/data/rewards.ts`，飾品疊圖貼圖在 `src/gfx/accessory.ts`。
 - `tools/gen-dungeon.mjs`：迷宮產生器（純 JavaScript、固定種子、輸出 `src/data/mazes.ts`）。
 - `src/scenes/*`：World（探索）、Battle（戰鬥，World 以 sleep/wake 切換）。
 - 畫面 320×240 邏輯像素，canvas 解析度 = 邏輯 × 整數倍率，相機 zoom 同倍率；Phaser Text 需帶 `resolution: view.zoom`。
@@ -21,4 +21,5 @@
 - 戰鬥規則：回音怪（`EnemyDef.echo`，普通攻擊只有 1 點傷害）、頭目護盾（`BattleDef.shield`，要先用魔法攻擊打破），只用在第三關以後；教學戰、沒有音檔、家長固定只看符號時停用；魔力用完照樣有效（會輸，不會卡死）。
 - 地形字元：`h/H` 民宅、`i/I` 旅館、`k/K` 商店、`l/Y` 研究所（屋頂/牆），`D` 門；第四關雪地：`n` 雪地、`j` 冰面、`z` 冰橋、`q` 結冰小池、`d` 枯樹、`u` 雪人、`m/M` 雪屋、`g/G` 雪旅館、`o/O` 雪商店；新字元要同時加進 `BLOCKED_TILES` 與 `TILE_KEY`。
 - 不得把未驗證的 TTS 當標準注音單音；沒有音檔時 tier 2/3 要降級成看符號配對。
+- 星星婆婆（id `granny`，鼓聲港 `dh`、蛙鳴灣 `gh`、雪花鎮 `xh` 各一位；第一次對話先播登場台詞，旗標 `grannyMet`）：星星可以換獎勵（稱號、蝴蝶結／王冠飾品、藥水）。存檔新欄位 `starsSpent`（已花星星）、`titles`、`accessories`、`equipped`、`title`（舊存檔要補預設值）。雪花鎮的星光門（`star_door`，kind `stardoor`）通往星光小屋 `xh_star`（寶箱 `chest_star`、星星雕像 `statue`）。
 - 任何 `say()` / modal 都會增減 `ui.blocking`；新增流程務必保證成對（曾因 `say([])` 例外造成地圖輸入鎖死）。

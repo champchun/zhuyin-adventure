@@ -613,6 +613,35 @@ if (run('lv4')) {
   log('✓ ㄐ把河水凍成冰橋，取得對岸的寶箱');
   await tapObj('dock', '冰原的碼頭（回雪花鎮）');
   if ((await save()).mapId !== 'xh') throw new Error('沒有從冰原回到雪花鎮');
+  // 星星婆婆：用星星換獎勵、星光門進星光小屋（星星設成 30、已花 0；之後的流程不再看星星數）
+  await ev(() => { const s = window.__game.G.save; s.stars = 30; s.starsSpent = 0; });
+  const gp = await objPos('granny');
+  for (let i = 0; i < 10 && !(await visibleTile(gp.x, gp.y)); i++) { // 彈窗會開著，不能用 doTap；先走近到看得見
+    const mid = await ev(([x, y]) => {
+      const w = window.__game.world(), v = w.cameras.main.worldView, z = w.cameras.main.zoom;
+      const path = w.findPath((cx, cy) => (cx === x && cy === y) || Math.abs(cx - x) + Math.abs(cy - y) === 1) ?? [];
+      const vis = path.filter((p) => p.x * 16 >= v.x + 4 && p.x * 16 + 16 <= v.right - 4 && p.y * 16 >= v.y + 40 / z && p.y * 16 + 16 <= v.bottom - 4);
+      return vis[vis.length - 1] ?? null;
+    }, [gp.x, gp.y]);
+    if (!mid) throw new Error('找不到走向星星婆婆的路徑點');
+    await tapTile(mid.x, mid.y); await sleep(250); await pump(idle, '走向星星婆婆');
+  }
+  await tapTile(gp.x, gp.y); await sleep(250); // 第一次先播登場台詞（pump 會按「下一句」），之後開兌換彈窗
+  await pump(() => ev(() => !!document.querySelector('#modal [data-a=redeem]')), '星星婆婆兌換視窗');
+  await snap('star-granny-modal');
+  await page.click('#modal [data-a=redeem][data-id=acc_bow]');
+  await sleep(300);
+  const gs = await save();
+  if (gs.equipped !== 'bow' || gs.starsSpent !== 10) throw new Error('兌換蝴蝶結失敗 ' + JSON.stringify({ equipped: gs.equipped, starsSpent: gs.starsSpent }));
+  await page.click('#modal [data-a=close]');
+  await pump(idle, '關閉星星婆婆視窗');
+  await tapObj('star_door', '星光門');
+  if ((await save()).mapId !== 'xh_star') throw new Error('沒有進入星光小屋');
+  await tapObj('chest_star', '星光小屋寶箱');
+  if (!(await flags())['c:xh_star:chest_star']) throw new Error('星光小屋寶箱沒有打開');
+  await tapObj('door', '離開星光小屋');
+  if ((await save()).mapId !== 'xh') throw new Error('沒有從星光小屋回到雪花鎮');
+  log('✓ 星星婆婆：用星星換蝴蝶結、星光門進星光小屋開寶箱');
   await tapObj('trail', '雪地小路（打倒冰晶王後出現）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從雪地小路走回起始村');
   log('✓ 第四關走完：雪花鎮、企鵝冰原、冰晶洞窟、走雪地小路回到起始村');
