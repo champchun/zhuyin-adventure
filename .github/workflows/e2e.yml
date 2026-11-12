@@ -1,5 +1,7 @@
 name: E2E
-# 端對端測試：在 GitHub 的機器上開瀏覽器，用機器人從頭玩到尾。
+# 端對端測試：在 GitHub 的機器上開瀏覽器，用機器人玩遊戲。
+# 平常 push：分成三段（村子～草原／舌尖中音島／蛙鳴灣～回音森林）同時跑，前面的進度直接寫進存檔，所以快。
+# 每天一次、或手動選 all：從頭玩到尾（慢，大版本前的最後確認）。
 # 與「部署到 GitHub Pages」分開，失敗只會通知，不會擋住網站更新。
 on:
   push:
@@ -9,15 +11,26 @@ on:
       - '**/*.md'
       - '.github/workflows/e2e.yml'
   workflow_dispatch:
+    inputs:
+      section:
+        description: '要測哪一段（lv0 / lv2 / lv3 / all）'
+        default: all
+  schedule:
+    - cron: '0 20 * * *'  # 每天台灣時間早上 4 點，從頭玩到尾
 permissions:
   contents: read
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: ${{ matrix.section == 'all' && 70 || 30 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # push：三段並行；手動或每天排程：只跑指定的那一個（排程預設 all）
+        section: ${{ (github.event_name == 'push') && fromJSON('["lv0","lv2","lv3"]') || fromJSON(format('["{0}"]', github.event.inputs.section || 'all')) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,11 +45,11 @@ jobs:
           nohup npx vite preview --port 5190 --host 127.0.0.1 > preview.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:5190/ > /dev/null && break; sleep 1; done
       - name: 機器人玩一遍
-        run: STARTER=momo node tests/e2e/play.mjs http://127.0.0.1:5190/ e2e-shots
+        run: SECTION=${{ matrix.section }} STARTER=momo node tests/e2e/play.mjs http://127.0.0.1:5190/ e2e-shots
       - name: 上傳截圖
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-shots
+          name: e2e-shots-${{ matrix.section }}
           path: e2e-shots
           if-no-files-found: ignore

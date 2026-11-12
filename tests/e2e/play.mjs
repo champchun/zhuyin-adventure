@@ -3,6 +3,10 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
+// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、all（預設，從頭玩到尾）。
+// 分段時前面的進度用「直接寫存檔」補上，不重打前面的戰鬥，所以只測被動到的那一段、跑得快很多。
+const SECTION = process.env.SECTION ?? 'all';
+const run = (...n) => SECTION === 'all' || n.includes(SECTION);
 const URL = process.argv[2] ?? 'http://127.0.0.1:5173/';
 const OUT = process.argv[3] ?? './e2e-shots';
 fs.mkdirSync(OUT, { recursive: true });
@@ -165,6 +169,7 @@ const STARTER = process.env.STARTER ?? 'momo';
 await doTap({ bobo: 3, momo: 5, popo: 7 }[STARTER], 3, '選 ' + STARTER);
 let s = await save();
 let f = await flags();
+let inn;
 if (s.party.length !== 1 || s.party[0].species !== STARTER || !f.starterChosen || !f.giftGiven) throw new Error('選夥伴流程不對 ' + JSON.stringify({ party: s.party, f }));
 if (!s.items.potion || !s.items.berry) throw new Error('博士沒有給道具 ' + JSON.stringify(s.items));
 await snap('starter-picked');
@@ -172,319 +177,354 @@ log('✓ 研究所選了', STARTER, '，拿到道具', JSON.stringify(s.items));
 await doTap(5, 8, '離開研究所');
 if ((await save()).mapId !== 'village') throw new Error('沒有回到村子');
 
-// ───── 第 0 關 ─────
-await doTap(8, 10, '村裡寶箱（小藥水）');
-if ((await save()).items.potion < 4) throw new Error('寶箱沒給小藥水');
-await doTap(16, 11, '練習戰');
-f = await flags();
-if (!f.practiceDone) throw new Error('練習戰沒有完成');
-await snap('practice-done');
-if (!(await save()).abilities.includes('blast') || !(await save()).abilities.includes('gust')) throw new Error('練習戰後沒有爆破拳／噴風');
-log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
-const intro1 = (await save()).introduced; if (!intro1 || !intro1.includes('ㄅ') || !intro1.includes('ㄆ')) throw new Error('練習戰之後 ㄅㄆ 應該已經上過課 ' + JSON.stringify(intro1));
-// ───── 寫字施法：開啟寫字挑戰，用滑鼠依筆順描出 ㄅ，石頭才會碎 ─────
-await ev(() => { window.__game.G.settings.writeChallenge = true; });
-await doTap(23, 5, '走到裂石前'); // 石頭在牆缺口 (23,4)，可走的前一格是 (23,5)；此時還沒開寫字畫布，doTap 安全
-await tapTile(23, 4); // 點石頭本身。不能用 doTap：寫字畫布開著時不會自己結束，doTap 會一直等
-await page.waitForSelector('#writecv');
-await snap('write-overlay');
-const box = await page.locator('#writecv').boundingBox();
-const BO = [[31, 14], [19, 40], [78, 31], [76, 50], [66, 72], [55, 86], [49, 87]]; // 與 src/data/strokes.ts 的 ㄅ 相同
-const at = ([x, y]) => [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height];
-// 先故意寫錯（隨便劃一條短線）：畫布不該關閉，也不該打碎石頭
-await page.mouse.move(...at([20, 80])); await page.mouse.down(); await page.mouse.move(...at([30, 85])); await page.mouse.up();
-await sleep(400); // 給延遲關閉留時間，確認畫布真的還開著
-if (!(await page.locator('#writecv').count())) throw new Error('寫錯了畫布不該關閉');
-if ((await flags())['r:village:rock_a']) throw new Error('寫錯了石頭不該碎');
-// 再照筆順描一次
-await page.mouse.move(...at(BO[0])); await page.mouse.down();
-for (let i = 1; i < BO.length; i++) for (let k = 1; k <= 6; k++) {
-  const [ax, ay] = BO[i - 1], [bx, by] = BO[i];
-  await page.mouse.move(...at([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
-}
-await page.mouse.up();
-await pump(() => ev(() => !!window.__game.G.save.flags['r:village:rock_a']), '寫完 ㄅ 後石頭碎掉');
-await pump(idle, '石頭碎掉之後的對話'); // 旗標一設好 pump 就會回來，但「碎石四散」的對話還開著，要先按掉才能繼續點地面
-await snap('write-done');
-log('✓ 寫字施法：寫錯不會碎，照筆順描出 ㄅ 後石頭碎了');
-await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
-await doTap(23, 3, '隱藏寶箱');
-f = await flags();
-if (!f['r:village:rock_a'] || !f['c:village:chest_hidden']) throw new Error('村裡裂石／隱藏寶箱失敗');
-log('✓ 村莊裂石與隱藏寶箱（爆破拳）');
-
-// ───── 小關B：村外小徑（ㄇㄈ）─────
-await doTap(4, 17, 'ㄇㄈ門');
-if ((await save()).mapId !== 'b') throw new Error('沒有進入村外小徑');
-await snap('valley');
-for (const [x, y, n] of [[9, 15, '寶箱1'], [11, 16, '小怪1'], [15, 12, '小怪2'], [18, 10, '寶箱2'], [16, 6, '小怪3']]) await doTap(x, y, n);
-await doTap(22, 4, '頭目');
-s = await save();
-if (!s.abilities.includes('hum') || !s.abilities.includes('fog') || !s.flags.boss_b) throw new Error('頭目後沒有哼哼波／吹霧');
-if (s.party[0].stage !== 1) throw new Error('夥伴沒有成長');
-await snap('boss-b-done');
-log('✓ 小關B頭目完成，哼哼波與吹霧解鎖，夥伴成長 → Lv.' + s.party[0].level);
-// HP 是跨戰鬥保留的：打完之後不一定是滿的；回家睡一覺要回滿
-const vit = await ev(() => { const m = window.__game.G.save.party[0]; return { hp: m.hp, mp: m.mp }; });
-log('  頭目戰後 HP/MP:', JSON.stringify(vit));
-await doTap(10, 11, '裂石（爆破拳）'); await doTap(3, 9, '裂石後寶箱');
-f = await flags();
-if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('小徑裂石／寶箱失敗');
-log('✓ 用爆破拳打碎小徑裂石並取得寶箱');
-await doTap(4, 18, '回村');
-if ((await save()).mapId !== 'village') throw new Error('沒有回村');
-// ───── 寫字施法（兩筆畫）：鈴鐺要先用滑鼠依筆順寫出 ㄇ ─────
-await ev(() => { window.__game.G.settings.writeChallenge = true; });
-await doTap(21, 6, '走到鈴鐺旁'); // 先走近，鈴鐺才在畫面內（(21,6) 是可以走的空格）
-await tapTile(21, 7);
-await page.waitForSelector('#writecv');
-await snap('write-bell');
-const bellStrokes = await ev(() => window.__game.STROKES['ㄇ'].map((s) => s.points));
-if (bellStrokes.length !== 2) throw new Error('ㄇ 應該是兩畫');
-const wbox = await page.locator('#writecv').boundingBox();
-const wat = ([x, y]) => [wbox.x + (x / 100) * wbox.width, wbox.y + (y / 100) * wbox.height];
-for (const pts of bellStrokes) { // 每一畫：按下、依序經過各點（每段補 6 步）、放開
-  await page.mouse.move(...wat(pts[0])); await page.mouse.down();
-  for (let i = 1; i < pts.length; i++) for (let k = 1; k <= 6; k++) {
-    const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
-    await page.mouse.move(...wat([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
+if (run('lv0')) {
+  // ───── 第 0 關 ─────
+  await doTap(8, 10, '村裡寶箱（小藥水）');
+  if ((await save()).items.potion < 4) throw new Error('寶箱沒給小藥水');
+  await doTap(16, 11, '練習戰');
+  f = await flags();
+  if (!f.practiceDone) throw new Error('練習戰沒有完成');
+  await snap('practice-done');
+  if (!(await save()).abilities.includes('blast') || !(await save()).abilities.includes('gust')) throw new Error('練習戰後沒有爆破拳／噴風');
+  log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
+  const intro1 = (await save()).introduced; if (!intro1 || !intro1.includes('ㄅ') || !intro1.includes('ㄆ')) throw new Error('練習戰之後 ㄅㄆ 應該已經上過課 ' + JSON.stringify(intro1));
+  // ───── 寫字施法：開啟寫字挑戰，用滑鼠依筆順描出 ㄅ，石頭才會碎 ─────
+  await ev(() => { window.__game.G.settings.writeChallenge = true; });
+  await doTap(23, 5, '走到裂石前'); // 石頭在牆缺口 (23,4)，可走的前一格是 (23,5)；此時還沒開寫字畫布，doTap 安全
+  await tapTile(23, 4); // 點石頭本身。不能用 doTap：寫字畫布開著時不會自己結束，doTap 會一直等
+  await page.waitForSelector('#writecv');
+  await snap('write-overlay');
+  const box = await page.locator('#writecv').boundingBox();
+  const BO = [[31, 14], [19, 40], [78, 31], [76, 50], [66, 72], [55, 86], [49, 87]]; // 與 src/data/strokes.ts 的 ㄅ 相同
+  const at = ([x, y]) => [box.x + (x / 100) * box.width, box.y + (y / 100) * box.height];
+  // 先故意寫錯（隨便劃一條短線）：畫布不該關閉，也不該打碎石頭
+  await page.mouse.move(...at([20, 80])); await page.mouse.down(); await page.mouse.move(...at([30, 85])); await page.mouse.up();
+  await sleep(400); // 給延遲關閉留時間，確認畫布真的還開著
+  if (!(await page.locator('#writecv').count())) throw new Error('寫錯了畫布不該關閉');
+  if ((await flags())['r:village:rock_a']) throw new Error('寫錯了石頭不該碎');
+  // 再照筆順描一次
+  await page.mouse.move(...at(BO[0])); await page.mouse.down();
+  for (let i = 1; i < BO.length; i++) for (let k = 1; k <= 6; k++) {
+    const [ax, ay] = BO[i - 1], [bx, by] = BO[i];
+    await page.mouse.move(...at([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
   }
   await page.mouse.up();
+  await pump(() => ev(() => !!window.__game.G.save.flags['r:village:rock_a']), '寫完 ㄅ 後石頭碎掉');
+  await pump(idle, '石頭碎掉之後的對話'); // 旗標一設好 pump 就會回來，但「碎石四散」的對話還開著，要先按掉才能繼續點地面
+  await snap('write-done');
+  log('✓ 寫字施法：寫錯不會碎，照筆順描出 ㄅ 後石頭碎了');
+  await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
+  await doTap(23, 3, '隱藏寶箱');
+  f = await flags();
+  if (!f['r:village:rock_a'] || !f['c:village:chest_hidden']) throw new Error('村裡裂石／隱藏寶箱失敗');
+  log('✓ 村莊裂石與隱藏寶箱（爆破拳）');
+
+  // ───── 小關B：村外小徑（ㄇㄈ）─────
+  await doTap(4, 17, 'ㄇㄈ門');
+  if ((await save()).mapId !== 'b') throw new Error('沒有進入村外小徑');
+  await snap('valley');
+  for (const [x, y, n] of [[9, 15, '寶箱1'], [11, 16, '小怪1'], [15, 12, '小怪2'], [18, 10, '寶箱2'], [16, 6, '小怪3']]) await doTap(x, y, n);
+  await doTap(22, 4, '頭目');
+  s = await save();
+  if (!s.abilities.includes('hum') || !s.abilities.includes('fog') || !s.flags.boss_b) throw new Error('頭目後沒有哼哼波／吹霧');
+  if (s.party[0].stage !== 1) throw new Error('夥伴沒有成長');
+  await snap('boss-b-done');
+  log('✓ 小關B頭目完成，哼哼波與吹霧解鎖，夥伴成長 → Lv.' + s.party[0].level);
+  // HP 是跨戰鬥保留的：打完之後不一定是滿的；回家睡一覺要回滿
+  const vit = await ev(() => { const m = window.__game.G.save.party[0]; return { hp: m.hp, mp: m.mp }; });
+  log('  頭目戰後 HP/MP:', JSON.stringify(vit));
+  await doTap(10, 11, '裂石（爆破拳）'); await doTap(3, 9, '裂石後寶箱');
+  f = await flags();
+  if (!f['r:b:rock_b'] || !f['c:b:chest_rock']) throw new Error('小徑裂石／寶箱失敗');
+  log('✓ 用爆破拳打碎小徑裂石並取得寶箱');
+  await doTap(4, 18, '回村');
+  if ((await save()).mapId !== 'village') throw new Error('沒有回村');
+  // ───── 寫字施法（兩筆畫）：鈴鐺要先用滑鼠依筆順寫出 ㄇ ─────
+  await ev(() => { window.__game.G.settings.writeChallenge = true; });
+  await doTap(21, 6, '走到鈴鐺旁'); // 先走近，鈴鐺才在畫面內（(21,6) 是可以走的空格）
+  await tapTile(21, 7);
+  await page.waitForSelector('#writecv');
+  await snap('write-bell');
+  const bellStrokes = await ev(() => window.__game.STROKES['ㄇ'].map((s) => s.points));
+  if (bellStrokes.length !== 2) throw new Error('ㄇ 應該是兩畫');
+  const wbox = await page.locator('#writecv').boundingBox();
+  const wat = ([x, y]) => [wbox.x + (x / 100) * wbox.width, wbox.y + (y / 100) * wbox.height];
+  for (const pts of bellStrokes) { // 每一畫：按下、依序經過各點（每段補 6 步）、放開
+    await page.mouse.move(...wat(pts[0])); await page.mouse.down();
+    for (let i = 1; i < pts.length; i++) for (let k = 1; k <= 6; k++) {
+      const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
+      await page.mouse.move(...wat([ax + ((bx - ax) * k) / 6, ay + ((by - ay) * k) / 6]));
+    }
+    await page.mouse.up();
+  }
+  await pump(() => ev(() => !!window.__game.G.save.flags.bellRung), '寫完 ㄇ 後鈴鐺響了');
+  await pump(idle, '鈴鐺響了之後的對話'); // 旗標一設好 pump 就會回來，但對話還開著，要先按掉才能繼續點地面
+  await snap('write-bell-done');
+  log('✓ 寫字施法（兩筆畫）：照筆順寫出 ㄇ，鈴鐺響了');
+  await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
+  await doTap(22, 8, '鈴鐺寶箱');
+  await doTap(10, 4, '迷霧（吹霧）'); await doTap(10, 2, '霧後寶箱');
+  f = await flags();
+  if (!f.bellRung || !f['c:village:chest_bell'] || !f['f:village:fog_a'] || !f['c:village:chest_fog']) throw new Error('鈴鐺／迷霧互動失敗 ' + JSON.stringify(f));
+  await snap('village-new-chests');
+  log('✓ 哼哼波搖響鈴鐺、吹霧進入迷霧小屋，各取得寶箱');
+
+  // ───── ㄆ關 ─────
+  await doTap(7, 17, '風車草原門');
+  if ((await save()).mapId !== 'p') throw new Error('沒有進入 ㄆ 關');
+  await snap('meadow');
+  for (const [x, y, n] of [[7, 14, '葉蟲1'], [6, 11, '寶箱'], [11, 13, '葉蟲2']]) await doTap(x, y, n);
+  // 橋在 (14..15,15)，路徑尋找會自動經過
+  for (const [x, y, n] of [[18, 11, '葉蟲3'], [20, 9, '寶箱']]) await doTap(x, y, n);
+  await doTap(22, 4, '霧影');
+  s = await save();
+  if (!s.flags.boss_p) throw new Error('霧影沒有打贏');
+  await snap('after-boss-p');
+  log('  戰鬥中喝了藥水', usedPotions, '次');
+  log('✓ 畢業戰完成，隊伍：', s.party.map((m) => m.species + ' Lv' + m.level).join());
+  await doTap(11, 9, '風車'); await doTap(5, 7, '落葉'); await doTap(5, 4, '落葉後寶箱'); await doTap(22, 14, '木門(已開)').catch(() => {});
+  await doTap(23, 17, '木門後寶箱');
+  f = await flags();
+  if (!f.windmillOn || !f['l:p:leaves_a'] || !f['c:p:chest_leaf'] || !f['c:p:chest_wind']) throw new Error('噴風互動失敗 ' + JSON.stringify(f));
+  await snap('meadow-gust');
+  log('✓ 噴風：風車、落葉、木門皆可用');
+
+  // ───── 回村、逛道具店：打怪賺到的金幣買藥水 ─────
+  await doTap(4, 18, '回村');
+  const coins0 = (await save()).coins;
+  if (!(coins0 > 0)) throw new Error('打完怪沒有金幣 ' + coins0);
+  await doTap(19, 14, '商店門');
+  if ((await save()).mapId !== 'shop') throw new Error('沒有進入商店');
+  await snap('shop-inside');
+  await tapTile(6, 3); await sleep(250); // 先是店員的對話，按掉之後才會開商店視窗（開著時 busy 不會結束，所以不能用 doTap）
+  await pump(() => ev(() => !!document.querySelector('#modal [data-a=buy]')), '店員對話');
+  await snap('shop-menu');
+  const potions0 = (await save()).items.potion ?? 0;
+  await page.click('#modal [data-a=buy][data-id=potion]');
+  await page.waitForSelector('#modal [data-a=buy]');
+  const afterBuy = await save();
+  if ((afterBuy.items.potion ?? 0) !== potions0 + 1 || afterBuy.coins !== coins0 - 15) throw new Error('購買結果不對 ' + JSON.stringify({ items: afterBuy.items, coins: afterBuy.coins, coins0 }));
+  await page.click('#modal [data-a=close]');
+  await pump(idle, '離開商店');
+  log('✓ 打怪賺到', coins0, '枚金幣，在商店買了 1 瓶小藥水，剩', afterBuy.coins);
+  await doTap(4, 7, '離開商店');
+  if ((await save()).mapId !== 'village') throw new Error('沒有走出商店');
+
+  // ───── 怪物重生：離開地圖再回來，野生怪回來、頭目不會 ─────
+  const beforeRe = await flags();
+  if (!beforeRe['m:b:m1'] || !beforeRe['m:b:boss']) throw new Error('測試前提不對：小徑的怪應該都打完了');
+  await doTap(4, 17, '再進小徑');
+  if ((await save()).mapId !== 'b') throw new Error('沒有再進小徑');
+  const afterRe = await flags();
+  if (afterRe['m:b:m1'] || afterRe['m:b:m2'] || afterRe['m:b:m3']) throw new Error('野生怪沒有重生 ' + JSON.stringify(afterRe));
+  if (!afterRe['m:b:boss'] || !afterRe.boss_b) throw new Error('頭目不該重生');
+  const monstersShown = await ev(() => [...window.__game.world().objs.values()].filter((o) => o.def.kind === 'monster').map((o) => o.def.id));
+  if (!['m1', 'm2', 'm3'].every((id) => monstersShown.includes(id)) || monstersShown.includes('boss')) throw new Error('畫面上的怪物不對 ' + monstersShown);
+  await snap('valley-respawned');
+  log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭目沒有');
+  await doTap(4, 18, '回村');
+
 }
-await pump(() => ev(() => !!window.__game.G.save.flags.bellRung), '寫完 ㄇ 後鈴鐺響了');
-await pump(idle, '鈴鐺響了之後的對話'); // 旗標一設好 pump 就會回來，但對話還開著，要先按掉才能繼續點地面
-await snap('write-bell-done');
-log('✓ 寫字施法（兩筆畫）：照筆順寫出 ㄇ，鈴鐺響了');
-await ev(() => { window.__game.G.settings.writeChallenge = false; }); // 後面的流程維持機器人點擊
-await doTap(22, 8, '鈴鐺寶箱');
-await doTap(10, 4, '迷霧（吹霧）'); await doTap(10, 2, '霧後寶箱');
-f = await flags();
-if (!f.bellRung || !f['c:village:chest_bell'] || !f['f:village:fog_a'] || !f['c:village:chest_fog']) throw new Error('鈴鐺／迷霧互動失敗 ' + JSON.stringify(f));
-await snap('village-new-chests');
-log('✓ 哼哼波搖響鈴鐺、吹霧進入迷霧小屋，各取得寶箱');
+// ───── 分段執行：不跑前面的關卡時，直接把進度寫進存檔 ─────
+if (!run('lv0')) {
+  await ev((sec) => {
+    const G = window.__game.G, S = G.save, m = S.party[0];
+    const add = (...k) => k.forEach((x) => { S.flags[x] = true; });
+    const ab = (...k) => k.forEach((x) => { if (!S.abilities.includes(x)) S.abilities.push(x); });
+    const intro = (...k) => k.forEach((x) => { if (!S.introduced.includes(x)) S.introduced.push(x); });
+    add('practiceDone', 'boss_b', 'boss_p', 'momTalked');
+    ab('blast', 'gust', 'hum', 'fog');
+    intro('ㄅ', 'ㄆ', 'ㄇ', 'ㄈ');
+    S.cleared.push('b', 'p');
+    S.coins = 150; S.items.potion = 4; S.items.berry = 2;
+    m.stage = 1; m.level = 4; m.hp = 99; m.mp = 99;
+    if (sec === 'lv3') {
+      add('dEntered', 'dPractice', 'boss_d', 'visited:dh', 'visited:d');
+      ab('drum', 'splash', 'nasal', 'stream');
+      intro('ㄉ', 'ㄊ', 'ㄋ', 'ㄌ');
+      S.cleared.push('d');
+      m.level = 6; m.hp = 99; m.mp = 99;
+    }
+    window.__game.world().loadMap(sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' ? 14 : 20, sec === 'lv3' ? 17 : 11);
+  }, SECTION);
+  await pump(idle, '直接寫進度後');
+  log('✓ 分段：' + SECTION + '，已補上前面關卡的進度');
+}
 
-// ───── ㄆ關 ─────
-await doTap(7, 17, '風車草原門');
-if ((await save()).mapId !== 'p') throw new Error('沒有進入 ㄆ 關');
-await snap('meadow');
-for (const [x, y, n] of [[7, 14, '葉蟲1'], [6, 11, '寶箱'], [11, 13, '葉蟲2']]) await doTap(x, y, n);
-// 橋在 (14..15,15)，路徑尋找會自動經過
-for (const [x, y, n] of [[18, 11, '葉蟲3'], [20, 9, '寶箱']]) await doTap(x, y, n);
-await doTap(22, 4, '霧影');
-s = await save();
-if (!s.flags.boss_p) throw new Error('霧影沒有打贏');
-await snap('after-boss-p');
-log('  戰鬥中喝了藥水', usedPotions, '次');
-log('✓ 畢業戰完成，隊伍：', s.party.map((m) => m.species + ' Lv' + m.level).join());
-await doTap(11, 9, '風車'); await doTap(5, 7, '落葉'); await doTap(5, 4, '落葉後寶箱'); await doTap(22, 14, '木門(已開)').catch(() => {});
-await doTap(23, 17, '木門後寶箱');
-f = await flags();
-if (!f.windmillOn || !f['l:p:leaves_a'] || !f['c:p:chest_leaf'] || !f['c:p:chest_wind']) throw new Error('噴風互動失敗 ' + JSON.stringify(f));
-await snap('meadow-gust');
-log('✓ 噴風：風車、落葉、木門皆可用');
+if (run('lv2')) {
+  // ───── 舌尖中音島（ㄉㄊㄋㄌ）─────
+  await doTap(21, 11, '起始村的碼頭（打倒草原頭目後出現）');
+  if ((await save()).mapId !== 'dh') throw new Error('沒有搭船到主島鼓聲港');
+  f = await flags();
+  if (!f['visited:dh']) throw new Error('到主島後應該記下去過 ' + JSON.stringify(f));
+  await snap('hub');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await doTap(6, 3, '旅館的門');
+  if ((await save()).mapId !== 'dh_inn') throw new Error('沒有進入旅館');
+  await doTap(6, 3, '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await doTap(6, 3, '旅館老闆（住一晚）'); // choose() 彈窗由 pump 自動選第一個選項「住一晚」
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 主島旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await doTap(4, 7, '離開旅館');
+  if ((await save()).mapId !== 'dh') throw new Error('沒有走出旅館');
+  await doTap(3, 10, '主島西邊的碼頭（去怪物島）');
+  if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島（怪物島）');
+  f = await flags();
+  if (!f.dEntered) throw new Error('進島後應該開始教 ㄉㄊ');
+  await snap('island');
+  await doTap(6, 14, '島上練習布偶');
+  s = await save();
+  if (!s.flags.dPractice || !s.abilities.includes('drum') || !s.abilities.includes('splash')) throw new Error('練習戰後沒有學到擊鼓拳／水花彈 ' + JSON.stringify(s.abilities));
+  log('✓ 島上練習戰完成，學會擊鼓拳與水花彈');
+  await doTap(8, 17, '島上寶箱');
+  await doTap(3, 11, '大鼓（擊鼓拳）'); await doTap(3, 10, '鼓後寶箱');
+  await doTap(9, 15, '乾花（水花彈）'); await doTap(10, 15, '花旁寶箱');
+  f = await flags();
+  if (!f['g:d:drum'] || !f['c:d:chest_drum'] || !f['g:d:plant'] || !f['c:d:chest_plant']) throw new Error('大鼓／乾花機關失敗 ' + JSON.stringify(f));
+  await snap('island-gimmicks');
+  log('✓ 擊鼓拳敲響大鼓、水花彈澆開乾花，各取得寶箱');
+  for (const [x, y, n] of [[9, 9, '水滴怪'], [11, 4, '橫行蟹'], [12, 2, '寶箱']]) await doTap(x, y, n);
+  await doTap(19, 10, '橋後的水滴怪');
+  await doTap(22, 4, '鼓王咚咚');
+  s = await save();
+  if (!s.flags.boss_d || !s.abilities.includes('nasal') || !s.abilities.includes('stream')) throw new Error('鼓王沒有打贏，或沒有學到嗯嗯泡／流水衝 ' + JSON.stringify(s.abilities));
+  await snap('after-boss-d');
+  log('✓ 鼓王咚咚打贏了，學會嗯嗯泡與流水衝');
+  const intro2 = (await save()).introduced; if (!intro2 || !intro2.includes('ㄋ') || !intro2.includes('ㄌ')) throw new Error('鼓王之後 ㄋㄌ 應該已經上過課 ' + JSON.stringify(intro2));
+  await doTap(18, 15, '小水壩（流水衝）'); await doTap(18, 16, '水壩後寶箱');
+  await doTap(6, 5, '泡泡球（嗯嗯泡）'); await doTap(6, 4, '泡泡後寶箱');
+  f = await flags();
+  if (!f['g:d:dam'] || !f['c:d:chest_dam'] || !f['g:d:bubble'] || !f['c:d:chest_bubble']) throw new Error('水壩／泡泡機關失敗 ' + JSON.stringify(f));
+  log('✓ 流水衝沖開水壩、嗯嗯泡飄走泡泡球，各取得寶箱');
 
-// ───── 回村、逛道具店：打怪賺到的金幣買藥水 ─────
-await doTap(4, 18, '回村');
-const coins0 = (await save()).coins;
-if (!(coins0 > 0)) throw new Error('打完怪沒有金幣 ' + coins0);
-await doTap(19, 14, '商店門');
-if ((await save()).mapId !== 'shop') throw new Error('沒有進入商店');
-await snap('shop-inside');
-await tapTile(6, 3); await sleep(250); // 先是店員的對話，按掉之後才會開商店視窗（開著時 busy 不會結束，所以不能用 doTap）
-await pump(() => ev(() => !!document.querySelector('#modal [data-a=buy]')), '店員對話');
-await snap('shop-menu');
-const potions0 = (await save()).items.potion ?? 0;
-await page.click('#modal [data-a=buy][data-id=potion]');
-await page.waitForSelector('#modal [data-a=buy]');
-const afterBuy = await save();
-if ((afterBuy.items.potion ?? 0) !== potions0 + 1 || afterBuy.coins !== coins0 - 15) throw new Error('購買結果不對 ' + JSON.stringify({ items: afterBuy.items, coins: afterBuy.coins, coins0 }));
-await page.click('#modal [data-a=close]');
-await pump(idle, '離開商店');
-log('✓ 打怪賺到', coins0, '枚金幣，在商店買了 1 瓶小藥水，剩', afterBuy.coins);
-await doTap(4, 7, '離開商店');
-if ((await save()).mapId !== 'village') throw new Error('沒有走出商店');
+  // ───── 試煉洞窟（階段 3 的迷宮元件）─────
+  await doTap(3, 3, '洞窟入口');
+  if ((await save()).mapId !== 'dc1') throw new Error('沒有進入洞窟 1 樓');
+  await snap('cave-1f');
+  await doTap(3, 4, '裂石（爆破拳）'); await doTap(3, 7, '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:dc1:rock_f'] || !f['c:dc1:chest_f']) throw new Error('洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  await doTap(10, 7, '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('沒有拿到小鑰匙');
+  await doTap(17, 4, '鎖住的門');
+  f = await flags();
+  if (!f['k:dc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  log('✓ 洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await doTap(17, 7, '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'dc2') throw new Error('沒有走到洞窟 2 樓');
+  await snap('cave-2f');
+  await doTap(17, 3, '機關開關（擊鼓拳）');
+  f = await flags();
+  if (!f['g:dc2:switch1']) throw new Error('2 樓的機關沒有啟動');
+  await doTap(10, 7, '石牆後的寶箱');
+  f = await flags();
+  if (!f['c:dc2:chest_berry']) throw new Error('石牆打開後拿不到魔力果寶箱');
+  log('✓ 洞窟 2 樓：啟動機關、石牆消失、取得寶箱');
+  await doTap(1, 1, '回 1 樓的樓梯');
+  if ((await save()).mapId !== 'dc1') throw new Error('沒有回到洞窟 1 樓');
+  await doTap(1, 1, '回島的樓梯');
+  if ((await save()).mapId !== 'd') throw new Error('沒有走回舌尖中音島');
+  log('✓ 洞窟：樓層之間來回、走回島上');
+  await doTap(4, 18, '怪物島的碼頭（回主島）');
+  if ((await save()).mapId !== 'dh') throw new Error('沒有從怪物島回到主島');
+}
+if (run('lv3')) {
+  // ───── 蛙鳴灣與回音森林（ㄍㄎㄏ）─────
+  await doTap(14, 18, '鼓聲港南邊的碼頭（去蛙鳴灣，打倒鼓王後出現）');
+  if ((await save()).mapId !== 'gh') throw new Error('沒有搭船到蛙鳴灣');
+  f = await flags();
+  if (!f['visited:gh']) throw new Error('到蛙鳴灣後應該記下去過 ' + JSON.stringify(f));
+  await snap('hub-g');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await doTap(6, 3, '蛙鳴灣旅館的門');
+  if ((await save()).mapId !== 'gh_inn') throw new Error('沒有進入蛙鳴灣旅館');
+  await doTap(6, 3, '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('蛙鳴灣：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await doTap(6, 3, '旅館老闆（住一晚）');
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('蛙鳴灣：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 蛙鳴灣旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await doTap(4, 7, '離開蛙鳴灣旅館');
+  if ((await save()).mapId !== 'gh') throw new Error('沒有走出蛙鳴灣旅館');
+  await doTap(3, 10, '蛙鳴灣西邊的碼頭（去回音森林）');
+  if ((await save()).mapId !== 'g') throw new Error('沒有進入回音森林');
+  f = await flags();
+  if (!f.gEntered) throw new Error('進森林後應該開始教 ㄍㄎ ' + JSON.stringify(f));
+  await snap('forest');
+  await doTap(7, 14, '森林練習布偶');
+  s = await save();
+  if (!s.flags.gPractice || !s.abilities.includes('croak') || !s.abilities.includes('knock')) throw new Error('練習戰後沒有學到呱呱叫／啄木敲 ' + JSON.stringify(s.abilities));
+  log('✓ 森林練習戰完成，學會 croak（ㄍ）與 knock（ㄎ）');
+  await doTap(9, 17, '森林寶箱');
+  await doTap(10, 12, '森林小怪 1');
+  await doTap(6, 9, '搖搖樹（ㄍ）'); await doTap(6, 8, '樹下寶箱');
+  await doTap(12, 5, '樹洞（ㄎ）'); await doTap(12, 4, '樹洞寶箱');
+  f = await flags();
+  if (!f['g:g:tree'] || !f['c:g:chest_tree'] || !f['g:g:hole'] || !f['c:g:chest_hole']) throw new Error('搖搖樹／樹洞機關失敗 ' + JSON.stringify(f));
+  await snap('forest-gimmicks');
+  log('✓ ㄍ搖落果子、ㄎ敲開樹洞，各取得寶箱（冰塊要等學會 ㄏ）');
+  await doTap(16, 8, '森林小怪 2');
+  await doTap(20, 15, '森林小怪 3');
 
-// ───── 怪物重生：離開地圖再回來，野生怪回來、頭目不會 ─────
-const beforeRe = await flags();
-if (!beforeRe['m:b:m1'] || !beforeRe['m:b:boss']) throw new Error('測試前提不對：小徑的怪應該都打完了');
-await doTap(4, 17, '再進小徑');
-if ((await save()).mapId !== 'b') throw new Error('沒有再進小徑');
-const afterRe = await flags();
-if (afterRe['m:b:m1'] || afterRe['m:b:m2'] || afterRe['m:b:m3']) throw new Error('野生怪沒有重生 ' + JSON.stringify(afterRe));
-if (!afterRe['m:b:boss'] || !afterRe.boss_b) throw new Error('頭目不該重生');
-const monstersShown = await ev(() => [...window.__game.world().objs.values()].filter((o) => o.def.kind === 'monster').map((o) => o.def.id));
-if (!['m1', 'm2', 'm3'].every((id) => monstersShown.includes(id)) || monstersShown.includes('boss')) throw new Error('畫面上的怪物不對 ' + monstersShown);
-await snap('valley-respawned');
-log('✓ 離開再回來：小怪重生了（', monstersShown.join(), '），頭目沒有');
-await doTap(4, 18, '回村');
+  // ───── 回音洞窟（蝙蝠王有護盾，要用魔法才打得到）─────
+  await doTap(24, 4, '洞窟入口');
+  if ((await save()).mapId !== 'gc1') throw new Error('沒有進入回音洞窟 1 樓');
+  await snap('gcave-1f');
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:gc1:rock_h'] || !f['c:gc1:chest_h']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  await tapObj('chest_key', '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('回音洞窟沒有拿到小鑰匙');
+  await tapObj('door', '鎖住的門');
+  f = await flags();
+  if (!f['k:gc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('回音洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  log('✓ 回音洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await tapObj('down', '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'gc2') throw new Error('沒有走到回音洞窟 2 樓');
+  await snap('gcave-2f');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：蝙蝠是回音怪，要用魔法攻擊才有傷害
+  await tapObj('switch1', '樹洞開關（ㄎ）');
+  f = await flags();
+  if (!f['g:gc2:switch1']) throw new Error('回音洞窟 2 樓的樹洞機關沒有啟動 ' + JSON.stringify(f));
+  log('✓ 回音洞窟 2 樓：敲開樹洞、石牆消失');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 機器人的目的是走完流程，不是考驗魔力管理：補魔力讓它破得了蝙蝠王的護盾
+  await tapObj('boss', '蝙蝠王');
+  s = await save();
+  if (!s.flags.boss_g || !s.abilities.includes('breath')) throw new Error('蝙蝠王沒有打贏，或沒有學到 breath（ㄏ） ' + JSON.stringify({ flags: s.flags.boss_g, abilities: s.abilities }));
+  await snap('after-boss-g');
+  log('✓ 蝙蝠王打贏了（護盾被魔法打破），學會 breath（ㄏ）');
+  const intro3 = (await save()).introduced; if (!intro3 || !intro3.includes('ㄏ')) throw new Error('蝙蝠王之後 ㄏ 應該已經上過課 ' + JSON.stringify(intro3));
+  await tapObj('chest_boss', '頭目寶箱');
+  if (!(await flags())['c:gc2:chest_boss']) throw new Error('蝙蝠王的寶箱沒拿到');
+  await tapObj('up', '回 1 樓的樓梯');
+  if ((await save()).mapId !== 'gc1') throw new Error('沒有回到回音洞窟 1 樓');
+  await tapObj('up', '回森林的出口');
+  if ((await save()).mapId !== 'g') throw new Error('沒有走回回音森林');
+  await doTap(22, 9, '冰塊（ㄏ）'); await doTap(22, 8, '冰塊後寶箱');
+  f = await flags();
+  if (!f['g:g:ice'] || !f['c:g:chest_ice']) throw new Error('冰塊機關失敗 ' + JSON.stringify(f));
+  await snap('forest-ice');
+  log('✓ ㄏ的熱氣融化冰塊，取得寶箱');
+  await doTap(4, 18, '森林的碼頭（回蛙鳴灣）');
+  if ((await save()).mapId !== 'gh') throw new Error('沒有從森林回到蛙鳴灣');
+  await doTap(14, 18, '蛙鳴灣南邊的碼頭（回鼓聲港）');
+  if ((await save()).mapId !== 'dh') throw new Error('沒有從蛙鳴灣回到鼓聲港');
+  log('✓ 第三關走完：蛙鳴灣、回音森林、洞窟、回到鼓聲港');
 
-// ───── 舌尖中音島（ㄉㄊㄋㄌ）─────
-await doTap(21, 11, '起始村的碼頭（打倒草原頭目後出現）');
-if ((await save()).mapId !== 'dh') throw new Error('沒有搭船到主島鼓聲港');
-f = await flags();
-if (!f['visited:dh']) throw new Error('到主島後應該記下去過 ' + JSON.stringify(f));
-await snap('hub');
-// 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
-await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
-await doTap(6, 3, '旅館的門');
-if ((await save()).mapId !== 'dh_inn') throw new Error('沒有進入旅館');
-await doTap(6, 3, '旅館老闆（金幣不夠）');
-let inn = await save();
-if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
-await ev(() => { window.__game.G.save.coins = 100; });
-await doTap(6, 3, '旅館老闆（住一晚）'); // choose() 彈窗由 pump 自動選第一個選項「住一晚」
-inn = await save();
-if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
-log('✓ 主島旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
-await doTap(4, 7, '離開旅館');
-if ((await save()).mapId !== 'dh') throw new Error('沒有走出旅館');
-await doTap(3, 10, '主島西邊的碼頭（去怪物島）');
-if ((await save()).mapId !== 'd') throw new Error('沒有進入舌尖中音島（怪物島）');
-f = await flags();
-if (!f.dEntered) throw new Error('進島後應該開始教 ㄉㄊ');
-await snap('island');
-await doTap(6, 14, '島上練習布偶');
-s = await save();
-if (!s.flags.dPractice || !s.abilities.includes('drum') || !s.abilities.includes('splash')) throw new Error('練習戰後沒有學到擊鼓拳／水花彈 ' + JSON.stringify(s.abilities));
-log('✓ 島上練習戰完成，學會擊鼓拳與水花彈');
-await doTap(8, 17, '島上寶箱');
-await doTap(3, 11, '大鼓（擊鼓拳）'); await doTap(3, 10, '鼓後寶箱');
-await doTap(9, 15, '乾花（水花彈）'); await doTap(10, 15, '花旁寶箱');
-f = await flags();
-if (!f['g:d:drum'] || !f['c:d:chest_drum'] || !f['g:d:plant'] || !f['c:d:chest_plant']) throw new Error('大鼓／乾花機關失敗 ' + JSON.stringify(f));
-await snap('island-gimmicks');
-log('✓ 擊鼓拳敲響大鼓、水花彈澆開乾花，各取得寶箱');
-for (const [x, y, n] of [[9, 9, '水滴怪'], [11, 4, '橫行蟹'], [12, 2, '寶箱']]) await doTap(x, y, n);
-await doTap(19, 10, '橋後的水滴怪');
-await doTap(22, 4, '鼓王咚咚');
-s = await save();
-if (!s.flags.boss_d || !s.abilities.includes('nasal') || !s.abilities.includes('stream')) throw new Error('鼓王沒有打贏，或沒有學到嗯嗯泡／流水衝 ' + JSON.stringify(s.abilities));
-await snap('after-boss-d');
-log('✓ 鼓王咚咚打贏了，學會嗯嗯泡與流水衝');
-const intro2 = (await save()).introduced; if (!intro2 || !intro2.includes('ㄋ') || !intro2.includes('ㄌ')) throw new Error('鼓王之後 ㄋㄌ 應該已經上過課 ' + JSON.stringify(intro2));
-await doTap(18, 15, '小水壩（流水衝）'); await doTap(18, 16, '水壩後寶箱');
-await doTap(6, 5, '泡泡球（嗯嗯泡）'); await doTap(6, 4, '泡泡後寶箱');
-f = await flags();
-if (!f['g:d:dam'] || !f['c:d:chest_dam'] || !f['g:d:bubble'] || !f['c:d:chest_bubble']) throw new Error('水壩／泡泡機關失敗 ' + JSON.stringify(f));
-log('✓ 流水衝沖開水壩、嗯嗯泡飄走泡泡球，各取得寶箱');
+}
+if (run('lv2', 'lv3')) {
+  await doTap(23, 10, '主島東邊的碼頭（回起始村）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有從主島回到起始村');
 
-// ───── 試煉洞窟（階段 3 的迷宮元件）─────
-await doTap(3, 3, '洞窟入口');
-if ((await save()).mapId !== 'dc1') throw new Error('沒有進入洞窟 1 樓');
-await snap('cave-1f');
-await doTap(3, 4, '裂石（爆破拳）'); await doTap(3, 7, '隱藏房間的寶箱');
-f = await flags();
-if (!f['r:dc1:rock_f'] || !f['c:dc1:chest_f']) throw new Error('洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
-await doTap(10, 7, '鑰匙寶箱');
-if (((await save()).items.key ?? 0) !== 1) throw new Error('沒有拿到小鑰匙');
-await doTap(17, 4, '鎖住的門');
-f = await flags();
-if (!f['k:dc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
-log('✓ 洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
-await doTap(17, 7, '往 2 樓的樓梯');
-if ((await save()).mapId !== 'dc2') throw new Error('沒有走到洞窟 2 樓');
-await snap('cave-2f');
-await doTap(17, 3, '機關開關（擊鼓拳）');
-f = await flags();
-if (!f['g:dc2:switch1']) throw new Error('2 樓的機關沒有啟動');
-await doTap(10, 7, '石牆後的寶箱');
-f = await flags();
-if (!f['c:dc2:chest_berry']) throw new Error('石牆打開後拿不到魔力果寶箱');
-log('✓ 洞窟 2 樓：啟動機關、石牆消失、取得寶箱');
-await doTap(1, 1, '回 1 樓的樓梯');
-if ((await save()).mapId !== 'dc1') throw new Error('沒有回到洞窟 1 樓');
-await doTap(1, 1, '回島的樓梯');
-if ((await save()).mapId !== 'd') throw new Error('沒有走回舌尖中音島');
-log('✓ 洞窟：樓層之間來回、走回島上');
-await doTap(4, 18, '怪物島的碼頭（回主島）');
-if ((await save()).mapId !== 'dh') throw new Error('沒有從怪物島回到主島');
-// ───── 蛙鳴灣與回音森林（ㄍㄎㄏ）─────
-await doTap(14, 18, '鼓聲港南邊的碼頭（去蛙鳴灣，打倒鼓王後出現）');
-if ((await save()).mapId !== 'gh') throw new Error('沒有搭船到蛙鳴灣');
-f = await flags();
-if (!f['visited:gh']) throw new Error('到蛙鳴灣後應該記下去過 ' + JSON.stringify(f));
-await snap('hub-g');
-// 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
-await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
-await doTap(6, 3, '蛙鳴灣旅館的門');
-if ((await save()).mapId !== 'gh_inn') throw new Error('沒有進入蛙鳴灣旅館');
-await doTap(6, 3, '旅館老闆（金幣不夠）');
-inn = await save();
-if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('蛙鳴灣：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
-await ev(() => { window.__game.G.save.coins = 100; });
-await doTap(6, 3, '旅館老闆（住一晚）');
-inn = await save();
-if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('蛙鳴灣：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
-log('✓ 蛙鳴灣旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
-await doTap(4, 7, '離開蛙鳴灣旅館');
-if ((await save()).mapId !== 'gh') throw new Error('沒有走出蛙鳴灣旅館');
-await doTap(3, 10, '蛙鳴灣西邊的碼頭（去回音森林）');
-if ((await save()).mapId !== 'g') throw new Error('沒有進入回音森林');
-f = await flags();
-if (!f.gEntered) throw new Error('進森林後應該開始教 ㄍㄎ ' + JSON.stringify(f));
-await snap('forest');
-await doTap(7, 14, '森林練習布偶');
-s = await save();
-if (!s.flags.gPractice || !s.abilities.includes('croak') || !s.abilities.includes('knock')) throw new Error('練習戰後沒有學到呱呱叫／啄木敲 ' + JSON.stringify(s.abilities));
-log('✓ 森林練習戰完成，學會 croak（ㄍ）與 knock（ㄎ）');
-await doTap(9, 17, '森林寶箱');
-await doTap(10, 12, '森林小怪 1');
-await doTap(6, 9, '搖搖樹（ㄍ）'); await doTap(6, 8, '樹下寶箱');
-await doTap(12, 5, '樹洞（ㄎ）'); await doTap(12, 4, '樹洞寶箱');
-f = await flags();
-if (!f['g:g:tree'] || !f['c:g:chest_tree'] || !f['g:g:hole'] || !f['c:g:chest_hole']) throw new Error('搖搖樹／樹洞機關失敗 ' + JSON.stringify(f));
-await snap('forest-gimmicks');
-log('✓ ㄍ搖落果子、ㄎ敲開樹洞，各取得寶箱（冰塊要等學會 ㄏ）');
-await doTap(16, 8, '森林小怪 2');
-await doTap(20, 15, '森林小怪 3');
-
-// ───── 回音洞窟（蝙蝠王有護盾，要用魔法才打得到）─────
-await doTap(24, 4, '洞窟入口');
-if ((await save()).mapId !== 'gc1') throw new Error('沒有進入回音洞窟 1 樓');
-await snap('gcave-1f');
-await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
-f = await flags();
-if (!f['r:gc1:rock_h'] || !f['c:gc1:chest_h']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
-await tapObj('chest_key', '鑰匙寶箱');
-if (((await save()).items.key ?? 0) !== 1) throw new Error('回音洞窟沒有拿到小鑰匙');
-await tapObj('door', '鎖住的門');
-f = await flags();
-if (!f['k:gc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('回音洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
-log('✓ 回音洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
-await tapObj('down', '往 2 樓的樓梯');
-if ((await save()).mapId !== 'gc2') throw new Error('沒有走到回音洞窟 2 樓');
-await snap('gcave-2f');
-await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：蝙蝠是回音怪，要用魔法攻擊才有傷害
-await tapObj('switch1', '樹洞開關（ㄎ）');
-f = await flags();
-if (!f['g:gc2:switch1']) throw new Error('回音洞窟 2 樓的樹洞機關沒有啟動 ' + JSON.stringify(f));
-log('✓ 回音洞窟 2 樓：敲開樹洞、石牆消失');
-await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 機器人的目的是走完流程，不是考驗魔力管理：補魔力讓它破得了蝙蝠王的護盾
-await tapObj('boss', '蝙蝠王');
-s = await save();
-if (!s.flags.boss_g || !s.abilities.includes('breath')) throw new Error('蝙蝠王沒有打贏，或沒有學到 breath（ㄏ） ' + JSON.stringify({ flags: s.flags.boss_g, abilities: s.abilities }));
-await snap('after-boss-g');
-log('✓ 蝙蝠王打贏了（護盾被魔法打破），學會 breath（ㄏ）');
-const intro3 = (await save()).introduced; if (!intro3 || !intro3.includes('ㄏ')) throw new Error('蝙蝠王之後 ㄏ 應該已經上過課 ' + JSON.stringify(intro3));
-await tapObj('chest_boss', '頭目寶箱');
-if (!(await flags())['c:gc2:chest_boss']) throw new Error('蝙蝠王的寶箱沒拿到');
-await tapObj('up', '回 1 樓的樓梯');
-if ((await save()).mapId !== 'gc1') throw new Error('沒有回到回音洞窟 1 樓');
-await tapObj('up', '回森林的出口');
-if ((await save()).mapId !== 'g') throw new Error('沒有走回回音森林');
-await doTap(22, 9, '冰塊（ㄏ）'); await doTap(22, 8, '冰塊後寶箱');
-f = await flags();
-if (!f['g:g:ice'] || !f['c:g:chest_ice']) throw new Error('冰塊機關失敗 ' + JSON.stringify(f));
-await snap('forest-ice');
-log('✓ ㄏ的熱氣融化冰塊，取得寶箱');
-await doTap(4, 18, '森林的碼頭（回蛙鳴灣）');
-if ((await save()).mapId !== 'gh') throw new Error('沒有從森林回到蛙鳴灣');
-await doTap(14, 18, '蛙鳴灣南邊的碼頭（回鼓聲港）');
-if ((await save()).mapId !== 'dh') throw new Error('沒有從蛙鳴灣回到鼓聲港');
-log('✓ 第三關走完：蛙鳴灣、回音森林、洞窟、回到鼓聲港');
-
-await doTap(23, 10, '主島東邊的碼頭（回起始村）');
-if ((await save()).mapId !== 'village') throw new Error('沒有從主島回到起始村');
+}
 
 // ───── 回家睡覺：HP／魔力回滿 ─────
 await ev(() => { const m = window.__game.G.save.party[0]; m.hp = 1; m.mp = 0; });
