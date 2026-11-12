@@ -130,15 +130,24 @@ const objPos = async (id) => {
 };
 const hasObj = (id) => ev((id) => window.__game.world().objs.has(id), id);
 /** 走到某個物件並點它；路被小怪擋住（走不到）時，先把還在的小怪打掉再重試 */
+const canReach = (x, y) => ev(([x, y]) => !!window.__game.world().findPath((cx, cy) => Math.abs(cx - x) + Math.abs(cy - y) === 1), [x, y]);
+const clearBlockers = async (label) => {
+  for (const m of ['mon1', 'mon2', 'mon3', 'mon4']) {
+    if (!(await hasObj(m))) continue;
+    try { const q = await objPos(m); await doTap(q.x, q.y, label + '→擋路的' + m); } catch { /* 這隻也走不到就換下一隻 */ }
+  }
+};
 const tapObj = async (id, label) => {
   for (let round = 0; round < 2; round++) {
-    try { const p = await objPos(id); await doTap(p.x, p.y, label); return; }
+    try {
+      const p = await objPos(id);
+      // 目標旁邊走不到（常見：巡邏怪站在門口）時，點下去只會跳「走不過去喔」而不會丟錯，所以要先檢查
+      if (round === 0 && !(await canReach(p.x, p.y))) { await clearBlockers(label); continue; }
+      await doTap(p.x, p.y, label); return;
+    }
     catch (e) {
       if (round === 1) throw e;
-      for (const m of ['mon1', 'mon2', 'mon3', 'mon4']) {
-        if (m === id || !(await hasObj(m))) continue;
-        try { const q = await objPos(m); await doTap(q.x, q.y, label + '→擋路的' + m); } catch { /* 這隻也走不到就換下一隻 */ }
-      }
+      await clearBlockers(label);
     }
   }
 };
