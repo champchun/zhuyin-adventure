@@ -94,6 +94,8 @@ export const STARTERS = ['bobo', 'momo', 'popo'];
 
 export interface EnemyDef {
   id: string; name: string; sprite: string; hp: number; atk: number; scale: number;
+  /** 回音怪：普通攻擊（看符號）只有 1 點傷害，要用魔法攻擊（聽聲音）才打得動 */
+  echo?: boolean;
 }
 export const ENEMIES: Record<string, EnemyDef> = {
   dummy: { id: 'dummy', name: '稻草布偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },

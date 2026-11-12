@@ -10,6 +10,7 @@ import { audio } from '../core/audio';
 import { bui, sleep } from '../core/battleui';
 import type { Mode } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
+import { resolveHit, rulesActive } from '../core/shield';
 import { PROMPT_LINES } from '../data/voiceLines';
 
 export type BattleOutcome = 'win' | 'lose' | 'run';
@@ -247,6 +248,13 @@ export class BattleScene extends Phaser.Scene {
     for (const line of def.intro) await bui.note(line);
 
     const targets = [...new Set([...def.focus, ...def.review])].filter((s) => activeSymbols().includes(s));
+    // 回音怪與頭目護盾：要用魔法攻擊（聽聲音）。教學戰、沒有音檔、固定只看符號、沒有魔力時不啟動
+    let shield = !!def.shield;
+    const rulesOn = () => rulesActive({ guided: def.guided, audioReady: audio.audioReadyFor(targets), tierSetting: G.settings.tier, mp: me.mp ?? 0 });
+    if (rulesOn()) {
+      if (shield) await bui.note('這個頭目有護盾！普通攻擊會被彈開，要用「🪄 魔法攻擊」（聽聲音）才打得破！');
+      else if (enemy.echo) await bui.note('這隻怪物好像只聽得到聲音……用「🪄 魔法攻擊」試試！');
+    }
     let prevTarget: string | undefined;
     let mode: Mode = 'look';
     let asked = 0;
@@ -324,14 +332,17 @@ export class BattleScene extends Phaser.Scene {
         const sec = run.ms / 1000;
         const speed = G.settings.speedBonus && clean ? (sec <= 4 ? 2 : sec <= 8 ? 1 : 0) : 0;
         const move = moveFor(me.species, q.target, hasAbility); // 答對哪個符號，就使出綁定的招式
-        const dmg = move.power + powerBonus(me) + listenBonus + speed;
+        const hit = resolveHit({ active: rulesOn(), type: q.type, echo: !!enemy.echo, shield, dmg: move.power + powerBonus(me) + listenBonus + speed });
+        shield = hit.shield;
+        const dmg = hit.dmg;
         if (q.type === 'listen') { me.mp = Math.max(0, me.mp! - 1); bui.setMp(me.mp, maxMp(me)); } // 魔法攻擊耗 1 點魔力
         bui.msg(`${SPECIES[me.species].name}使出了${q.type === 'listen' ? move.magicName : move.name}！${speed >= 2 ? '⚡好快！威力大增！' : speed === 1 ? '⚡不錯！威力增加！' : ''}`);
         await this.playerAttack(move);
         ehp = Math.max(0, ehp - dmg);
-        this.num(this.en.x, this.en.y - 30, `-${dmg}`, '#ffd84a');
+        if (dmg > 0) this.num(this.en.x, this.en.y - 30, `-${dmg}`, '#ffd84a');
         bui.setHp('enemy', enemy.name, ehp, enemy.hp);
         await sleep(450);
+        if (hit.msg) { bui.msg(hit.msg, true); await sleep(900); }
         if (ehp > 0 && (await enemyTurn())) return 'lose';
         bui.lock(false);
       }

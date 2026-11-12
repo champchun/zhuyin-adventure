@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { rulesActive, resolveHit } from '../src/core/shield';
+import { BATTLES } from '../src/data/levels';
+import { ENEMIES } from '../src/data/monsters';
 
 const base = { guided: false, audioReady: true, tierSetting: 'auto' as const, mp: 3 };
 
@@ -55,5 +57,20 @@ describe('resolveHit：一次答對之後的傷害', () => {
   });
   it('規則停用時：護盾不擋、回音不減，傷害照舊，護盾狀態原樣保留', () => {
     expect(resolveHit({ ...hit, active: false, shield: true, echo: true })).toEqual({ dmg: 6, shield: true });
+  });
+});
+
+describe('戰鬥資料與護盾、回音怪', () => {
+  it('鼓王咚咚有護盾', () => {
+    expect(BATTLES.boss_d.shield).toBe(true);
+  });
+  it('只有頭目戰（多個小回合）可以有護盾；教學戰不可以有護盾，也不可以對上回音怪', () => {
+    for (const b of Object.values(BATTLES)) {
+      if (b.shield) expect(b.phases, `${b.id} 有護盾但不是頭目戰`).toBeGreaterThan(1);
+      if (b.guided) {
+        expect(b.shield, `${b.id} 是教學戰卻有護盾`).toBeFalsy();
+        expect(ENEMIES[b.enemy].echo, `${b.id} 是教學戰卻是回音怪`).toBeFalsy();
+      }
+    }
   });
 });
