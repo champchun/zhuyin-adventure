@@ -43,6 +43,7 @@ async function tapTile(x, y) {
 /** 處理畫面上的對話／戰鬥／彈窗，直到 cond() 成立 */
 let seenTop = false, seenMove = false, usedPotions = 0;
 let shieldUp = false;
+let battleRefilled = false; // 這一場戰鬥是否已補過 HP／魔力（戰鬥結束時清掉）
 async function pump(cond, label, maxMs = 900000) {
   const t0 = Date.now();
   let lastBattle = '';
@@ -64,18 +65,19 @@ async function pump(cond, label, maxMs = 900000) {
       const itemPick = document.querySelector('#battleui [data-a=it]');
       const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
       const lesson = document.querySelector('#modal[data-lesson-target]')?.dataset.lessonTarget ?? ''; // 第一次認識符號的小課程
-      return { lesson, low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      return { bhidden: document.querySelector('#battleui')?.hidden ?? true, lesson, low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     // 頭目護盾：訊息只會閃一下（之後被「反擊了」蓋掉），所以記起來，直到看到「護盾被魔法打破了」或戰鬥結束
     if (/護盾擋住了|攻擊被彈開/.test(st.msg)) shieldUp = true;
-    else if (/護盾被魔法打破/.test(st.msg) || st.results) shieldUp = false; // 回音怪（被彈開）打贏時由 results 清掉
+    else if (/護盾被魔法打破/.test(st.msg) || st.results) shieldUp = false;
+    if (st.bhidden) battleRefilled = false; // 戰鬥畫面收起來＝這場打完了 // 回音怪（被彈開）打贏時由 results 清掉
     if (st.lesson) { await sleep(300); await page.click(`#modal [data-a=lp][data-ch="${st.lesson}"]`).catch(() => {}); await sleep(200); continue; } // 第一次認識符號的小課程：點對的符號
     if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
     else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
-    else if (st.top.length) { if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? (shieldUp && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? (shieldUp && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
@@ -87,6 +89,13 @@ async function pump(cond, label, maxMs = 900000) {
   }
   throw new Error('pump 逾時：' + label);
 }
+// 機器人的目的是走完流程，不是考驗戰鬥強度：夥伴等級太低會讓頭目戰輸掉或拖很久，造成測試偶爾失敗。
+// 所以走每一步之前先把夥伴等級補到 BOOST_LEVEL（只往上補、不動 HP；旅館測試會自己把 HP 設成 1，不能被補掉），
+// 戰鬥一開始（出現第一個選單）再把 HP／魔力補滿。設 E2E_BOOST=0 可關掉，回到真實的成長曲線。
+const BOOST_LEVEL = Number(process.env.E2E_BOOST_LEVEL ?? 8);
+const BOOST = process.env.E2E_BOOST !== '0';
+const boostLevel = () => BOOST ? ev((lv) => { for (const m of window.__game.G.save.party) if (m.level < lv) m.level = lv; }, BOOST_LEVEL) : null;
+const refillVitals = () => BOOST ? ev(() => { const g = window.__game, m = g.G.save.party[g.G.save.active] ?? g.G.save.party[0]; if (m) { m.hp = g.maxHp(m); m.mp = g.maxMp(m); } }) : null;
 const idle = () => ev(() => { const w = window.__game.world(); return !w.moving && !w.busy && w.queue.length === 0 && !document.querySelector('#dialog .box') && document.querySelector('#battleui').hidden; });
 const visibleTile = (x, y) => ev(([x, y]) => {
   const cam = window.__game.world().cameras.main, v = cam.worldView;
@@ -94,6 +103,7 @@ const visibleTile = (x, y) => ev(([x, y]) => {
 }, [x, y]);
 /** 點擊目標；若目標不在畫面內，先沿路徑點擊畫面內最遠的一格（和真人一樣得先走近） */
 const doTap = async (x, y, label) => {
+  await boostLevel();
   for (let i = 0; i < 10; i++) {
     if (await visibleTile(x, y)) {
       await tapTile(x, y); await sleep(250); await pump(idle, label); // 碼頭的「出發」選擇視窗由 pump 自動選第一個
