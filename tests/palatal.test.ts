@@ -161,3 +161,45 @@ describe('第四關的地圖', () => {
     expect(xh.tiles.join('').includes('q')).toBe(true);
   });
 });
+
+describe('冰晶洞窟（產生的迷宮）：用 reachReport 驗證一定解得開', () => {
+  const abilities = ['blast', 'gust', 'snow', 'slide', 'freeze'];
+  const start = { map: 'xc1', x: 2, y: 1 };
+  const xc1 = MAPS.xc1, xc2 = MAPS.xc2, x = MAPS.x;
+  it('兩層一起走：沒有走不到的地板與物件，鑰匙剛好用完', () => {
+    const r = reachReport([xc1, xc2], start, abilities);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+  });
+  it('沒有 slide 招式時，冰牆後面走不到；沒有 blast 時，隱藏小密室走不到', () => {
+    expect(reachReport([xc1, xc2], start, ['blast', 'snow', 'freeze']).unreachableFloor.length).toBeGreaterThan(0);
+    expect(reachReport([xc1, xc2], start, ['slide']).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('尺寸、物件、同一個 group、樓梯與出口位置', () => {
+    for (const m of [xc1, xc2]) { expect(m.w).toBe(31); expect(m.h).toBe(22); expect(m.group).toBe('xc'); }
+    const has = (m: typeof xc1, id: string) => m.objects.some((o) => o.id === id);
+    expect(has(xc1, 'door')).toBe(true);
+    expect(has(xc1, 'chest_key')).toBe(true);
+    for (const id of ['barrier1', 'switch1', 'boss', 'chest_boss']) expect(has(xc2, id), id).toBe(true);
+    const sw = xc2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw.ability).toBe('slide');
+    expect(sw.fx).toBe('slide');
+    const boss = xc2.objects.find((o) => o.id === 'boss')!;
+    expect(boss.battle).toBe('boss_x');
+    expect(boss.hideIf).toBe('boss_x');
+    expect(xc2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_x');
+    expect(xc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('xc2');
+    expect(xc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('xc1');
+    const exit = xc1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit.map).toBe('x');
+    expect(BLOCKED_TILES.has(x.tiles[exit.y][exit.x])).toBe(false);
+    expect(x.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在', () => {
+    for (const m of [xc1, xc2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon\d+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+    }
+  });
+});

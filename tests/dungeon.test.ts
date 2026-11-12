@@ -198,7 +198,6 @@ describe('示範洞窟（舌尖中音島的小迷宮）', () => {
     for (const m of Object.values(MAPS)) {
       for (const o of m.objects.filter((o) => o.kind === 'stairs')) {
         expect(o.to, `${m.id}/${o.id}`).toBeDefined();
-        if (['xc1', 'xc2'].includes(o.to!.map)) continue; // 冰晶洞窟 Task 4 才建立，之後移除這個豁免
         expect(MAPS[o.to!.map], `${m.id}/${o.id} -> ${o.to!.map}`).toBeDefined();
       }
     }

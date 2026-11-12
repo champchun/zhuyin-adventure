@@ -478,14 +478,15 @@ if (run('lv3')) {
   await doTap(24, 4, '洞窟入口');
   if ((await save()).mapId !== 'gc1') throw new Error('沒有進入回音洞窟 1 樓');
   await snap('gcave-1f');
-  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
-  f = await flags();
-  if (!f['r:gc1:rock_h'] || !f['c:gc1:chest_h']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  // 順序：鑰匙 → 鎖門 → 裂石。產生的迷宮裡裂石（隱藏房間）可能在鎖門後面，所以不能先打裂石
   await tapObj('chest_key', '鑰匙寶箱');
   if (((await save()).items.key ?? 0) !== 1) throw new Error('回音洞窟沒有拿到小鑰匙');
   await tapObj('door', '鎖住的門');
   f = await flags();
   if (!f['k:gc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('回音洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:gc1:rock_h'] || !f['c:gc1:chest_h']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
   log('✓ 回音洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
   await tapObj('down', '往 2 樓的樓梯');
   if ((await save()).mapId !== 'gc2') throw new Error('沒有走到回音洞窟 2 樓');

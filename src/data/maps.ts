@@ -660,22 +660,33 @@ MAPS.x = {
   ],
 };
 
-// ───────── 回音洞窟：由 tools/gen-dungeon.mjs 產生的迷宮（兩層，每層 31×22）─────────
+// ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2';
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
-function mazeObjects(mapId: 'gc1' | 'gc2', up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
+function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
+  const ice = mapId.startsWith('x');
+  const boss = ice ? 'boss_x' : 'boss_g';
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
   for (const o of f.objects) {
     const at = { x: o.x, y: o.y };
     switch (o.role) {
-      case 'up': objs.push({ id: 'up', kind: 'stairs', ...at, to: up, label: mapId === 'gc1' ? '出口' : '回 1 樓' }); break;
+      case 'up': objs.push({ id: 'up', kind: 'stairs', ...at, to: up, label: mapId.endsWith('1') ? '出口' : '回 1 樓' }); break;
       case 'down': objs.push({ id: 'down', kind: 'stairs', ...at, to: down, label: '往下' }); break;
       case 'key': objs.push({ id: 'chest_key', kind: 'chest', ...at, item: 'key' }); break;
       case 'door': objs.push({ id: 'door', kind: 'lockdoor', ...at, lockText: ['門被鎖住了。', '要先找到小鑰匙。'] }); break;
-      case 'barrier': objs.push({ id: 'barrier1', kind: 'barrier', ...at, hideIf: 'g:gc2:switch1', lockText: ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'] }); break;
-      case 'switch': objs.push({
+      case 'barrier': objs.push({
+        id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
+        lockText: ice ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
+      }); break;
+      case 'switch': objs.push(ice ? {
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'ice_rock', ability: 'slide', fx: 'slide', vanish: true,
+        lockText: ['冰面上有一塊大冰石，卡在機關的凹槽上。', '用企鵝「ㄑ」的滑行，也許能把它推開……'],
+        hitText: ['夥伴像企鵝一樣「ㄑ」地一滑，冰石「咻」地滑走了！', '遠處傳來「轟隆」一聲，好像有一道冰牆打開了！'],
+        doneText: ['冰石已經滑走了。'],
+      } : {
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'knock', fx: 'knock',
         lockText: ['一個樹洞，洞口緊緊關著。', '用啄木鳥「ㄎ」的敲擊，也許會有回音……'],
         hitText: ['夥伴「ㄎ」地輕輕一敲，樹洞「喀」地打開了！', '遠處傳來「轟隆」一聲，好像有一道牆打開了！'],
@@ -684,8 +695,8 @@ function mazeObjects(mapId: 'gc1' | 'gc2', up: MapObj['to'], down: MapObj['to'] 
       case 'rock': objs.push({ id: 'rock_h', kind: 'rock', ...at }); break;
       case 'closet': objs.push({ id: 'chest_h', kind: 'chest', ...at, item: 'berry' }); break;
       case 'chest': { const n = nth('chest'); objs.push({ id: `chest_${n}`, kind: 'chest', ...at, item: n % 2 ? 'potion' : 'berry' }); break; }
-      case 'boss': objs.push({ id: 'boss', kind: 'monster', ...at, battle: 'boss_g', hideIf: 'boss_g' }); break;
-      case 'bossChest': objs.push({ id: 'chest_boss', kind: 'chest', ...at, item: 'bigpotion', showIf: 'boss_g' }); break;
+      case 'boss': objs.push({ id: 'boss', kind: 'monster', ...at, battle: boss, hideIf: boss }); break;
+      case 'bossChest': objs.push({ id: 'chest_boss', kind: 'chest', ...at, item: 'bigpotion', showIf: boss }); break;
       case 'monster': {
         const n = nth('monster');
         objs.push({ id: `mon${n}`, kind: 'monster', ...at, battle: `${mapId}m${n === 1 ? '' : n}`, ai: o.ai, ...(o.patrol ? { patrol: o.patrol } : {}) });
@@ -704,6 +715,18 @@ MAPS.gc2 = {
   id: 'gc2', name: '回音洞窟 2F', w: MAZES.gc2.w, h: MAZES.gc2.h, tiles: MAZES.gc2.rows, theme: 'valley', group: 'gc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('gc2', { map: 'gc1', x: MAZES.gc1.downArrive!.x, y: MAZES.gc1.downArrive!.y }, undefined),
+};
+// 冰晶洞窟：地板用冰面 j、牆用懸崖 S（外觀像冰洞）；出口回企鵝冰原洞口 (11,2) 的下方一格
+const iceRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'j'));
+MAPS.xc1 = {
+  id: 'xc1', name: '冰晶洞窟 1F', w: MAZES.xc1.w, h: MAZES.xc1.h, tiles: iceRows(MAZES.xc1.rows), theme: 'valley', group: 'xc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('xc1', { map: 'x', x: 11, y: 3 }, { map: 'xc2', x: 2, y: 1 }),
+};
+MAPS.xc2 = {
+  id: 'xc2', name: '冰晶洞窟 2F', w: MAZES.xc2.w, h: MAZES.xc2.h, tiles: iceRows(MAZES.xc2.rows), theme: 'valley', group: 'xc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('xc2', { map: 'xc1', x: MAZES.xc1.downArrive!.x, y: MAZES.xc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {

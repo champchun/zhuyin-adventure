@@ -4,6 +4,8 @@ import type { FloorConfig } from '../tools/gen-dungeon.mjs';
 
 const cfg1: FloorConfig = { seed: 11, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } };
 const cfg2: FloorConfig = { seed: 23, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } };
+const cfgX1: FloorConfig = { seed: 37, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } };
+const cfgX2: FloorConfig = { seed: 41, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } };
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 /** 從 (sx,sy) 出發能走到的地板（不看物件） */
@@ -21,7 +23,7 @@ function flood(rows: string[], sx: number, sy: number): Set<string> {
   return seen;
 }
 
-describe.each([['一樓', cfg1], ['二樓', cfg2]] as const)('generateFloor：%s', (_n, cfg) => {
+describe.each([['一樓', cfg1], ['二樓', cfg2], ['冰晶一樓', cfgX1], ['冰晶二樓', cfgX2]] as const)('generateFloor：%s', (_n, cfg) => {
   const f = generateFloor(cfg);
   it('大小是 31×22、每列長度一致、只有 S 與 :', () => {
     expect(f.w).toBe(31);

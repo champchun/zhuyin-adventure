@@ -25,7 +25,6 @@ function reach(mapId: string, from: { x: number; y: number }, extraBlocked: Set<
 }
 const adjReach = (seen: Set<string>, o: { x: number; y: number }) => N4.some(([dx, dy]) => seen.has(`${o.x + dx},${o.y + dy}`));
 
-const PENDING_MAPS = new Set(['xc1', 'xc2']); // 暫時豁免：Task 4 建立後移除
 describe('maps', () => {
   for (const m of Object.values(MAPS)) {
     it(`${m.id}: 尺寸一致、物件在界內、起點可走、id 不重複`, () => {
@@ -50,7 +49,6 @@ describe('maps', () => {
     });
     it(`${m.id}: 出口／門的目的地存在且落在可走的格子`, () => {
       for (const o of m.objects.filter((x) => x.to)) {
-        if (PENDING_MAPS.has(o.to!.map)) continue; // 冰晶洞窟 xc1/xc2 在 Task 4 才建立，之後移除這個豁免
         const dst = MAPS[o.to!.map];
         expect(dst, `${m.id}/${o.id} → ${o.to!.map}`).toBeDefined();
         expect(BLOCKED_TILES.has(dst.tiles[o.to!.y][o.to!.x]), `${m.id}/${o.id} 落點被擋住`).toBe(false);
