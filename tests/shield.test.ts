@@ -57,8 +57,10 @@ describe('resolveHit：一次答對之後的傷害', () => {
 });
 
 describe('戰鬥資料與護盾、回音怪', () => {
-  it('鼓王咚咚以前的戰鬥（含鼓王）先不使用護盾與回音怪，從第三關才開始', () => {
+  it('只有第三關的戰鬥使用護盾與回音怪（鼓王咚咚以前的都不用）', () => {
+    const velar = new Set(['boss_g', 'g1', 'g2', 'g3', 'gc1m', 'gc2m']);
     for (const b of Object.values(BATTLES)) {
+      if (velar.has(b.id)) continue;
       expect(b.shield, `${b.id} 不該有護盾`).toBeFalsy();
       expect(ENEMIES[b.enemy].echo, `${b.id} 的敵人不該是回音怪`).toBeFalsy();
     }

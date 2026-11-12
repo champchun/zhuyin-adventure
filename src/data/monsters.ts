@@ -4,7 +4,7 @@ export interface MoveDef {
   /** 魔法攻擊（聽聲音）時顯示的名字 */
   magicName: string;
   power: number;
-  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream';
+  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
   /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
@@ -66,22 +66,25 @@ export const MOVES: Record<string, MoveDef> = {
   splash: { id: 'splash', magicName: '水花魔法', symbol: 'ㄊ', name: '水花彈', power: 5, fx: 'splash', needAbility: 'splash', desc: '「ㄊ」吐出一口氣，噴出一串水花，能澆醒乾乾的花。' },
   nasal: { id: 'nasal', magicName: '泡泡魔法', symbol: 'ㄋ', name: '嗯嗯泡', power: 4, fx: 'bubble', needAbility: 'nasal', desc: '「ㄋ」氣從鼻子出來「嗯～」，吹出圓圓的泡泡，能飄走擋路的泡泡球。' },
   stream: { id: 'stream', magicName: '流水魔法', symbol: 'ㄌ', name: '流水衝', power: 5, fx: 'stream', needAbility: 'stream', desc: '「ㄌ」舌尖輕輕彈，像流水一樣衝出去，能沖開小水壩。' },
+  croak: { id: 'croak', magicName: '呱呱魔法', symbol: 'ㄍ', name: '呱呱震', power: 5, fx: 'croak', needAbility: 'croak', desc: '「ㄍ」從喉嚨深處「呱」地震一下，能搖落樹上的果子。' },
+  knock: { id: 'knock', magicName: '啄木魔法', symbol: 'ㄎ', name: '啄木敲', power: 5, fx: 'knock', needAbility: 'knock', desc: '「ㄎ」喉嚨輕輕一彈，像啄木鳥「喀喀」敲，能敲開樹洞。' },
+  breath: { id: 'breath', magicName: '哈氣魔法', symbol: 'ㄏ', name: '哈氣', power: 6, fx: 'breath', needAbility: 'breath', desc: '「ㄏ」張大嘴巴「哈～」呼出熱氣，能融化冰塊。' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream], color: '#f59a3c',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#f59a3c',
     desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream], color: '#4fb3a4',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#4fb3a4',
     desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream], color: '#ff8a3a',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#ff8a3a',
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
@@ -106,5 +109,9 @@ export const ENEMIES: Record<string, EnemyDef> = {
   drippy: { id: 'drippy', name: '水滴怪', sprite: 'en_drippy', hp: 16, atk: 3, scale: 2.25 },
   crabby: { id: 'crabby', name: '橫行蟹', sprite: 'en_crabby', hp: 18, atk: 3, scale: 2.25 },
   drumking: { id: 'drumking', name: '鼓王咚咚', sprite: 'en_drumking', hp: 20, atk: 4, scale: 2.75 },
+  froggy: { id: 'froggy', name: '青蛙', sprite: 'en_froggy', hp: 16, atk: 3, scale: 2.25 },
+  pecker: { id: 'pecker', name: '啄木鳥', sprite: 'en_pecker', hp: 18, atk: 3, scale: 2.25 },
+  bat: { id: 'bat', name: '蝙蝠', sprite: 'en_bat', hp: 18, atk: 3, scale: 2.25, echo: true },
+  batking: { id: 'batking', name: '蝙蝠王嗡嗡', sprite: 'en_batking', hp: 22, atk: 4, scale: 2.75 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };

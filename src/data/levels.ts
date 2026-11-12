@@ -13,7 +13,7 @@ export const LEVELS: Record<string, LevelDef> = {
   b: { id: 'b', symbol: 'ㄇㄈ', name: '村外小徑', open: true, mapId: 'b', partner: '夥伴' },
   p: { id: 'p', symbol: '霧', name: '風車草原', open: true, mapId: 'p', partner: '夥伴' },
   d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'dh', partner: '夥伴' },
-  g: { id: 'g', symbol: 'ㄍ', name: '舌根音島（回音洞窟）', open: false, partner: '（蝙蝠王嗡嗡）' },
+  g: { id: 'g', symbol: 'ㄍㄎㄏ', name: '舌根音島（回音森林）', open: true, mapId: 'gh', partner: '夥伴' },
 };
 
 export interface RewardDef {
@@ -102,6 +102,29 @@ export const BATTLES: Record<string, BattleDef> = {
   // 試煉洞窟（舌尖中音島的小迷宮）：怪物要有自己的旗標，不能和島上的 d1～d3 共用，否則會把島上的怪物打掉
   dc1m: wild('dc1m', 'crabby', 3, ['ㄉ', 'ㄊ'], ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'], 'm:dc1:m1'),
   dc2m: wild('dc2m', 'drippy', 3, ['ㄉ', 'ㄊ'], ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'], 'm:dc2:m2'),
+  // 第 2 座島：舌根音島（ㄍㄎㄏ）。進森林先練習 ㄍㄎ，ㄏ 要等練習完才出現
+  gpractice: {
+    id: 'gpractice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄍ', 'ㄎ'], review: [], guided: true,
+    intro: ['森林裡也有稻草布偶，先來練習！', '這一次要認的是「ㄍ」和「ㄎ」。聲音是從喉嚨深處發出來的！'],
+    reward: {
+      flag: 'gPractice', exp: 5, coins: 8, abilities: ['croak', 'knock'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄍ」像青蛙「呱」地叫，夥伴學會了呱呱震！', '「ㄎ」像啄木鳥「喀喀」地敲，夥伴學會了啄木敲！', '森林裡還有「ㄏ」在等著你，往前走走看吧！'],
+    },
+  },
+  g1: wild('g1', 'froggy', 1, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ'], 'm:g:m1'),
+  g2: { ...wild('g2', 'pecker', 2, ['ㄍ', 'ㄎ'], ['ㄋ', 'ㄌ'], 'm:g:m2'), intro: ['啄木鳥擋住了路！', '牠會考「ㄍ」和「ㄎ」。'] },
+  g3: { ...wild('g3', 'froggy', 3, ['ㄏ', 'ㄍ'], ['ㄎ', 'ㄉ', 'ㄊ'], 'm:g:m3'), intro: ['青蛙跳出來了！', '牠會考新的注音：「ㄏ」。'] },
+  boss_g: {
+    id: 'boss_g', enemy: 'batking', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄏ', 'ㄍ', 'ㄎ'], review: ['ㄋ', 'ㄌ', 'ㄉ', 'ㄊ'],
+    intro: ['嗡嗡嗡～蝙蝠王嗡嗡把山谷的回音都吸走了！', '一共三個小回合，累了隨時都可以離開。'],
+    reward: {
+      flag: 'boss_g', exp: 20, coins: 80, abilities: ['breath'], items: { potion: 2, berry: 2 },
+      story: ['蝙蝠王嗡嗡飛走了，山谷的回音又回來了！', '「ㄏ」是張大嘴巴「哈～」，夥伴學會了哈氣！', '森林裡有結冰的地方，回頭用新招式試試看吧！'],
+    },
+  },
+  // 試煉洞窟（舌根音島的小迷宮）：怪物旗標獨立，不與島上的 g1～g3 共用
+  gc1m: wild('gc1m', 'froggy', 3, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'], 'm:gc1:m1'),
+  gc2m: wild('gc2m', 'bat', 3, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'], 'm:gc2:m2'),
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),
@@ -135,7 +158,8 @@ export const STORY = {
   ],
   guideAfter: ['每一扇圓門都通往一個地方。', '夥伴的招式，要先學會對應的注音才能用喔！', '累了就回家睡一覺，夥伴的體力和魔力都會恢復。'],
   guideEnd: ['你已經學會所有唇音了，太厲害了！', '接下來就去舌尖中音島吧，那裡的鼓聲被迷霧偷走了。', '村子東邊池塘旁的碼頭出現了，搭船過去看看！'],
-  guideEndD: ['鼓聲回來了，真是了不起！', '「ㄉㄊㄋㄌ」你都學會了。接下來是舌根音島，那裡還在準備中，等我研究好再告訴你！'],
+  guideEndD: ['鼓聲回來了，真是了不起！', '「ㄉㄊㄋㄌ」你都學會了。鼓聲港南邊的碼頭出現了，搭船就能去下一關：舌根音島！'],
+  guideEndG: ['回音回來了，真是了不起！', '「ㄍㄎㄏ」你都學會了。更多的注音，等我研究好再告訴你！'],
   sleep: ['呼～睡得好飽！', '夥伴的體力和魔力都回來了。'],
   shopHello: ['歡迎光臨小福道具店！', '打贏怪獸得到的金幣，可以在這裡買藥水和魔力果。'],
   shopBye: ['謝謝惠顧！下次再來喔～'],

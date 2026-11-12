@@ -308,7 +308,7 @@ describe('招式綁符號', () => {
   });
   it('每一招都有魔法版的名字', () => {
     expect(moveFor('bobo', 'ㄅ', () => true).magicName).toBe('爆破魔法');
-    expect(moveFor('bobo', 'ㄍ', () => true).magicName).toBe('小魔法彈');
+    expect(moveFor('bobo', 'ㄐ', () => true).magicName).toBe('小魔法彈');
   });
 });
 

@@ -519,6 +519,7 @@ export class WorldScene extends Phaser.Scene {
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
     else if (!flag('starterChosen')) await say2(STORY.guideChoose);
     else if (!flag('giftGiven')) await this.starterTest();
+    else if (flag('boss_g')) await say2(STORY.guideEndG);
     else if (flag('boss_d')) await say2(STORY.guideEndD);
     else if (flag('boss_p')) await say2(STORY.guideEnd);
     else await say2(STORY.guideAfter);
@@ -645,7 +646,7 @@ export class WorldScene extends Phaser.Scene {
     await new Promise((r) => this.time.delayedCall(900, r));
   }
   /** 島上機關的特效：鼓（震動波）、水花、泡泡、水流 */
-  private async gimmickFx(fx: 'drum' | 'splash' | 'bubble' | 'stream', x: number, y: number) {
+  private async gimmickFx(fx: NonNullable<MapObj['fx']>, x: number, y: number) {
     const calm = G.settings.reduceMotion;
     if (fx === 'drum') {
       audio.sfx('drum');

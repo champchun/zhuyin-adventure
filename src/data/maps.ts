@@ -32,7 +32,7 @@ export interface MapObj {
   sprite?: string;
   /** gimmick（用招式啟動的機關）：需要的能力、特效、啟動前後的圖與說明 */
   ability?: string;
-  fx?: 'drum' | 'splash' | 'bubble' | 'stream';
+  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath';
   sprite2?: string;
   /** 啟動後這個物件就消失（例如泡泡球、小水壩） */
   vanish?: boolean;
