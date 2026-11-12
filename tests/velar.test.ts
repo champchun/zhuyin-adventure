@@ -121,3 +121,42 @@ describe('第三關的地圖', () => {
     for (const m of [gh, g, gc1, gc2]) expect(BLOCKED_TILES.has(m.tiles[m.start.y][m.start.x]), `${m.id} 起點不能走`).toBe(false);
   });
 });
+
+describe('蛙鳴灣：荷葉池塘水鄉', () => {
+  const gh = MAPS.gh;
+  const at = (x: number, y: number) => gh.tiles[y][x];
+  it('池塘中間有一座木板橋連到南北岸，荷葉可以走、水不能走', () => {
+    for (let y = 7; y <= 14; y++) expect(at(14, y), `橋 (14,${y})`).toBe('+');
+    expect(BLOCKED_TILES.has('P')).toBe(false);
+    expect(BLOCKED_TILES.has('+')).toBe(false);
+    expect(at(12, 9)).toBe('~');
+    expect(gh.tiles.join('').includes('P')).toBe(true);
+  });
+  it('青蛙聽音石在荷葉島上，走得到它旁邊（從起點出發，其他物件當障礙）', () => {
+    const frog = gh.objects.find((o) => o.id === 'frog')!;
+    expect(frog.kind).toBe('frogstone');
+    expect(at(frog.x, frog.y)).toBe('P');
+    // 從起點廣度優先搜尋：物件所在格視為障礙
+    const solid = new Set(gh.objects.map((o) => `${o.x},${o.y}`));
+    const seen = new Set<string>([`${gh.start.x},${gh.start.y}`]);
+    const q = [[gh.start.x, gh.start.y]];
+    while (q.length) {
+      const [x, y] = q.shift()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, k = `${nx},${ny}`;
+        if (nx < 0 || ny < 0 || nx >= gh.w || ny >= gh.h || seen.has(k)) continue;
+        if (BLOCKED_TILES.has(at(nx, ny)) || solid.has(k)) continue;
+        seen.add(k); q.push([nx, ny]);
+      }
+    }
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen.has(`${frog.x + dx},${frog.y + dy}`));
+    expect(near, '走不到青蛙聽音石旁邊').toBe(true);
+  });
+  it('旅館與商店的門、兩個碼頭、三位島民都還在原位', () => {
+    expect(gh.objects.find((o) => o.id === 'door_inn')).toMatchObject({ x: 6, y: 3 });
+    expect(gh.objects.find((o) => o.id === 'door_shop')).toMatchObject({ x: 21, y: 3 });
+    expect(gh.objects.find((o) => o.id === 'dock_dh')).toMatchObject({ x: 14, y: 18 });
+    expect(gh.objects.find((o) => o.id === 'dock_isle')).toMatchObject({ x: 3, y: 10 });
+    for (const id of ['frog_fan', 'captain', 'angler']) expect(gh.objects.find((o) => o.id === id)!.kind).toBe('npc');
+  });
+});
