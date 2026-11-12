@@ -33,7 +33,7 @@ export interface MapObj {
   sprite?: string;
   /** gimmick（用招式啟動的機關）：需要的能力、特效、啟動前後的圖與說明 */
   ability?: string;
-  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath';
+  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze';
   sprite2?: string;
   /** 啟動後這個物件就消失（例如泡泡球、小水壩） */
   vanish?: boolean;
@@ -477,19 +477,21 @@ MAPS.gh = {
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'gh_shop', x: 4, y: 6 } },
     { id: 'dock_dh', kind: 'dock', x: 14, y: 18, dockTo: { map: 'dh', x: 14, y: 17 } }, // 南邊：回鼓聲港
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'g', x: 4, y: 17 } }, // 西邊：去回音森林
+    { id: 'dock_xh', kind: 'dock', x: 26, y: 10, showIf: 'boss_g', dockTo: { map: 'xh', x: 4, y: 10 } }, // 東邊：去雪花鎮（打倒蝙蝠王後）
     { id: 'frog', kind: 'frogstone', x: 17, y: 10, label: '青蛙聽音石' }, // 荷葉上的聽音石
     {
       id: 'frog_fan', kind: 'npc', x: 10, y: 5, sprite: 'npc_kid', label: '小青蛙迷',
       talk: [
         { not: 'gPractice', lines: ['歡迎來到蛙鳴灣！', '這裡是荷葉池塘，到處都是青蛙的家。', '池塘中間有一尊青蛙聽音石，聽聲音點對的石頭，還有獎勵喔！'] },
         { not: 'boss_g', lines: ['森林裡有會「呱呱」叫的樹，像青蛙一樣愛叫，聽說用「ㄍ」的聲音就能搖落果子。', '洞窟裡的蝙蝠王很會躲，聽說只有「聽聲音」的魔法才打得到牠！'] },
-        { lines: ['回音回來了！謝謝你！', '蝙蝠王嗡嗡飛走以後，山谷又熱鬧起來了。'] },
+        { lines: ['回音回來了！謝謝你！', '蝙蝠王嗡嗡飛走以後，山谷又熱鬧起來了。', '聽說東邊的碼頭現在有船了，是去一個下雪的小鎮呢！'] },
       ],
     },
     {
       id: 'captain', kind: 'npc', x: 18, y: 16, sprite: 'npc_elder', label: '老船長',
       talk: [
-        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，可以搭船回起始村的家睡覺，是免費的喔！', '南邊的碼頭回鼓聲港（再從鼓聲港搭船回起始村），西邊的碼頭去回音森林。'] },
+        { not: 'boss_g', lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，可以搭船回起始村的家睡覺，是免費的喔！', '南邊的碼頭回鼓聲港（再從鼓聲港搭船回起始村），西邊的碼頭去回音森林。'] },
+        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。旅館住一晚 25 金幣。', '南邊的碼頭回鼓聲港，西邊的碼頭去回音森林。', '東邊的新碼頭，是去雪花鎮的船！那裡一年到頭都在下雪。'] },
       ],
     },
     {
@@ -551,6 +553,110 @@ MAPS.g = {
     { id: 'ice', kind: 'gimmick', x: 22, y: 9, sprite: 'ice_block', ability: 'breath', fx: 'breath', vanish: true, lockText: ['一大塊冰，擋住了小路。', '用「ㄏ」呼出的熱氣，也許能把它融化……'], hitText: ['夥伴張大嘴巴「ㄏ～」，冰塊慢慢融化了！'] },
     { id: 'chest_ice', kind: 'chest', x: 22, y: 8, item: 'bigpotion' },
     { id: 'm3', kind: 'monster', x: 20, y: 15, battle: 'g3', showIf: 'gPractice', ai: 'patrol', patrol: [{ x: 21, y: 15 }, { x: 22, y: 15 }] },
+  ],
+};
+
+// ───────── 雪花鎮：舌面音這一關的主島（第四關）─────────
+// 和前三座主島不同：沒有橫街，一條直路縱貫全鎮，旅館在西北的坡上、商店在東南；中間一座結冰的小池。
+// 西邊海灣是回蛙鳴灣的碼頭，東南海灣是去企鵝冰原的碼頭；打倒冰晶女王後，東邊多一條通往起始村的雪地小路。
+const xhGrid = (() => {
+  const g = new Grid(28, 20, 'n').border('~');
+  g.rect('~', 0, 8, 3, 5).rect('~', 25, 13, 3, 5).rect('~', 18, 17, 6, 2); // 西邊海灣、東南海灣、南邊的水
+  g.rect('=', 13, 3, 2, 15).rect('=', 4, 10, 21, 1).rect('=', 6, 7, 1, 3).rect('=', 14, 15, 10, 1).set(21, 14, '=');
+  g.rect('g', 4, 5, 5, 1).rect('G', 4, 6, 5, 1).set(6, 6, 'D'); // 旅館：門在 (6,6)
+  g.rect('o', 19, 12, 5, 1).rect('O', 19, 13, 5, 1).set(21, 13, 'D'); // 商店：門在 (21,13)
+  g.rect('m', 17, 2, 4, 1).rect('M', 17, 3, 4, 1).rect('m', 3, 14, 4, 1).rect('M', 3, 15, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('q', 16, 6, 5, 3).rect('q', 8, 16, 3, 2); // 結冰的小池
+  g.rect('j', 9, 12, 3, 2);
+  g.many('u', [[10, 4], [24, 7], [12, 14]]);
+  g.many('d', [[2, 4], [9, 2], [25, 5], [26, 11], [16, 17], [2, 17], [11, 7], [22, 4]]);
+  return g;
+})();
+MAPS.xh = {
+  id: 'xh', name: '雪花鎮', w: 28, h: 20, tiles: xhGrid.rows(), theme: 'island',
+  start: { x: 4, y: 10 }, respawn: { x: 6, y: 7 },
+  hub: { dock: { x: 4, y: 10 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 6, y: 6, to: { map: 'xh_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 21, y: 13, to: { map: 'xh_shop', x: 4, y: 6 } },
+    { id: 'dock_gh', kind: 'dock', x: 3, y: 10, dockTo: { map: 'gh', x: 25, y: 10 } }, // 西邊：回蛙鳴灣
+    { id: 'dock_isle', kind: 'dock', x: 24, y: 15, dockTo: { map: 'x', x: 2, y: 3 } }, // 東南：去企鵝冰原
+    { id: 'trail', kind: 'stairs', x: 25, y: 10, to: { map: 'village', x: 20, y: 11 }, label: '雪地小路', showIf: 'boss_x' }, // 單向：通到起始村池塘旁的空地
+    { id: 'trail_sign', kind: 'sign', x: 25, y: 11, showIf: 'boss_x', text: ['雪地小路：一直走，就能回到起始村。', '這條小路只能單向走，要回雪花鎮，得從起始村搭船。'] },
+    {
+      id: 'snowkid', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '雪球小弟',
+      talk: [
+        { not: 'xEntered', lines: ['歡迎來到雪花鎮！', '這裡一年到頭都在下雪，到處白白的，好漂亮。', '東南邊的碼頭，有船去企鵝冰原。島上有稻草布偶，先去練習看看吧！'] },
+        { not: 'boss_x', lines: ['聽說企鵝冰原的洞窟裡，住著冰晶女王，是她把冰原都凍住了。', '要先練習完，才找得到洞窟的入口喔。', '累了就來旅館住一晚！'] },
+        { lines: ['冰原暖和起來了！謝謝你！', '東邊現在有一條雪地小路，可以直接走回起始村，很方便。'] },
+      ],
+    },
+    {
+      id: 'granny', kind: 'npc', x: 16, y: 12, sprite: 'npc_elder', label: '雪地奶奶',
+      talk: [
+        { not: 'xPractice', lines: ['冰原上有一大堆雪，好像用輕輕的氣就能吹開。', '光滑的冰面上，也許能滑得動大石頭……'] },
+        { not: 'boss_x', lines: ['冰原上有一條河，水流得很急，走不過去。', '聽說打倒冰晶女王，學會「結冰」的魔法，就能把河水凍成橋！'] },
+        { lines: ['河面凍成冰橋了嗎？聽說對岸還有好幾個寶箱呢。', '回雪花鎮要搭船，小路只能從這裡走回起始村。'] },
+      ],
+    },
+    {
+      id: 'sailor', kind: 'npc', x: 7, y: 12, sprite: 'npc_girl', label: '船長小桃',
+      talk: [
+        { not: 'boss_x', lines: ['西邊的碼頭，是回蛙鳴灣的船。', '東南邊的碼頭，是去企鵝冰原的船。', '打倒怪獸會得到金幣，旅館住一晚 25 金幣。'] },
+        { lines: ['西邊的碼頭，是回蛙鳴灣的船。東南邊的碼頭，是去企鵝冰原的船。', '東邊的雪地小路，通到起始村的池塘邊，不用搭船。', '不過那是單向的路，要回雪花鎮，得從起始村搭船喔！'] },
+      ],
+    },
+  ],
+};
+MAPS.xh_inn = {
+  id: 'xh_inn', name: '雪花鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 6, y: 7 } },
+  ],
+};
+MAPS.xh_shop = {
+  id: 'xh_shop', name: '雪花鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 21, y: 14 } },
+  ],
+};
+
+// ───────── ㄐㄑㄒ：企鵝冰原 ─────────
+// 一條南北向的小河把冰原切成兩半：西岸是碼頭、機關與洞窟，東岸要等學會結冰術、凍出冰橋才過得去。
+// 河上的冰橋：河面那一格的地形是冰橋（可走），上面先擺一個「河水」機關物件擋路；用 freeze 啟動後物件消失，冰橋就露出來。
+const icefield = (() => {
+  const g = new Grid(28, 20, 'n').border('~');
+  g.rect('~', 13, 1, 1, 18).set(13, 10, 'z'); // 小河與冰橋所在的那一格
+  g.rect('j', 4, 12, 7, 4); // 西岸的薄冰面
+  g.many('d', [[6, 11], [8, 11], [7, 10]]); // 圍住石頭後面的寶箱
+  g.many('d', [[2, 13], [2, 17], [11, 17], [9, 1], [5, 9], [12, 13], [16, 6], [18, 5], [22, 8], [25, 3], [20, 16], [23, 13]]);
+  g.many('u', [[10, 10], [3, 18], [15, 14], [24, 10]]);
+  g.rect('j', 17, 12, 5, 3).rect('q', 19, 6, 3, 2);
+  return g;
+})();
+MAPS.x = {
+  id: 'x', name: '企鵝冰原（ㄐㄑㄒ）', w: 28, h: 20, tiles: icefield.rows(), theme: 'meadow',
+  start: { x: 2, y: 3 }, respawn: { x: 2, y: 3 },
+  objects: [
+    { id: 'dock', kind: 'dock', x: 1, y: 3, dockTo: { map: 'xh', x: 23, y: 15 } }, // 回主島
+    { id: 'cave', kind: 'stairs', x: 11, y: 2, to: { map: 'xc1', x: 2, y: 1 }, label: '洞窟', showIf: 'xPractice' },
+    { id: 'sign1', kind: 'sign', x: 3, y: 5, text: ['企鵝冰原。', '這座島的注音，都是舌面靠近上顎發出來的：ㄒ ㄑ，還有一個要等你自己發現。', '島上有雪堆、薄冰面和一條河，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 5, y: 4, battle: 'xpractice', hideIf: 'xPractice' },
+    { id: 'chest_1', kind: 'chest', x: 3, y: 8, item: 'potion' },
+    { id: 'pile', kind: 'gimmick', x: 6, y: 6, sprite: 'snow_pile', sprite2: 'snow_pile_gone', ability: 'snow', fx: 'snow', lockText: ['一大堆雪，好像把什麼東西埋住了。', '用「ㄒ」輕輕吹出的氣，也許能把雪吹開……'], hitText: ['夥伴「ㄒ」地輕輕一吹，雪花飄散開來！', '雪堆下面出現了一個寶箱！'], doneText: ['雪堆已經被吹開了。'] },
+    { id: 'chest_snow', kind: 'chest', x: 6, y: 5, showIf: 'g:x:pile', item: 'berry' },
+    { id: 'm1', kind: 'monster', x: 9, y: 8, battle: 'x1', ai: 'patrol', patrol: [{ x: 10, y: 8 }, { x: 11, y: 8 }] },
+    { id: 'rock', kind: 'gimmick', x: 7, y: 12, sprite: 'ice_rock', ability: 'slide', fx: 'slide', vanish: true, lockText: ['薄薄的冰面上，有一塊大石頭，擋住了後面的寶箱。', '用企鵝「ㄑ」的滑行，也許能把它推走……'], hitText: ['夥伴像企鵝一樣「ㄑ」地一滑，石頭「咻」地滑走了！'] },
+    { id: 'chest_slide', kind: 'chest', x: 7, y: 11, item: 'potion' },
+    { id: 'm2', kind: 'monster', x: 10, y: 5, battle: 'x2', ai: 'patrol', patrol: [{ x: 11, y: 5 }, { x: 12, y: 5 }] },
+    { id: 'm3', kind: 'monster', x: 4, y: 16, battle: 'x3', showIf: 'xPractice', ai: 'patrol', patrol: [{ x: 5, y: 16 }, { x: 6, y: 16 }] },
+    { id: 'bridge', kind: 'gimmick', x: 13, y: 10, sprite: 't_water', ability: 'freeze', fx: 'freeze', vanish: true, lockText: ['一條小河，水流很急，過不去。', '要是河水能結成冰就好了……'], hitText: ['夥伴「ㄐ」地吹出冷冷的氣，河面結成了一座冰橋！', '現在可以走到對岸了！'] },
+    { id: 'chest_bridge1', kind: 'chest', x: 16, y: 10, item: 'potion' },
+    { id: 'chest_bridge2', kind: 'chest', x: 24, y: 4, item: 'bigpotion' },
   ],
 };
 

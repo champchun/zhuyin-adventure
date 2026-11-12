@@ -124,6 +124,7 @@ export class WorldScene extends Phaser.Scene {
     audio.playBgm(m.theme);
     if (m.id === 'd' && !flag('dEntered')) setFlag('dEntered'); // 進到舌尖中音島：開始教 ㄉㄊ
     if (m.id === 'g' && !flag('gEntered')) setFlag('gEntered'); // 進到回音森林：開始教 ㄍㄎ
+    if (m.id === 'x' && !flag('xEntered')) setFlag('xEntered'); // 進到企鵝冰原：開始教 ㄒㄑ
     markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
@@ -530,6 +531,7 @@ export class WorldScene extends Phaser.Scene {
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
     else if (!flag('starterChosen')) await say2(STORY.guideChoose);
     else if (!flag('giftGiven')) await this.starterTest();
+    else if (flag('boss_x')) await say2(STORY.guideEndX);
     else if (flag('boss_g')) await say2(STORY.guideEndG);
     else if (flag('boss_d')) await say2(STORY.guideEndD);
     else if (flag('boss_p')) await say2(STORY.guideEnd);
@@ -729,6 +731,28 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < 6; i++) {
         const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffb36b);
         this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'snow') {
+      audio.sfx('wind');
+      for (let i = 0; i < 8; i++) {
+        const s = this.add.image(x - 10 + i * 3, y - 22, 'puff').setDepth(9999).setTint(0xffffff).setScale(0.7);
+        this.tweens.add({ targets: s, y: y + 8, x: s.x + (i % 2 ? 4 : -4), alpha: 0, duration: 800, delay: i * 60, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'slide') {
+      audio.sfx('wind');
+      for (let i = 0; i < 8; i++) {
+        const s = this.add.image(x - 16, y + (i - 4) * 3, 'windline').setDepth(9999).setTint(0xcfeaff);
+        this.tweens.add({ targets: s, x: x + 28, alpha: 0, duration: 450, delay: i * 35, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'freeze') {
+      audio.sfx('hint');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0x9fd8ff).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 22, alpha: 0, duration: 650, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xbfe9ff);
+        this.tweens.add({ targets: s, y: y - 22 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
       }
     } else {
       audio.sfx('splash');

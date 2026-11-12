@@ -68,7 +68,7 @@ describe('第三關的地圖', () => {
     expect(gh.hub).toBeDefined();
     expect(gh.objects.some((o) => o.kind === 'exit')).toBe(false);
     expect(g.objects.some((o) => o.kind === 'exit')).toBe(false);
-    expect(gh.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map).sort()).toEqual(['dh', 'g']);
+    expect(gh.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map).sort()).toEqual(['dh', 'g', 'xh']);
     expect(g.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['gh']);
   });
   it('鼓聲港的南邊碼頭要打倒鼓王才出現，通往蛙鳴灣', () => {
