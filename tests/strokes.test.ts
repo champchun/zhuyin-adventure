@@ -7,7 +7,6 @@ import { MAPS, abilityOf } from '../src/data/maps';
 import { MOVES, castSymbol } from '../src/data/monsters';
 import { defaultSettings } from '../src/core/save';
 
-const NO_STROKES_YET = new Set(['croak', 'knock', 'breath']);
 const BO: StrokePoint[] = STROKES['ㄅ'][0].points;
 const target = sampleStroke(BO);
 /** 模擬孩子畫的線：沿著這條折線每 3 單位一個點，可整體偏移 */
@@ -106,7 +105,6 @@ describe('招式互動物件要寫的注音（由招式自動決定）', () => {
       if (!m.needAbility) continue;
       const s = castSymbol(m.needAbility);
       expect(s, m.id).toBeDefined();
-      if (NO_STROKES_YET.has(m.id)) continue; // ㄍㄎㄏ 的筆順還沒有資料（沒有資料時寫字施法會自動略過）
       expect(STROKES[s!], `${m.id} → ${s}`).toBeDefined();
     }
   });
@@ -119,12 +117,11 @@ describe('招式互動物件要寫的注音（由招式自動決定）', () => {
         expect(ab, `${m.id}/${o.id}`).toBeDefined();
         const s = castSymbol(ab!);
         expect(s, `${m.id}/${o.id}`).toBeDefined();
-        if (NO_STROKES_YET.has(ab!)) continue; // ㄍㄎㄏ 的機關：筆順還沒有資料
         expect(STROKES[s!], `${m.id}/${o.id} → ${s}`).toBeDefined();
         count++;
       }
     }
-    expect(count).toBe(14); // 裂石 2、落葉、風車、鈴鐺、迷霧，加上島上 4 個機關物件，再加試煉洞窟的裂石與機關開關各 1，加上回音洞窟的隱藏小密室裂石 2（回音森林的 ㄍㄎㄏ 機關還沒有筆順，不算）
+    expect(count).toBe(18); // 裂石 2、落葉、風車、鈴鐺、迷霧，加上島上 4 個機關物件，再加試煉洞窟的裂石與機關開關各 1，加上回音洞窟的隱藏小密室裂石 2，再加回音森林（g）的 ㄍ 樹、ㄎ 洞、ㄏ 冰機關 3 個，以及 gc2 的 ㄎ 機關開關 1 個
   });
   it('木門、告示牌、NPC 等不是招式互動物件：沒有對應招式', () => {
     for (const k of ['woodgate', 'sign', 'npc', 'chest', 'monster', 'dock'] as const) {
@@ -137,7 +134,7 @@ describe('招式互動物件要寫的注音（由招式自動決定）', () => {
 });
 
 describe('全部筆順資料的品質', () => {
-  const EXPECTED: Record<string, number> = { 'ㄅ': 1, 'ㄆ': 2, 'ㄇ': 2, 'ㄈ': 2, 'ㄉ': 2, 'ㄊ': 3, 'ㄋ': 1, 'ㄌ': 2 };
+  const EXPECTED: Record<string, number> = { 'ㄅ': 1, 'ㄆ': 2, 'ㄇ': 2, 'ㄈ': 2, 'ㄉ': 2, 'ㄊ': 3, 'ㄋ': 1, 'ㄌ': 2, 'ㄍ': 2, 'ㄎ': 2, 'ㄏ': 2 };
   it('有筆順的符號和筆畫數，照筆順圖', () => {
     expect(Object.keys(STROKES).sort()).toEqual(Object.keys(EXPECTED).sort());
     for (const [ch, n] of Object.entries(EXPECTED)) expect(STROKES[ch], ch).toHaveLength(n);
