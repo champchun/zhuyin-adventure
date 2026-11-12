@@ -6,6 +6,7 @@ const LEVELS: { name: string; smalls: string[]; boss: string }[] = [
   { name: '第 0 關（村外小徑、風車草原）', smalls: ['pebble', 'leafy'], boss: 'windking' },
   { name: '第 1 關（舌尖中音島）', smalls: ['drippy', 'crabby'], boss: 'drumking' },
   { name: '第 2 關（回音森林）', smalls: ['froggy', 'pecker', 'bat'], boss: 'batking' },
+  { name: '第 3 關（企鵝冰原）', smalls: ['snowball', 'penguin', 'icebat'], boss: 'icequeen' },
 ];
 const range = (ids: string[], k: 'hp' | 'atk') => ({ min: Math.min(...ids.map((i) => ENEMIES[i][k])), max: Math.max(...ids.map((i) => ENEMIES[i][k])) });
 

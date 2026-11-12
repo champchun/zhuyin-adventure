@@ -4,7 +4,7 @@ export interface MoveDef {
   /** 魔法攻擊（聽聲音）時顯示的名字 */
   magicName: string;
   power: number;
-  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath';
+  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
   /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
@@ -69,22 +69,25 @@ export const MOVES: Record<string, MoveDef> = {
   croak: { id: 'croak', magicName: '呱呱魔法', symbol: 'ㄍ', name: '呱呱震', power: 5, fx: 'croak', needAbility: 'croak', desc: '「ㄍ」從喉嚨深處「呱」地震一下，能搖落樹上的果子。' },
   knock: { id: 'knock', magicName: '啄木魔法', symbol: 'ㄎ', name: '啄木敲', power: 5, fx: 'knock', needAbility: 'knock', desc: '「ㄎ」喉嚨輕輕一彈，像啄木鳥「喀喀」敲，能敲開樹洞。' },
   breath: { id: 'breath', magicName: '哈氣魔法', symbol: 'ㄏ', name: '哈氣', power: 6, fx: 'breath', needAbility: 'breath', desc: '「ㄏ」張大嘴巴「哈～」呼出熱氣，能融化冰塊。' },
+  snow: { id: 'snow', magicName: '雪花魔法', symbol: 'ㄒ', name: '雪花飄', power: 6, fx: 'snow', needAbility: 'snow', desc: '「ㄒ」氣從舌面和上顎中間輕輕「嘶」出來，飄出一片片雪花，能吹開堆起來的雪。' },
+  slide: { id: 'slide', magicName: '滑行魔法', symbol: 'ㄑ', name: '企鵝滑', power: 6, fx: 'slide', needAbility: 'slide', desc: '「ㄑ」舌面一彈，像企鵝肚子貼著冰面「咻」地滑出去，能推動冰上的石頭。' },
+  freeze: { id: 'freeze', magicName: '結冰魔法', symbol: 'ㄐ', name: '結冰術', power: 7, fx: 'freeze', needAbility: 'freeze', desc: '「ㄐ」舌面頂住上顎再放開，嘴邊吹出冷冷的氣，能把河水凍成冰橋。' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#f59a3c',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze], color: '#f59a3c',
     desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#4fb3a4',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze], color: '#4fb3a4',
     desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath], color: '#ff8a3a',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze], color: '#ff8a3a',
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
@@ -113,5 +116,9 @@ export const ENEMIES: Record<string, EnemyDef> = {
   pecker: { id: 'pecker', name: '啄木鳥', sprite: 'en_pecker', hp: 22, atk: 3, scale: 2.25 },
   bat: { id: 'bat', name: '蝙蝠', sprite: 'en_bat', hp: 22, atk: 4, scale: 2.25, echo: true },
   batking: { id: 'batking', name: '蝙蝠王嗡嗡', sprite: 'en_batking', hp: 28, atk: 5, scale: 2.75 },
+  snowball: { id: 'snowball', name: '雪球怪', sprite: 'en_snowball', hp: 24, atk: 4, scale: 2.25 },
+  penguin: { id: 'penguin', name: '企鵝', sprite: 'en_penguin', hp: 26, atk: 4, scale: 2.25, echo: true },
+  icebat: { id: 'icebat', name: '冰晶蝙蝠', sprite: 'en_icebat', hp: 26, atk: 5, scale: 2.25, echo: true },
+  icequeen: { id: 'icequeen', name: '冰晶女王', sprite: 'en_icequeen', hp: 32, atk: 6, scale: 2.75 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };

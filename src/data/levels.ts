@@ -14,6 +14,7 @@ export const LEVELS: Record<string, LevelDef> = {
   p: { id: 'p', symbol: '霧', name: '風車草原', open: true, mapId: 'p', partner: '夥伴' },
   d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'dh', partner: '夥伴' },
   g: { id: 'g', symbol: 'ㄍㄎㄏ', name: '舌根音島（回音森林）', open: true, mapId: 'gh', partner: '夥伴' },
+  x: { id: 'x', symbol: 'ㄐㄑㄒ', name: '舌面音島（企鵝冰原）', open: true, mapId: 'xh', partner: '夥伴' },
 };
 
 export interface RewardDef {
@@ -131,6 +132,26 @@ export const BATTLES: Record<string, BattleDef> = {
   gc2m: wild('gc2m', 'bat', 3, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'], 'm:gc2:mon1'),
   gc2m2: wild('gc2m2', 'bat', 3, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'], 'm:gc2:mon2'),
   gc2m3: wild('gc2m3', 'bat', 3, ['ㄍ', 'ㄎ'], ['ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'], 'm:gc2:mon3'),
+  // 第 3 座島：舌面音島（ㄐㄑㄒ）。一進島先練習 ㄒㄑ，ㄐ 要等練習完才出現
+  xpractice: {
+    id: 'xpractice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄒ', 'ㄑ'], review: [], guided: true,
+    intro: ['雪地裡也有稻草布偶，先來練習！', '這一次要認的是「ㄒ」和「ㄑ」。嘴巴扁扁的，氣從舌面前面擠出來！'],
+    reward: {
+      flag: 'xPractice', exp: 6, coins: 10, abilities: ['snow', 'slide'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄒ」像雪花輕輕飄下來，夥伴學會了雪花飄！', '「ㄑ」像企鵝肚子貼著冰面滑出去，夥伴學會了企鵝滑！', '冰原上還有「ㄐ」在等著你，往前走走看吧！'],
+    },
+  },
+  x1: wild('x1', 'snowball', 1, ['ㄒ', 'ㄑ'], ['ㄍ', 'ㄎ'], 'm:x:m1'),
+  x2: { ...wild('x2', 'penguin', 2, ['ㄒ', 'ㄑ'], ['ㄏ', 'ㄍ'], 'm:x:m2'), intro: ['企鵝擋住了路！', '牠會考「ㄒ」和「ㄑ」。'] },
+  x3: { ...wild('x3', 'snowball', 3, ['ㄐ', 'ㄒ'], ['ㄑ', 'ㄏ', 'ㄍ'], 'm:x:m3'), intro: ['雪球怪滾過來了！', '牠會考新的注音：「ㄐ」。'] },
+  boss_x: {
+    id: 'boss_x', enemy: 'icequeen', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄐ', 'ㄒ', 'ㄑ'], review: ['ㄍ', 'ㄎ', 'ㄏ', 'ㄉ', 'ㄊ'],
+    intro: ['咻咻咻～冰晶女王把整座冰原都凍住了！', '一共三個小回合，累了隨時都可以離開。'],
+    reward: {
+      flag: 'boss_x', exp: 24, coins: 100, abilities: ['freeze'], items: { potion: 2, berry: 2 },
+      story: ['冰晶女王的寒氣散開了，冰原又暖和起來！', '「ㄐ」是舌面頂住上顎再放開，夥伴學會了結冰術！', '河面上有地方可以結冰，回頭用新招式試試看吧！'],
+    },
+  },
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),

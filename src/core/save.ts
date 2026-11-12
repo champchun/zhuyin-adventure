@@ -112,6 +112,9 @@ export function loadSettings() {
   // 第三關之前的「全開」是 ㄅ～ㄌ 共 8 個：存過設定的舊存檔還停在這個清單，不升級的話 ㄍㄎㄏ 永遠不會出題
   const OLD_ALL = ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'];
   if (OLD_ALL.every((s) => G.settings.allowed.includes(s)) && !['ㄍ', 'ㄎ', 'ㄏ'].some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
+  // 第四關之前的「全開」是 ㄅ～ㄏ 共 11 個：同樣要升級，ㄐㄑㄒ 才會出題
+  const OLD_ALL3 = [...OLD_ALL, 'ㄍ', 'ㄎ', 'ㄏ'];
+  if (OLD_ALL3.every((s) => G.settings.allowed.includes(s)) && !['ㄐ', 'ㄑ', 'ㄒ'].some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
   if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));
