@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { MONSTER_ART, monsterRows } from './monsterArt';
 import { drawSnowTextures } from './snowArt';
+import { drawStarTextures } from './starArt';
 
 export const TILE = 16;
 
@@ -414,4 +415,6 @@ export function generateTextures(scene: Phaser.Scene) {
 
   // 第四關（雪花鎮、企鵝冰原）
   drawSnowTextures(make as unknown as Parameters<typeof drawSnowTextures>[0], px as unknown as Parameters<typeof drawSnowTextures>[1]);
+  // 星星婆婆、飾品、星光門
+  drawStarTextures(make as unknown as Parameters<typeof drawStarTextures>[0], px as unknown as Parameters<typeof drawStarTextures>[1]);
 }
