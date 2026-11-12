@@ -199,7 +199,7 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'frogstone': spr = this.add.image(px, py, 'frog_statue').setOrigin(0).setDepth(depth); break;
-        case 'dock': spr =this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
+        case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
         case 'stairs': spr = this.add.image(px, py, 'stairs').setOrigin(0).setDepth(depth); break;
         case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
         case 'barrier': spr = this.add.image(px, py, 'barrier').setOrigin(0).setDepth(depth); break;
