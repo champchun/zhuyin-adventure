@@ -6,6 +6,9 @@ const STYLES: Record<string, { roof: string; wall: string }> = {
   inn: { roof: 'i', wall: 'I' },
   shop: { roof: 'k', wall: 'K' },
   lab: { roof: 'l', wall: 'Y' },
+  snowHome: { roof: 'm', wall: 'M' },
+  snowInn: { roof: 'g', wall: 'G' },
+  snowShop: { roof: 'o', wall: 'O' },
 };
 
 /** 在地圖上找一棟房子：這一列是屋頂字元、下一列同欄是牆字元、門在牆那一列 */
@@ -26,7 +29,7 @@ describe('房子外觀：新的地形字元', () => {
       }
     }
     const keys = Object.values(STYLES).flatMap((s) => [TILE_KEY[s.roof], TILE_KEY[s.wall]]);
-    expect(new Set(keys).size).toBe(keys.length); // 八張貼圖各不相同
+    expect(new Set(keys).size).toBe(keys.length); // 每張貼圖各不相同
   });
   it('起始村：家是民宅、研究所是研究所、商店是商店', () => {
     expect(houseAt('village', 5, 3)).toEqual({ door: 'D', wall: STYLES.home.wall, roof: STYLES.home.roof });

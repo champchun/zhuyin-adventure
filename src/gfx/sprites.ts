@@ -2,6 +2,7 @@
 // 只要在 Boot 階段改成 load.image / load.spritesheet 並維持相同 key 即可。
 import Phaser from 'phaser';
 import { MONSTER_ART, monsterRows } from './monsterArt';
+import { drawSnowTextures } from './snowArt';
 
 export const TILE = 16;
 
@@ -410,4 +411,7 @@ export function generateTextures(scene: Phaser.Scene) {
     px(c, '#2b2140', 3, 0, 3, 9); px(c, '#2b2140', 0, 3, 9, 3); px(c, '#2b2140', 1, 1, 7, 7);
     px(c, '#ffd84a', 4, 1, 1, 7); px(c, '#ffd84a', 1, 4, 7, 1); px(c, '#ffd84a', 2, 2, 5, 5); px(c, '#fff6b0', 3, 3, 2, 2);
   });
+
+  // 第四關（雪花鎮、企鵝冰原）
+  drawSnowTextures(make as unknown as Parameters<typeof drawSnowTextures>[0], px as unknown as Parameters<typeof drawSnowTextures>[1]);
 }

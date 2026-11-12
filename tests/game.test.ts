@@ -120,8 +120,7 @@ describe('夥伴像素圖', () => {
       rows.forEach((r) => expect(r.length).toBe(32));
     }
     for (const sp of Object.values(SPECIES)) for (const key of sp.sprites) expect(MONSTER_ART[key], `${sp.id}/${key}`).toBeDefined();
-    const ART_PENDING = new Set(['snowball', 'penguin', 'icebat', 'icequeen']); // 第四關怪物圖在 Task 2 加入，之後移除這個豁免
-    for (const en of Object.values(ENEMIES)) if (!ART_PENDING.has(en.id)) expect(MONSTER_ART[en.sprite], `敵人 ${en.id}`).toBeDefined();
+    for (const en of Object.values(ENEMIES)) expect(MONSTER_ART[en.sprite], `敵人 ${en.id}`).toBeDefined();
   });
 });
 
