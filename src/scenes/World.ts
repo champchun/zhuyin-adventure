@@ -542,7 +542,7 @@ export class WorldScene extends Phaser.Scene {
     await say(STORY.innHello.map((text) => ({ who, text })));
     const stay = stayOutcome(G.save.coins, price);
     if (!stay.ok) {
-      await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！東邊碼頭的小船可以載你回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
+      await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！搭船回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
       return;
     }
     const i = await choose(`住一晚要 ${price} 金幣？`, `夥伴的 HP 和魔力都會回滿，還會幫你存檔。你有 ${G.save.coins} 枚金幣。`, ['住一晚 💤', '先不要']);

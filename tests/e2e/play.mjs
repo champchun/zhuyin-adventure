@@ -62,8 +62,8 @@ async function pump(cond, label, maxMs = 900000) {
       return { low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     // 頭目護盾：訊息只會閃一下（之後被「反擊了」蓋掉），所以記起來，直到看到「護盾被魔法打破了」或戰鬥結束
-    if (/護盾擋住了/.test(st.msg)) shieldUp = true;
-    else if (/護盾被魔法打破/.test(st.msg) || st.results) shieldUp = false;
+    if (/護盾擋住了|攻擊被彈開/.test(st.msg)) shieldUp = true;
+    else if (/護盾被魔法打破/.test(st.msg) || st.results) shieldUp = false; // 回音怪（被彈開）打贏時由 results 清掉
     if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
@@ -430,6 +430,7 @@ log('✓ 回音洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了�
 await doTap(17, 7, '往 2 樓的樓梯');
 if ((await save()).mapId !== 'gc2') throw new Error('沒有走到回音洞窟 2 樓');
 await snap('gcave-2f');
+await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：蝙蝠是回音怪，要用魔法攻擊才有傷害
 await doTap(11, 3, '洞窟 2 樓小怪');
 await doTap(17, 3, '樹洞開關（ㄎ）');
 f = await flags();

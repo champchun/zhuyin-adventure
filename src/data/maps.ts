@@ -468,7 +468,7 @@ MAPS.gh = {
     {
       id: 'captain', kind: 'npc', x: 18, y: 12, sprite: 'npc_elder', label: '老船長',
       talk: [
-        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，搭船回起始村的家睡覺，是免費的喔！', '南邊的碼頭回鼓聲港，西邊的碼頭去回音森林。'] },
+        { lines: ['打倒怪獸會得到金幣，可以到商店買藥水。', '旅館住一晚 25 金幣。沒錢的話，可以搭船回起始村的家睡覺，是免費的喔！', '南邊的碼頭回鼓聲港（再從鼓聲港搭船回起始村），西邊的碼頭去回音森林。'] },
       ],
     },
     {
@@ -521,7 +521,7 @@ MAPS.g = {
     { id: 'm2', kind: 'monster', x: 16, y: 8, battle: 'g2', ai: 'patrol', patrol: [{ x: 17, y: 8 }, { x: 18, y: 8 }] },
     { id: 'ice', kind: 'gimmick', x: 22, y: 9, sprite: 'ice_block', ability: 'breath', fx: 'breath', vanish: true, lockText: ['一大塊冰，擋住了小路。', '用「ㄏ」呼出的熱氣，也許能把它融化……'], hitText: ['夥伴張大嘴巴「ㄏ～」，冰塊慢慢融化了！'] },
     { id: 'chest_ice', kind: 'chest', x: 22, y: 8, item: 'bigpotion' },
-    { id: 'm3', kind: 'monster', x: 20, y: 15, battle: 'g3', ai: 'patrol', patrol: [{ x: 21, y: 15 }, { x: 22, y: 15 }] },
+    { id: 'm3', kind: 'monster', x: 20, y: 15, battle: 'g3', showIf: 'gPractice', ai: 'patrol', patrol: [{ x: 21, y: 15 }, { x: 22, y: 15 }] },
   ],
 };
 
