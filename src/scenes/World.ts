@@ -13,6 +13,7 @@ import { audio } from '../core/audio';
 import { choose, openParty, openResults, openSettings, openShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
+import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
@@ -44,6 +45,8 @@ export class WorldScene extends Phaser.Scene {
   private pending?: Obj;
   private moving = false;
   private busy = false;
+  /** 這次進入蛙鳴灣，青蛙聽音石的獎勵已經領過了（只存在記憶體，離開地圖就重置） */
+  private frogPaid = false;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private marker?: Phaser.GameObjects.Image;
@@ -96,6 +99,7 @@ export class WorldScene extends Phaser.Scene {
     this.labels = [];
     this.trail = [];
     this.map = MAPS[id];
+    this.frogPaid = false;
     this.tx = x; this.ty = y;
     G.save.mapId = id; G.save.x = x; G.save.y = y;
     const m = this.map;
@@ -194,7 +198,8 @@ export class WorldScene extends Phaser.Scene {
         case 'leaves': spr = this.add.image(px, py, 'leaves').setOrigin(0).setDepth(depth); break;
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
-        case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
+        case 'frogstone': spr = this.add.image(px, py, 'frog_statue').setOrigin(0).setDepth(depth); break;
+        case 'dock': spr =this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
         case 'stairs': spr = this.add.image(px, py, 'stairs').setOrigin(0).setDepth(depth); break;
         case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
         case 'barrier': spr = this.add.image(px, py, 'barrier').setOrigin(0).setDepth(depth); break;
@@ -415,6 +420,7 @@ export class WorldScene extends Phaser.Scene {
     switch (d.kind) {
       case 'npc': return d.id === 'doctor' ? this.talkGuide() : d.id === 'clerk' ? this.talkClerk(d) : this.talkNpc(d);
       case 'innkeeper': return this.useInn(d);
+      case 'frogstone': return this.useFrogStone(d);
       case 'sign': return say((d.text ?? []).map((t) => ({ who: d.sprite === 'desk' ? '書桌' : '告示牌', text: t })));
       case 'chest': return this.openChest(o);
       case 'bed': return this.sleepInBed();
@@ -533,6 +539,38 @@ export class WorldScene extends Phaser.Scene {
     if (!v) return;
     await say(v.lines.map((text) => ({ who: d.label, text })));
     if (v.set) { setFlag(v.set); saveGame(); }
+  }
+
+  /** 青蛙聽音石：聽一個注音的聲音，點對的石頭；答對 3 次有獎勵（每次進入蛙鳴灣只能領一次）。答錯沒有懲罰。 */
+  private async useFrogStone(d: MapObj) {
+    const who = d.label ?? '青蛙聽音石';
+    const talk = (lines: string[]) => say(lines.map((text) => ({ who, text })));
+    if (this.frogPaid) { await talk(STORY.frogAgain); return; }
+    const pool = activeSymbols();
+    if (pool.length < 3) { await talk(STORY.frogNeed); return; }
+    if (!audio.audioReadyFor(pool)) { await talk(STORY.frogNoAudio); return; } // 沒有音檔不用 TTS 冒充，青蛙睡著了
+    await talk(STORY.frogHello);
+    let prev: string | undefined;
+    for (let n = 0; n < FROG_ROUNDS; n++) {
+      const round = makeFrogRound(pool, prev);
+      if (!round) return;
+      prev = round.target;
+      for (;;) {
+        audio.playSymbol(round.target);
+        const labels = [...round.options, '🔊 再聽一次', '先不要'];
+        const i = await choose(`第 ${n + 1} 題（共 ${FROG_ROUNDS} 題）`, '聽一聽，點對的石頭！', labels);
+        if (i === round.options.length + 1) return; // 先不要
+        if (i === round.options.length) continue; // 再聽一次
+        if (round.options[i] === round.target) { toast(STORY.frogRight[0]); break; }
+        toast(STORY.frogWrong[0]);
+      }
+    }
+    this.frogPaid = true;
+    addCoins(FROG_REWARD.coins);
+    addItem(FROG_REWARD.item, FROG_REWARD.count);
+    saveGame();
+    audio.sfx('levelup');
+    await talk(STORY.frogDone);
   }
 
   /** 旅館：付錢住一晚，夥伴 HP／魔力回滿並存檔。金幣不夠就不能住（搭船回起始村睡覺是免費的），也不扣錢。 */
