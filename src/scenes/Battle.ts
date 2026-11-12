@@ -11,6 +11,7 @@ import { bui, sleep } from '../core/battleui';
 import type { Mode } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
 import { resolveHit, rulesActive } from '../core/shield';
+import { cheats } from '../core/cheats';
 import { PROMPT_LINES } from '../data/voiceLines';
 import { accOffset, accTexture } from '../gfx/accessory';
 
@@ -416,7 +417,7 @@ export class BattleScene extends Phaser.Scene {
         const move = moveFor(me.species, q.target, hasAbility); // 答對哪個符號，就使出綁定的招式
         const hit = resolveHit({ active: rulesOn(), type: q.type, echo: !!enemy.echo, shield, dmg: move.power + powerBonus(me) + listenBonus + speed });
         shield = hit.shield;
-        const dmg = hit.dmg;
+        const dmg = cheats.oneHit && hit.dmg > 0 ? ehp : hit.dmg; // 一擊必殺（測試用）；被護盾擋下（0 傷害）的不算
         if (q.type === 'listen') { me.mp = Math.max(0, me.mp! - 1); bui.setMp(me.mp, maxMp(me)); } // 魔法攻擊耗 1 點魔力
         bui.msg(`${SPECIES[me.species].name}使出了${q.type === 'listen' ? move.magicName : move.name}！${speed >= 2 ? '⚡好快！威力大增！' : speed === 1 ? '⚡不錯！威力增加！' : ''}`);
         await this.playerAttack(move);

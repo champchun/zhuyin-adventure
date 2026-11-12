@@ -7,6 +7,7 @@
 - 端對端：`npm run dev` 後 `node tests/e2e/play.mjs`（playwright-core + 系統 Edge/Chrome）；很慢（CI 約 35 分鐘），平常交給 GitHub Actions（`.github/workflows/e2e.yml`），不在本機跑。
 - 端對端分段：`SECTION=lv0|lv2|lv3|lv4|all node tests/e2e/play.mjs`（前面關卡的進度直接寫進存檔；`all` 從頭玩到尾，結束時在起始村）。
 - 迷宮：`node tools/gen-dungeon.mjs` 重新產生 `src/data/mazes.ts`（回音洞窟 `gc1`/`gc2` 種子 11、23；冰晶洞窟 `xc1`/`xc2` 種子 37、41）；改種子或演算法後必須重跑，`tests/mazegen.test.ts` 會檢查檔案與產生器同步。
+- 端對端預設開「一擊必殺」（`src/core/cheats.ts`，`window.__game.cheats.oneHit`，只能從主控台／腳本開，不存檔；被護盾擋下的那一擊仍是 0 傷害）與「夥伴等級補到 8、每場戰鬥補滿血」：機器人只要走完流程。`E2E_ONEHIT=0`、`E2E_BOOST=0` 可關掉，回到真實戰鬥。
 - vitest 偶爾出現「1 個 Unhandled Error」且測試數變少（暫時性），重跑即可。
 
 ## 結構與慣例

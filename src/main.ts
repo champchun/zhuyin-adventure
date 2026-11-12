@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import './style.css';
 import { VIEW_H, VIEW_W, computeFit, computeZoom, view } from './core/view';
+import { cheats } from './core/cheats';
 import { G, hasSave, loadGame, maxHp, maxMp, loadSettings, saveGame, startNewGame } from './core/save';
 import { audio } from './core/audio';
 import { applyBodyClasses, hooks, openSettings, openWriteSymbol, setupHud, showHud, showTitle, ui } from './core/ui';
@@ -107,4 +108,4 @@ flow();
 
 // 供除錯與自動化測試使用
 // writeSymbol('ㄊ')：直接開那個注音的寫字畫布（檢查筆順用）；STROKES：筆順資料（端對端測試用它產生滑鼠軌跡）
-(window as any).__game = { game, G, audio, world, ui, hasSave, writeSymbol: openWriteSymbol, STROKES, maxHp, maxMp };
+(window as any).__game = { game, G, audio, world, ui, hasSave, writeSymbol: openWriteSymbol, STROKES, maxHp, maxMp, cheats };
