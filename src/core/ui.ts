@@ -1,6 +1,6 @@
 // DOM 介面：標題、對話、HUD、夥伴、家長設定、成果。
 import { audio } from './audio';
-import { G, PARTY_MAX, buyItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
+import { G, PARTY_MAX, addItem, buyItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, peekSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
 import { ITEMS, SPECIES } from '../data/monsters';
 import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
@@ -8,6 +8,9 @@ import { STROKES } from '../data/strokes';
 import { sampleStroke, strokeDone } from './strokes';
 import type { Pt } from './strokes';
 import { PROMPT_LINES } from '../data/voiceLines';
+import { REWARDS, rewardById } from '../data/rewards';
+import type { AccessoryId } from '../data/rewards';
+import { availableStars, canRedeem, equip, isOwned, redeem, setTitle, titleName } from './stars';
 
 const $ = (id: string) => document.getElementById(id)!;
 export const hooks: { texture: (key: string) => CanvasImageSource | undefined; applyMotion: () => void } = {
@@ -134,6 +137,57 @@ export function openShop(): Promise<void> {
         const it = ITEMS[id];
         if (r === 'ok') { audio.sfx('chest'); saveGame(); note = `買了 ${it.icon} ${it.name}！`; audio.speak(`買了${it.name}`); }
         else if (r === 'poor') { audio.sfx('wrong'); note = '金幣不夠喔，多打幾隻怪獸再來吧！'; audio.speak(note); }
+        closeModal();
+        render();
+      });
+    };
+    render();
+  });
+}
+
+/**
+ * 星星婆婆的換獎勵視窗：花可用星星換稱號、飾品、小禮物；已擁有的飾品可以換戴或脫下，已擁有的稱號可以換顯示。
+ * 按鈕的 data-a：redeem（data-id＝獎勵 id）、equip（data-acc）、unequip、title（data-id）、close。
+ * onChange：換了飾品時通知世界重畫跟隨的夥伴。
+ */
+export function openStarShop(onChange?: () => void): Promise<void> {
+  return new Promise((resolve) => {
+    let note = '';
+    const s = G.save;
+    const render = () => {
+      const accs = REWARDS.filter((r) => r.type === 'accessory' && (s.accessories ?? []).includes(r.accessory!));
+      const titles = REWARDS.filter((r) => r.type === 'title' && (s.titles ?? []).includes(r.id));
+      const html = `<h2>⭐ 星星婆婆</h2>
+        <div class="note" style="font-size:20px;font-weight:800">可用星星 ${availableStars(s)} 顆（累計 ${s.stars} 顆）</div>
+        <div class="foot" style="flex-direction:column;gap:8px;align-items:stretch">${REWARDS.map((r) => {
+          const have = isOwned(s, r);
+          const poor = !have && !canRedeem(s, r).ok;
+          return `<button class="btn ${have || poor ? '' : 'primary'}" data-a="redeem" data-id="${r.id}" ${have || poor ? 'style="opacity:.45"' : ''}>
+            ${r.icon} ${r.name}　⭐ ${r.cost}${have ? '　✔ 已擁有' : ''}</button>`;
+        }).join('')}</div>
+        ${accs.length || titles.length ? `<div class="foot" style="flex-direction:column;gap:8px;align-items:stretch">
+          ${accs.map((r) => `<button class="btn" data-a="equip" data-acc="${r.accessory}">${r.icon} ${s.equipped === r.accessory ? '戴著' : '戴上'}${r.name}</button>`).join('')}
+          ${s.equipped ? '<button class="btn" data-a="unequip">脫下飾品</button>' : ''}
+          ${titles.map((r) => `<button class="btn" data-a="title" data-id="${r.id}">${r.icon} 稱號：${r.name}${s.title === r.id ? '（目前）' : ''}</button>`).join('')}</div>` : ''}
+        <div class="note" style="min-height:1.6em">${note}</div>
+        <div class="foot"><button class="btn" data-a="close">下次再來</button></div>`;
+      const m = openModal(html);
+      delegate(m, (a, el) => {
+        if (a === 'close') { closeModal(); resolve(); return; }
+        if (a === 'redeem') {
+          const r = rewardById(el.dataset.id!)!;
+          const res = redeem(s, r);
+          if (res.ok) {
+            if (res.gift) addItem(res.gift.item, res.gift.count);
+            audio.sfx('chest'); saveGame(); onChange?.();
+            note = `換到了 ${r.icon} ${r.name}！${r.type === 'accessory' ? '已經幫夥伴戴上囉。' : ''}`;
+          } else if (res.reason === 'owned') { audio.sfx('tap'); note = '這個你已經有囉～'; }
+          else { audio.sfx('wrong'); note = '再多撿幾顆星星就能換囉～'; }
+        } else if (a === 'equip') { equip(s, el.dataset.acc as AccessoryId); saveGame(); audio.sfx('tap'); onChange?.(); note = ''; }
+        else if (a === 'unequip') { equip(s, undefined); saveGame(); audio.sfx('tap'); onChange?.(); note = ''; }
+        else if (a === 'title') { setTitle(s, el.dataset.id!); saveGame(); audio.sfx('tap'); note = `現在的稱號是「${titleName(s)}」！`; }
+        else return;
+        audio.speak(note);
         closeModal();
         render();
       });
@@ -309,7 +363,7 @@ export function openParty(onChange?: () => void): Promise<void> {
   return new Promise((resolve) => {
     const render = () => {
       const html = `<h2>我的夥伴 <small style="font-size:16px">(${G.save.party.length}/${PARTY_MAX})</small></h2>
-      <div class="note">點一下夥伴，就會換成出戰的夥伴。　🪙 金幣 ${G.save.coins ?? 0}　${Object.keys(ITEMS).filter((id) => itemCount(id) > 0).map((id) => `${ITEMS[id].icon}×${itemCount(id)}`).join(' ')}</div>
+      <div class="note">${titleName(G.save) ? `🏅 稱號：${titleName(G.save)}　` : ''}點一下夥伴，就會換成出戰的夥伴。　🪙 金幣 ${G.save.coins ?? 0}　${Object.keys(ITEMS).filter((id) => itemCount(id) > 0).map((id) => `${ITEMS[id].icon}×${itemCount(id)}`).join(' ')}</div>
       ${G.save.party.map((m, i) => {
         const sp = SPECIES[m.species];
         const names = sp.moves.map((mv) => mv.name + (mv.needAbility && !hasAbility(mv.needAbility) ? '（未學會）' : '')).join('、');
@@ -486,6 +540,8 @@ export function showTitle(): Promise<'new' | 'continue'> {
     const sc = $('screen');
     const render = () => {
       const sum = audio.zhuyinSummary();
+      const saved = hasSave() ? peekSave() : undefined;
+      const saveTitle = saved ? titleName(saved) : undefined;
       sc.className = 'on';
       sc.innerHTML = `<div class="sub">迷霧島冒險</div><div class="logo">注音夥伴</div>
         <div class="deco-row" style="display:flex;gap:12px;justify-content:center"><span data-k="mon_momo2"></span><span data-k="mon_bobo2"></span><span data-k="mon_popo2"></span></div>
@@ -494,7 +550,7 @@ export function showTitle(): Promise<'new' | 'continue'> {
           <button class="btn ${hasSave() ? '' : 'primary'}" data-a="new">新的冒險</button>
           <button class="btn small" data-a="settings">⚙ 家長設定</button>
         </div>
-        <div class="stat">${audio.statusText()}<br>${audio.audioReadyFor(ALL_SYMBOLS) ? '注音音檔：已就緒（共 ' + sum.ready + ' 個）' : '注音音檔：尚未安裝完整（目前使用「看符號配對」）'}</div>`;
+        <div class="stat">${saveTitle ? `🏅 稱號：${saveTitle}<br>` : ''}${audio.statusText()}<br>${audio.audioReadyFor(ALL_SYMBOLS) ? '注音音檔：已就緒（共 ' + sum.ready + ' 個）' : '注音音檔：尚未安裝完整（目前使用「看符號配對」）'}</div>`;
       sc.querySelectorAll<HTMLElement>('[data-k]').forEach((s) => s.replaceWith(thumb(s.dataset.k!, 112)));
     };
     render();

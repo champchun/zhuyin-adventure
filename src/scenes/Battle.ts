@@ -12,6 +12,7 @@ import type { Mode } from '../core/battleui';
 import { QuestionRun, effectiveOptionCount, makeQuestion } from '../core/learning';
 import { resolveHit, rulesActive } from '../core/shield';
 import { PROMPT_LINES } from '../data/voiceLines';
+import { accOffset, accTexture } from '../gfx/accessory';
 
 export type BattleOutcome = 'win' | 'lose' | 'run';
 export interface BattleInit { battleId: string; mapTheme: string; done: (r: BattleOutcome) => void }
@@ -25,6 +26,9 @@ export class BattleScene extends Phaser.Scene {
   private pl!: Phaser.GameObjects.Image;
   private en!: Phaser.GameObjects.Image;
   private plShadow!: Phaser.GameObjects.Image;
+  /** 夥伴頭上的飾品（沒戴就是 undefined）；跟著夥伴圖的位置、縮放與透明度，每一幀在 update 裡更新 */
+  private acc?: Phaser.GameObjects.Image;
+  private accOff = { x: 16, y: 8 };
   private enShadow!: Phaser.GameObjects.Image;
   private init0!: BattleInit;
   private idle: Phaser.Tweens.Tween[] = [];
@@ -45,6 +49,7 @@ export class BattleScene extends Phaser.Scene {
     this.plShadow = this.add.image(PLAYER_POS.x, PLAYER_POS.y + 38, 'shadow').setScale(3.5);
     this.en = this.add.image(ENEMY_POS.x, ENEMY_POS.y, enemy.sprite).setScale(enemy.scale);
     this.pl = this.add.image(PLAYER_POS.x, PLAYER_POS.y, spriteOf(G.save.party[G.save.active] ?? G.save.party[0])).setScale(2.5); // 夥伴圖本來就朝右，面對右邊的敵人
+    this.syncAcc(G.save.party[G.save.active] ?? G.save.party[0]);
     this.startIdle();
     audio.playBgm('battle');
     this.fight(def).then((r) => {
@@ -73,6 +78,24 @@ export class BattleScene extends Phaser.Scene {
     for (let i = 0; i < 18; i++) g.fillRect((i * 53) % VIEW_W, HORIZON + 8 + ((i * 29) % 140), 6, 2);
     g.fillStyle(0x000000, 0.12); g.fillEllipse(PLAYER_POS.x, PLAYER_POS.y + 38, 80, 14);
   }
+
+  /** 依存檔的 equipped 與目前出戰的夥伴，建立（或重建）頭上的飾品 */
+  private syncAcc(m: MonsterInst) {
+    this.acc?.destroy();
+    this.acc = undefined;
+    const eq = G.save.equipped;
+    if (!eq) return;
+    this.accOff = accOffset(m.species, m.stage);
+    this.acc = this.add.image(0, 0, accTexture(eq)).setOrigin(0.5, 1).setScale(this.pl.scale);
+    this.updateAcc();
+  }
+  private updateAcc() {
+    const a = this.acc, p = this.pl;
+    if (!a) return;
+    a.setPosition(p.x + (this.accOff.x - 16) * p.scale, p.y + (this.accOff.y - 16) * p.scale).setAlpha(p.alpha).setDepth(p.depth + 0.1);
+    if (p.isTinted) a.setTintFill(0xffffff); else a.clearTint(); // 夥伴被打到閃白時，飾品也一起閃
+  }
+  update() { this.updateAcc(); }
 
   private startIdle() {
     this.idle.forEach((t) => t.stop());
@@ -280,6 +303,7 @@ export class BattleScene extends Phaser.Scene {
     const setMe = (m: MonsterInst) => {
       me = m;
       this.pl.setTexture(spriteOf(m));
+      this.syncAcc(m);
       bui.setHp('me', SPECIES[m.species].name, m.hp!, maxHp(m), m.level);
       bui.setMp(m.mp!, maxMp(m));
     };

@@ -11,9 +11,12 @@ import {
 } from '../core/save';
 import { audio } from '../core/audio';
 import { lessonSteps, lessonSymbols, makeLessonRound } from '../core/lesson';
-import { choose, openLessonPick, openParty, openResults, openSettings, openShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
+import { choose, openLessonPick, openParty, openResults, openSettings, openShop, openStarShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
+import { starDoorOpen } from '../core/stars';
+import { STAR_DOOR_NEED } from '../data/rewards';
+import { accOffset, accTexture } from '../gfx/accessory';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
@@ -37,7 +40,9 @@ export class WorldScene extends Phaser.Scene {
   private mons = new Map<string, MonState>();
   private player!: Phaser.GameObjects.Image;
   private pShadow!: Phaser.GameObjects.Image;
-  private followers: { spr: Phaser.GameObjects.Image; sh: Phaser.GameObjects.Image }[] = [];
+  private followers: { spr: Phaser.GameObjects.Image; sh: Phaser.GameObjects.Image; acc?: Phaser.GameObjects.Image; off?: { x: number; y: number } }[] = [];
+  /** 這張地圖上的星星婆婆（有的話每一幀更新光暈、小星星與杖尖動畫） */
+  private granny?: Obj;
   private trail: { x: number; y: number }[] = [];
   private tx = 0;
   private ty = 0;
@@ -129,14 +134,17 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildFollowers() {
-    this.followers.forEach((f) => { f.spr.destroy(); f.sh.destroy(); });
+    this.followers.forEach((f) => { f.spr.destroy(); f.sh.destroy(); f.acc?.destroy(); });
     this.followers = [];
     const party = G.save.party;
     const order = party.length ? [party[G.save.active] ?? party[0], ...party.filter((_, i) => i !== G.save.active)] : [];
-    order.forEach((m) => {
+    order.forEach((m, i) => {
       const sh = this.add.image(0, 0, 'shadow').setDepth(1).setScale(0.8);
       const spr = this.add.image(this.tx * T + 8, this.ty * T + 16, spriteOf(m)).setOrigin(0.5, 1).setScale(0.5); // 32×32 縮成一格大小
-      this.followers.push({ spr, sh });
+      const eq = G.save.equipped;
+      // 飾品只戴在跟在最前面（出戰）的夥伴頭上；位置跟著夥伴圖，每一幀在 update 裡更新
+      const acc = i === 0 && eq ? this.add.image(0, 0, accTexture(eq)).setOrigin(0.5, 1).setScale(0.5) : undefined;
+      this.followers.push({ spr, sh, acc, off: acc ? accOffset(m.species, m.stage) : undefined });
     });
     this.placeFollowers(false);
   }
@@ -180,6 +188,7 @@ export class WorldScene extends Phaser.Scene {
   private refreshObjects() {
     this.objs.forEach((o) => { o.spr.destroy(); o.extra.forEach((e) => e.destroy()); });
     this.objs.clear();
+    this.granny = undefined;
     this.labels = [];
     const m = this.map;
     for (const def of m.objects) {
@@ -204,6 +213,17 @@ export class WorldScene extends Phaser.Scene {
         case 'bell': spr = this.add.image(px, py, 'bell').setOrigin(0).setDepth(depth); break;
         case 'fog': spr = this.add.image(px, py, 'fog_patch').setOrigin(0).setDepth(depth); bob(spr, 1, 900); break;
         case 'frogstone': spr = this.add.image(px, py, 'frog_statue').setOrigin(0).setDepth(depth); break;
+        case 'granny': {
+          // 星星婆婆：身後有柔和的光暈、身邊三顆繞圈的小星星（位置與閃爍在 animGranny 每幀更新）
+          shadow();
+          const glow = this.add.image(px + 8, py + 6, 'glow').setDepth(depth - 0.5).setAlpha(0.5);
+          spr = this.add.image(px + 8, py + 16, 'granny').setOrigin(0.5, 1).setDepth(depth);
+          extra.push(glow);
+          for (let i = 0; i < 3; i++) extra.push(this.add.image(px + 8, py + 6, 'spark').setDepth(depth + 1).setScale(0.8));
+          break;
+        }
+        case 'stardoor': spr = this.add.image(px, py, starDoorOpen(G.save) ? 'star_door_open' : 'star_door').setOrigin(0).setDepth(depth); break;
+        case 'statue': spr = this.add.image(px, py, 'star_statue').setOrigin(0).setDepth(depth); break;
         case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
         case 'stairs': spr = this.add.image(px, py, 'stairs').setOrigin(0).setDepth(depth); break;
         case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
@@ -244,7 +264,9 @@ export class WorldScene extends Phaser.Scene {
         }
         default: continue;
       }
-      this.objs.set(def.id, { def, spr, extra, x: ox, y: oy });
+      const obj: Obj = { def, spr, extra, x: ox, y: oy };
+      this.objs.set(def.id, obj);
+      if (def.kind === 'granny') this.granny = obj;
     }
   }
 
@@ -346,7 +368,11 @@ export class WorldScene extends Phaser.Scene {
     if (!this.ready) return;
     this.player.setDepth(this.player.y);
     this.pShadow.setPosition(this.player.x, this.tyPx() - 2);
-    this.followers.forEach((f) => { f.spr.setDepth(f.spr.y - 0.5); f.sh.setPosition(f.spr.x, f.spr.y - 2); });
+    this.followers.forEach((f) => {
+      f.spr.setDepth(f.spr.y - 0.5); f.sh.setPosition(f.spr.x, f.spr.y - 2);
+      if (f.acc && f.off) f.acc.setPosition(f.spr.x + (f.off.x - 16) * 0.5, f.spr.y + (f.off.y - 32) * 0.5).setDepth(f.spr.depth + 0.2);
+    });
+    if (this.granny) this.animGranny(this.granny);
     if (this.moving || this.busy || ui.blocking || !this.scene.isActive()) return;
     let d: Dir | undefined;
     if (this.cursors.left.isDown || this.wasd.A.isDown) d = 'left';
@@ -363,6 +389,25 @@ export class WorldScene extends Phaser.Scene {
     else { const o = this.objAt(nx, ny); if (o) { this.pending = o; this.run(); } }
   }
   private tyPx() { return this.player.y; }
+
+  /**
+   * 星星婆婆的動畫：杖尖兩格閃爍、光暈呼吸、小星星繞圈；主角走近（約 5 格內）光暈更亮。
+   * 設定「減少動態」時只留靜止的光暈與固定位置的小星星。
+   */
+  private animGranny(o: Obj) {
+    const calm = G.settings.reduceMotion;
+    const t = calm ? 0 : this.time.now;
+    const near = Math.hypot(o.x - this.tx, o.y - this.ty) <= 5;
+    const [glow, ...stars] = o.extra as Phaser.GameObjects.Image[];
+    const frame = Math.floor(t / 500) % 2 ? 'granny2' : 'granny';
+    if (o.spr.texture.key !== frame) o.spr.setTexture(frame);
+    glow.setAlpha((near ? 0.9 : 0.5) + (calm ? 0 : 0.15 * Math.sin(t / 400))).setScale(1 + (calm ? 0 : 0.06 * Math.sin(t / 400)));
+    const cx = o.x * T + 8, cy = o.y * T + 6;
+    stars.forEach((s, i) => {
+      const a = t / 900 + (i * Math.PI * 2) / 3;
+      s.setPosition(cx + Math.cos(a) * 11, cy + Math.sin(a) * 6 - 2).setDepth(o.spr.depth + (Math.sin(a) > 0 ? 1 : -1)).setAlpha(near ? 1 : 0.7);
+    });
+  }
 
   private syncPlayerTexture() {
     if (this.dir === 'down') this.player.setTexture('player_down').setFlipX(false);
@@ -426,6 +471,9 @@ export class WorldScene extends Phaser.Scene {
       case 'npc': return d.id === 'doctor' ? this.talkGuide() : d.id === 'clerk' ? this.talkClerk(d) : this.talkNpc(d);
       case 'innkeeper': return this.useInn(d);
       case 'frogstone': return this.useFrogStone(d);
+      case 'granny': return this.useGranny(d);
+      case 'stardoor': return this.useStarDoor(d);
+      case 'statue': return say((d.text ?? []).map((text) => ({ who: d.label ?? '星星雕像', text })));
       case 'sign': return say((d.text ?? []).map((t) => ({ who: d.sprite === 'desk' ? '書桌' : '告示牌', text: t })));
       case 'chest': return this.openChest(o);
       case 'bed': return this.sleepInBed();
@@ -579,6 +627,28 @@ export class WorldScene extends Phaser.Scene {
     await talk(STORY.frogDone);
   }
 
+  /** 星星婆婆：第一次見面有登場台詞；之後直接開換獎勵視窗（換了飾品就重畫跟隨的夥伴） */
+  private async useGranny(d: MapObj) {
+    const who = d.label ?? '星星婆婆';
+    if (!flag('grannyMet')) {
+      await say(['喔呵呵～小探險家，你身上有星星的味道！', '寶箱裡的星星碎片，可以拿來跟我換好東西喔。'].map((text) => ({ who, text })));
+      setFlag('grannyMet');
+      saveGame();
+    }
+    await openStarShop(() => this.buildFollowers());
+    saveGame();
+  }
+
+  /** 星光門：看累計星星（不看可用星星）；不夠就說明還要幾顆，夠了就進星光小屋 */
+  private async useStarDoor(d: MapObj) {
+    if (!starDoorOpen(G.save)) {
+      await say([{ who: d.label ?? '星光門', text: `星光門還在睡覺，要 ${STAR_DOOR_NEED} 顆星星才會醒來（現在 ${G.save.stars} 顆）` }]);
+      return;
+    }
+    audio.sfx('chest');
+    await this.travel(d.to!.map, d.to!.x, d.to!.y);
+  }
+
   /** 旅館：付錢住一晚，夥伴 HP／魔力回滿並存檔。金幣不夠就不能住（搭船回起始村睡覺是免費的），也不扣錢。 */
   private async useInn(d: MapObj) {
     const who = d.label ?? '旅館老闆';
@@ -633,6 +703,7 @@ export class WorldScene extends Phaser.Scene {
     const star = this.add.image(o.spr.x + 8, o.spr.y, 'star').setDepth(9999);
     this.tweens.add({ targets: star, y: star.y - 20, duration: 700, onComplete: () => star.destroy() });
     const lines = [`打開寶箱！得到 ${n} 顆 ⭐ 星星碎片！（共 ${G.save.stars} 顆）`];
+    for (const [id, n] of Object.entries(o.def.items ?? {})) { addItem(id, n); lines.push(`還有 ${ITEMS[id].icon} ${ITEMS[id].name} ×${n}！`); }
     if (o.def.item) {
       addItem(o.def.item);
       const it = ITEMS[o.def.item];

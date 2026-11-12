@@ -1,7 +1,7 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
 import { fromAscii } from './ascii';
 import { MAZES } from './mazes';
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper' | 'frogstone';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper' | 'frogstone' | 'granny' | 'stardoor' | 'statue';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
 export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
@@ -47,6 +47,8 @@ export interface MapObj {
   dockTo?: { map: string; x: number; y: number };
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
+  /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
+  items?: Record<string, number>;
 }
 export interface MapDef {
   id: string;
@@ -413,6 +415,7 @@ MAPS.dh = {
     { id: 'dock_village', kind: 'dock', x: 23, y: 10, dockTo: { map: 'village', x: 20, y: 11 } }, // 東邊：回起始村
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'd', x: 4, y: 17 } }, // 西邊：去舌尖中音島
     { id: 'dock_gh', kind: 'dock', x: 14, y: 18, showIf: 'boss_d', dockTo: { map: 'gh', x: 14, y: 17 } }, // 南邊：去蛙鳴灣（打倒鼓王後）
+    { id: 'granny', kind: 'granny', x: 21, y: 9, label: '星星婆婆' }, // 東邊碼頭旁
     {
       id: 'drummer', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '小鼓手',
       talk: [
@@ -476,6 +479,7 @@ MAPS.gh = {
     { id: 'door_inn', kind: 'door', x: 6, y: 3, to: { map: 'gh_inn', x: 4, y: 6 } },
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'gh_shop', x: 4, y: 6 } },
     { id: 'dock_dh', kind: 'dock', x: 14, y: 18, dockTo: { map: 'dh', x: 14, y: 17 } }, // 南邊：回鼓聲港
+    { id: 'granny', kind: 'granny', x: 16, y: 17, label: '星星婆婆' }, // 南邊碼頭旁
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'g', x: 4, y: 17 } }, // 西邊：去回音森林
     { id: 'dock_xh', kind: 'dock', x: 26, y: 10, showIf: 'boss_g', dockTo: { map: 'xh', x: 4, y: 10 } }, // 東邊：去雪花鎮（打倒蝙蝠王後）
     { id: 'frog', kind: 'frogstone', x: 17, y: 10, label: '青蛙聽音石' }, // 荷葉上的聽音石
@@ -580,6 +584,8 @@ MAPS.xh = {
     { id: 'door_inn', kind: 'door', x: 6, y: 6, to: { map: 'xh_inn', x: 4, y: 6 } },
     { id: 'door_shop', kind: 'door', x: 21, y: 13, to: { map: 'xh_shop', x: 4, y: 6 } },
     { id: 'dock_gh', kind: 'dock', x: 3, y: 10, dockTo: { map: 'gh', x: 25, y: 10 } }, // 西邊：回蛙鳴灣
+    { id: 'granny', kind: 'granny', x: 5, y: 11, label: '星星婆婆' }, // 西邊碼頭旁
+    { id: 'star_door', kind: 'stardoor', x: 24, y: 3, to: { map: 'xh_star', x: 4, y: 6 }, label: '星光門' }, // 東北角：累計星星夠了才打得開
     { id: 'dock_isle', kind: 'dock', x: 24, y: 15, dockTo: { map: 'x', x: 2, y: 3 } }, // 東南：去企鵝冰原
     { id: 'trail', kind: 'stairs', x: 25, y: 10, to: { map: 'village', x: 20, y: 11 }, label: '雪地小路', showIf: 'boss_x' }, // 單向：通到起始村池塘旁的空地
     { id: 'trail_sign', kind: 'sign', x: 25, y: 11, showIf: 'boss_x', text: ['雪地小路：一直走，就能回到起始村。', '這條小路只能單向走，要回雪花鎮，得從起始村搭船。'] },
@@ -592,7 +598,7 @@ MAPS.xh = {
       ],
     },
     {
-      id: 'granny', kind: 'npc', x: 16, y: 12, sprite: 'npc_elder', label: '雪地奶奶',
+      id: 'snow_granny', kind: 'npc', x: 16, y: 12, sprite: 'npc_elder', label: '雪地奶奶',
       talk: [
         { not: 'xPractice', lines: ['冰原上有一大堆雪，好像用輕輕的氣就能吹開。', '光滑的冰面上，也許能滑得動大石頭……'] },
         { not: 'boss_x', lines: ['冰原上有一條河，水流得很急，走不過去。', '聽說打倒冰晶女王，學會「結冰」的魔法，就能把河水凍成橋！'] },
@@ -622,6 +628,18 @@ MAPS.xh_shop = {
   objects: [
     { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 21, y: 14 } },
+  ],
+};
+
+// 星光小屋：累計 25 顆星星才進得去的隱藏小房間（一個大寶箱、一座星星雕像）；出口回雪花鎮星光門前一格
+MAPS.xh_star = {
+  id: 'xh_star', name: '星光小屋', w: 10, h: 8,
+  tiles: new Grid(10, 8, 'f').rect('W', 0, 0, 10, 2).border('W').many('L', [[1, 1], [8, 1]]).rect('r', 3, 5, 4, 2).rows(),
+  theme: 'village', start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'chest_star', kind: 'chest', x: 3, y: 3, items: { bigpotion: 2, berry: 2 } },
+    { id: 'statue', kind: 'statue', x: 6, y: 3, label: '星星雕像', text: ['每一顆星星，都是你認真學習的小小證明。', '你已經很棒了，慢慢來，繼續閃閃發光吧！'] },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 24, y: 4 } },
   ],
 };
 

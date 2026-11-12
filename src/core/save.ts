@@ -129,6 +129,12 @@ export function loadSettings() {
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));
 export const hasSave = () => !!safeGet(SAVE_KEY);
+/** 只看一眼存檔（不載入）：標題畫面用來顯示稱號等資訊；沒有或壞掉就回 undefined */
+export function peekSave(): SaveData | undefined {
+  const raw = safeGet(SAVE_KEY);
+  if (!raw) return undefined;
+  try { return JSON.parse(raw) as SaveData; } catch { return undefined; }
+}
 export function loadGame(): boolean {
   const raw = safeGet(SAVE_KEY);
   if (!raw) return false;
