@@ -6,6 +6,7 @@ import { STROKES } from '../src/data/strokes';
 import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import { defeatSpot, markArrival } from '../src/core/travel';
 import { reachReport } from '../src/core/dungeon';
+import { SNOW_TEXTURES } from '../src/gfx/snowArt';
 
 describe('第四關（舌面音）的資料', () => {
   it('ㄒㄑ 進島才開始教，ㄐ 要打完練習戰才出現', () => {
@@ -110,17 +111,36 @@ describe('第四關的地圖', () => {
       for (const v of n.talk!) for (const l of v.lines) expect(/[ㄐㄑㄒ]/.test(l), `${n.id}：${l}`).toBe(false);
     }
   });
-  it('雪地小路：打倒 boss_x 才出現、單向通到起始村的可走位置，而且不壓到起始村的物件', () => {
-    const t = xh.objects.find((o) => o.id === 'trail')!;
-    expect(t.kind).toBe('stairs');
-    expect(t.showIf).toBe('boss_x');
-    expect(t.label).toBe('雪地小路');
-    expect(t.to!.map).toBe('village');
+  it('雪地小路是雙向的：兩邊目的地可走、不壓物件、互為回程；出口本身在可走格上、沒被別的物件蓋住、有專屬貼圖', () => {
     const v = MAPS.village;
-    expect(BLOCKED_TILES.has(v.tiles[t.to!.y][t.to!.x])).toBe(false);
-    expect(v.objects.some((o) => o.x === t.to!.x && o.y === t.to!.y)).toBe(false);
-    // 起始村沒有通往雪花鎮的物件（回來要搭船）
-    expect(v.objects.some((o) => o.to?.map === 'xh' || o.dockTo?.map === 'xh')).toBe(false);
+    const t = xh.objects.find((o) => o.id === 'trail')!, tv = v.objects.find((o) => o.id === 'trail_xh')!;
+    for (const [o, from, dest] of [[t, xh, v], [tv, v, xh]] as const) {
+      expect(o.kind).toBe('stairs');
+      expect(o.showIf).toBe('boss_x');
+      expect(o.label).toBe('雪地小路');
+      expect(o.sprite).toBe('snow_trail');
+      expect(SNOW_TEXTURES as readonly string[]).toContain(o.sprite);
+      expect(o.to!.map).toBe(dest.id);
+      // 出口自己所在的格子：可走、不被牆或別的物件佔住（打倒 boss_x 設旗標後 showIf 條件成立，一定畫得出來）
+      expect(BLOCKED_TILES.has(from.tiles[o.y][o.x]), `${from.id} 出口地形`).toBe(false);
+      expect(from.objects.filter((p) => p.x === o.x && p.y === o.y).map((p) => p.id)).toEqual([o.id]);
+      // 抵達格：可走、不在任何物件上、也不是出口本身
+      expect(BLOCKED_TILES.has(dest.tiles[o.to!.y][o.to!.x])).toBe(false);
+      expect(dest.objects.some((p) => p.x === o.to!.x && p.y === o.to!.y)).toBe(false);
+    }
+    // 互為回程：抵達格和對面的出口緊鄰（不壓在出口上），不會一抵達就被送回去
+    for (const [a, b] of [[t, tv], [tv, t]] as const) expect(Math.abs(a.to!.x - b.x) + Math.abs(a.to!.y - b.y)).toBe(1);
+    // 兩邊各一塊告示牌，也是 boss_x 才出現，站在可走格上、不擋住出口
+    for (const [m, id] of [[xh, 'trail_sign'], [v, 'trail_sign_v']] as const) {
+      const sg = m.objects.find((o) => o.id === id)!;
+      expect(sg.kind).toBe('sign');
+      expect(sg.showIf).toBe('boss_x');
+      expect(BLOCKED_TILES.has(m.tiles[sg.y][sg.x])).toBe(false);
+      expect(sg.text!.join('')).not.toMatch(/單向|只能/);
+    }
+    // 起始村的物件之間不重疊
+    const keys = v.objects.map((o) => `${o.x},${o.y}`);
+    expect(new Set(keys).size).toBe(keys.length);
   });
   it('企鵝冰原：三個機關、洞窟入口練習完才出現、通往 xc1、小怪戰鬥存在', () => {
     for (const [id, ab] of [['pile', 'snow'], ['rock', 'slide'], ['bridge', 'freeze']]) {

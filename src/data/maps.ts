@@ -226,6 +226,8 @@ export const MAPS: Record<string, MapDef> = {
       { id: 'chest_bell', kind: 'chest', x: 22, y: 8, showIf: 'bellRung' },
       { id: 'fog_a', kind: 'fog', x: 10, y: 4 },
       { id: 'chest_fog', kind: 'chest', x: 10, y: 2 },
+      { id: 'trail_xh', kind: 'stairs', x: 20, y: 10, sprite: 'snow_trail', to: { map: 'xh', x: 24, y: 10 }, label: '雪地小路', showIf: 'boss_x' }, // 打倒冰晶女王後出現：走回雪花鎮（和 xh 的 trail 互為回程）
+      { id: 'trail_sign_v', kind: 'sign', x: 19, y: 10, showIf: 'boss_x', text: ['雪地小路：通往雪花鎮。', '沿著小路走，就能回到雪花鎮，不用搭船。'] },
       ...villageGates,
     ],
   },
@@ -587,14 +589,14 @@ MAPS.xh = {
     { id: 'granny', kind: 'granny', x: 5, y: 11, label: '星星婆婆' }, // 西邊碼頭旁
     { id: 'star_door', kind: 'stardoor', x: 24, y: 3, to: { map: 'xh_star', x: 4, y: 6 }, label: '星光門' }, // 東北角：累計星星夠了才打得開
     { id: 'dock_isle', kind: 'dock', x: 24, y: 15, dockTo: { map: 'x', x: 2, y: 3 } }, // 東南：去企鵝冰原
-    { id: 'trail', kind: 'stairs', x: 25, y: 10, to: { map: 'village', x: 20, y: 11 }, label: '雪地小路', showIf: 'boss_x' }, // 單向：通到起始村池塘旁的空地
-    { id: 'trail_sign', kind: 'sign', x: 25, y: 11, showIf: 'boss_x', text: ['雪地小路：一直走，就能回到起始村。', '這條小路只能單向走，要回雪花鎮，得從起始村搭船。'] },
+    { id: 'trail', kind: 'stairs', x: 25, y: 10, sprite: 'snow_trail', to: { map: 'village', x: 20, y: 11 }, label: '雪地小路', showIf: 'boss_x' }, // 雙向：通到起始村池塘旁的空地，起始村的 trail_xh 走回這裡 (24,10)
+    { id: 'trail_sign', kind: 'sign', x: 25, y: 11, showIf: 'boss_x', text: ['雪地小路：通往起始村。', '這條小路是雙向的，起始村那邊也有一條路可以走回雪花鎮。'] },
     {
       id: 'snowkid', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '雪球小弟',
       talk: [
         { not: 'xEntered', lines: ['歡迎來到雪花鎮！', '這裡一年到頭都在下雪，到處白白的，好漂亮。', '東南邊的碼頭，有船去企鵝冰原。島上有稻草布偶，先去練習看看吧！'] },
         { not: 'boss_x', lines: ['聽說企鵝冰原的洞窟裡，住著冰晶女王，是她把冰原都凍住了。', '要先練習完，才找得到洞窟的入口喔。', '累了就來旅館住一晚！'] },
-        { lines: ['冰原暖和起來了！謝謝你！', '東邊現在有一條雪地小路，可以直接走回起始村，很方便。'] },
+        { lines: ['冰原暖和起來了！謝謝你！', '東邊現在有一條雪地小路，可以直接走到起始村，回來也行，很方便。'] },
       ],
     },
     {
@@ -602,14 +604,14 @@ MAPS.xh = {
       talk: [
         { not: 'xPractice', lines: ['冰原上有一大堆雪，好像用輕輕的氣就能吹開。', '光滑的冰面上，也許能滑得動大石頭……'] },
         { not: 'boss_x', lines: ['冰原上有一條河，水流得很急，走不過去。', '聽說打倒冰晶女王，學會「結冰」的魔法，就能把河水凍成橋！'] },
-        { lines: ['河面凍成冰橋了嗎？聽說對岸還有好幾個寶箱呢。', '回雪花鎮要搭船，小路只能從這裡走回起始村。'] },
+        { lines: ['河面凍成冰橋了嗎？聽說對岸還有好幾個寶箱呢。', '東邊的雪地小路，雙向都能走，去起始村很方便。'] },
       ],
     },
     {
       id: 'sailor', kind: 'npc', x: 7, y: 12, sprite: 'npc_girl', label: '船長小桃',
       talk: [
         { not: 'boss_x', lines: ['西邊的碼頭，是回蛙鳴灣的船。', '東南邊的碼頭，是去企鵝冰原的船。', '打倒怪獸會得到金幣，旅館住一晚 25 金幣。'] },
-        { lines: ['西邊的碼頭，是回蛙鳴灣的船。東南邊的碼頭，是去企鵝冰原的船。', '東邊的雪地小路，通到起始村的池塘邊，不用搭船。', '不過那是單向的路，要回雪花鎮，得從起始村搭船喔！'] },
+        { lines: ['西邊的碼頭，是回蛙鳴灣的船。東南邊的碼頭，是去企鵝冰原的船。', '東邊的雪地小路，通到起始村的池塘邊，不用搭船。', '那條路是雙向的，從起始村也能走回來喔！'] },
       ],
     },
   ],

@@ -14,7 +14,7 @@ function rng(seed: number) {
 export const SNOW_TEXTURES = [
   't_snow', 't_ice', 't_pond_ice', 't_icebridge', 't_tree_dead', 't_snowman',
   't_roof_snow', 't_wall_snow', 't_roof_inn_snow', 't_wall_inn_snow', 't_roof_shop_snow', 't_wall_shop_snow',
-  'snow_pile', 'snow_pile_gone', 'ice_rock', 'ice_bridge',
+  'snow_pile', 'snow_pile_gone', 'ice_rock', 'ice_bridge', 'snow_trail',
 ] as const;
 
 export function drawSnowTextures(make: Make, px: Px) {
@@ -111,6 +111,14 @@ export function drawSnowTextures(make: Make, px: Px) {
   });
 
   // ───── 物件 ─────
+  // 雪地小路的拱門（雪花鎮與起始村各一個）：雪地上一條棕色小路穿過紅色旗子的木拱門，一看就知道是個出口
+  make('snow_trail', 16, 16, (c) => {
+    snow(c, 23);
+    px(c, '#d9a26a', 5, 7, 6, 9); px(c, '#b9824f', 5, 7, 1, 9); px(c, '#b9824f', 10, 7, 1, 9); px(c, '#8b5a3c', 7, 10, 2, 1); px(c, '#8b5a3c', 7, 13, 2, 1);
+    px(c, '#2b2140', 1, 3, 4, 13); px(c, '#2b2140', 11, 3, 4, 13); px(c, '#2b2140', 1, 0, 14, 5);
+    px(c, '#b9824f', 2, 4, 2, 12); px(c, '#b9824f', 12, 4, 2, 12); px(c, '#d9a26a', 2, 2, 12, 2);
+    px(c, '#e8514a', 6, 2, 4, 3); px(c, '#ffffff', 7, 3, 2, 1); px(c, '#ffffff', 1, 1, 14, 1); px(c, '#ffffff', 1, 15, 3, 1); px(c, '#ffffff', 12, 15, 3, 1);
+  });
   // 雪堆：擋路的一大堆雪（用「ㄒ」吹開）
   make('snow_pile', 16, 16, (c) => {
     px(c, '#2b2140', 1, 7, 14, 9); px(c, '#2b2140', 3, 4, 10, 12); px(c, '#2b2140', 5, 3, 6, 13);

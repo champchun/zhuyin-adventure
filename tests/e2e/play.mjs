@@ -654,7 +654,11 @@ if (run('lv4')) {
   log('✓ 星星婆婆：用星星換蝴蝶結、星光門進星光小屋開寶箱');
   await tapObj('trail', '雪地小路（打倒冰晶王後出現）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從雪地小路走回起始村');
-  log('✓ 第四關走完：雪花鎮、企鵝冰原、冰晶洞窟、走雪地小路回到起始村');
+  await tapObj('trail_xh', '起始村的雪地小路（走回雪花鎮）');
+  if ((await save()).mapId !== 'xh') throw new Error('沒有從起始村的雪地小路走回雪花鎮');
+  await tapObj('trail', '雪花鎮的雪地小路（再回起始村）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有從雪花鎮再走回起始村');
+  log('✓ 第四關走完：雪花鎮、企鵝冰原、冰晶洞窟、雪地小路雙向來回');
 }
 if (SECTION === 'lv2' || SECTION === 'lv3') {
   await doTap(23, 10, '主島東邊的碼頭（回起始村）');

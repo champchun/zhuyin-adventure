@@ -27,6 +27,13 @@ describe('第四關圖樣', () => {
   it('地形圖塊畫滿 16×16（沒有透明縫）', () => {
     for (const k of SNOW_TEXTURES.filter((t) => t.startsWith('t_'))) expect(tex[k].px.every((p) => p), `${k} 有透明格`).toBe(true);
   });
+  it('雪地小路拱門 snow_trail：16×16、有紅旗與木柱（比灰色樓梯醒目）、畫面上半部有橫樑', () => {
+    const t = tex.snow_trail;
+    expect([t.w, t.h]).toEqual([16, 16]);
+    expect(t.px.every((p) => p)).toBe(true);
+    for (const col of ['#e8514a', '#b9824f', '#d9a26a']) expect(t.px, col).toContain(col);
+    expect(t.px.slice(0, 16 * 4).filter((p) => p === '#2b2140').length).toBeGreaterThan(8);
+  });
   it('新地形字元：都有貼圖；雪地、冰面、冰橋可走，其餘不能走', () => {
     for (const c of 'njzqdumMgGoO') {
       expect(SNOW_TEXTURES as readonly string[], c).toContain(TILE_KEY[c]);
