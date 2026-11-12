@@ -3,7 +3,7 @@ import { rulesActive, resolveHit } from '../src/core/shield';
 import { BATTLES } from '../src/data/levels';
 import { ENEMIES } from '../src/data/monsters';
 
-const base = { guided: false, audioReady: true, tierSetting: 'auto' as const, mp: 3 };
+const base = { guided: false, audioReady: true, tierSetting: 'auto' as const };
 
 describe('rulesActive：什麼時候啟動護盾與回音怪', () => {
   it('一般戰鬥、音檔齊、難度自動、還有魔力：啟動', () => {
@@ -19,10 +19,6 @@ describe('rulesActive：什麼時候啟動護盾與回音怪', () => {
   });
   it('家長固定成只看符號（難度 1）不啟動', () => {
     expect(rulesActive({ ...base, tierSetting: 1 })).toBe(false);
-  });
-  it('魔力用完不啟動（否則破不了盾）', () => {
-    expect(rulesActive({ ...base, mp: 0 })).toBe(false);
-    expect(rulesActive({ ...base, mp: 1 })).toBe(true);
   });
 });
 

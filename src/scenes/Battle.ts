@@ -248,9 +248,9 @@ export class BattleScene extends Phaser.Scene {
     for (const line of def.intro) await bui.note(line);
 
     const targets = [...new Set([...def.focus, ...def.review])].filter((s) => activeSymbols().includes(s));
-    // 回音怪與頭目護盾：要用魔法攻擊（聽聲音）。教學戰、沒有音檔、固定只看符號、沒有魔力時不啟動
+    // 回音怪與頭目護盾：要用魔法攻擊（聽聲音）。教學戰、沒有音檔、固定只看符號時不啟動（魔力用完照樣啟動，要自己留意魔力）
     let shield = !!def.shield;
-    const rulesOn = () => rulesActive({ guided: def.guided, audioReady: audio.audioReadyFor(targets), tierSetting: G.settings.tier, mp: me.mp ?? 0 });
+    const rulesOn = () => rulesActive({ guided: def.guided, audioReady: audio.audioReadyFor(targets), tierSetting: G.settings.tier });
     if (rulesOn()) {
       if (shield) await bui.note('這個頭目有護盾！普通攻擊會被彈開，要用「🪄 魔法攻擊」（聽聲音）才打得破！');
       else if (enemy.echo) await bui.note('這隻怪物好像只聽得到聲音……用「🪄 魔法攻擊」試試！');

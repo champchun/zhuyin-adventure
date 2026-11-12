@@ -5,10 +5,11 @@ export type TierSetting = 'auto' | 1 | 2 | 3;
 
 /**
  * 這一次出招，護盾與回音怪要不要生效。
- * 教學戰不用；音檔不齊（不能聽）、家長固定成只看符號、夥伴沒魔力時也不用，否則孩子會被卡住。
+ * 教學戰不用；音檔不齊（不能聽）、家長固定成只看符號時也不用，否則孩子會被卡住。
+ * 夥伴魔力用完時**照樣啟動**：要自己留意魔力，吃魔力果或換夥伴；真的撐不住就是輸（敵人每回合都會反擊，不會卡死）。
  */
-export function rulesActive(o: { guided?: boolean; audioReady: boolean; tierSetting: TierSetting; mp: number }): boolean {
-  return !o.guided && o.audioReady && o.tierSetting !== 1 && o.mp >= 1;
+export function rulesActive(o: { guided?: boolean; audioReady: boolean; tierSetting: TierSetting }): boolean {
+  return !o.guided && o.audioReady && o.tierSetting !== 1;
 }
 
 export interface HitIn {
