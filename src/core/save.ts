@@ -1,6 +1,7 @@
 import { ALL_SYMBOLS, LEARN_STEPS } from '../data/symbols';
-import { ITEMS, SPECIES } from '../data/monsters';
+import { ITEMS, SPECIES, castSymbol } from '../data/monsters';
 import { MAPS } from '../data/maps';
+import { introducedFromAbilities } from './lesson';
 
 export interface Settings {
   voiceOn: boolean;
@@ -60,6 +61,8 @@ export interface SaveData {
   playSeconds: number;
   /** 最近到過的主島；被打倒時送回這裡。舊存檔沒有時視為起始村 */
   homeMap?: string;
+  /** 已經上過「第一次認識」小課程的符號。舊存檔沒有這個欄位時，載入會依已學會的招式補上 */
+  introduced?: string[];
 }
 
 export const PARTY_MAX = 3;
@@ -85,7 +88,7 @@ export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assiste
 
 export const newSave = (): SaveData => ({
   v: 1, mapId: 'room', x: 2, y: 3, party: [], active: 0, flags: {}, abilities: [], items: {}, coins: 0,
-  stats: Object.fromEntries(ALL_SYMBOLS.map((s) => [s, emptyStat()])), stars: 0, cleared: [], playSeconds: 0,
+  stats: Object.fromEntries(ALL_SYMBOLS.map((s) => [s, emptyStat()])), stars: 0, cleared: [], playSeconds: 0, introduced: [],
 });
 
 export const G: { save: SaveData; settings: Settings } = { save: newSave(), settings: defaultSettings() };
@@ -123,6 +126,9 @@ export function loadGame(): boolean {
     // 舊存檔（還沒有房間／研究所劇情）：已經有夥伴就視為選過初始夥伴、見過博士
     if (G.save.party.length) { G.save.flags.starterChosen = true; G.save.flags.guideMet = true; }
     if (!MAPS[G.save.mapId]) { G.save.mapId = 'village'; G.save.x = 4; G.save.y = 7; }
+    // 舊存檔沒有 introduced：已經學會的招式綁定的符號都算已認識，老玩家不用重新上課
+    // （要看原始的 d：G.save 已經先被 newSave() 的 introduced: [] 補上，不能用它判斷）
+    if (!d.introduced) G.save.introduced = introducedFromAbilities(G.save.abilities, castSymbol);
     G.save.party.forEach(ensureVitals);
     return true;
   } catch { return false; }
