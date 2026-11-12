@@ -10,7 +10,8 @@ import {
   G, activeSymbols, addCoins, addExp, addItem, flag, giveMonster, hasAbility, healAll, itemCount, saveGame, setFlag, spriteOf,
 } from '../core/save';
 import { audio } from '../core/audio';
-import { choose, openParty, openResults, openSettings, openShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
+import { lessonSteps, lessonSymbols, makeLessonRound } from '../core/lesson';
+import { choose, openLessonPick, openParty, openResults, openSettings, openShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
@@ -823,6 +824,22 @@ export class WorldScene extends Phaser.Scene {
     await this.applyReward(def, o);
   }
 
+  /** 第一次認識符號的小課程：每個新符號依序「選符號 → 聽符號 → 寫符號」，不能跳過、沒有處罰；上完記進 introduced。 */
+  private async runLessons(newAbilities: string[]) {
+    const intro = (G.save.introduced ??= []);
+    for (const sym of lessonSymbols(newAbilities, intro, castSymbol)) {
+      const steps = lessonSteps({ hasAudio: audio.hasSymbolAudio(sym), hasStrokes: !!STROKES[sym]?.length, writeOn: G.settings.writeChallenge });
+      await say([`「${sym}」是新朋友！`, '我們來認識它：先找一找，再聽一聽，最後寫一寫。'].map((text) => ({ text })), { speak: true });
+      for (const step of steps) {
+        if (step === 'write') { await openWriteSymbol(sym, { required: true }); continue; }
+        const round = makeLessonRound(sym, activeSymbols());
+        await openLessonPick(step, round.target, round.options);
+      }
+      intro.push(sym);
+      saveGame();
+    }
+  }
+
   private async applyReward(def: BattleDef, o: Obj) {
     const rw = def.reward;
     const claimed = flag(`claimed:${def.id}`);
@@ -850,6 +867,7 @@ export class WorldScene extends Phaser.Scene {
     const coinLine = rw.coins ? [`得到 🪙 ${rw.coins} 枚金幣！（共 ${G.save.coins} 枚）`] : [];
     if (all.length) await say([...all, ...coinLine].map((text) => ({ text })));
     else toast(`贏了！獲得經驗 ${rw.exp}${rw.coins ? `、🪙 ${rw.coins} 枚金幣` : ''}！`);
+    if (!claimed) await this.runLessons(rw.abilities ?? []);
     if (rw.results) {
       const r = await openResults();
       if (r === 'replay') this.resetLevel('p');

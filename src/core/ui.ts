@@ -157,6 +157,31 @@ export function choose(title: string, body: string, options: string[]): Promise<
   });
 }
 
+/** 第一次認識符號的小課程：選符號（看到符號，找一樣的）／聽符號（聽聲音，選符號）。沒有關閉鈕，點對才結束；答錯沒有處罰。 */
+export function openLessonPick(mode: 'match' | 'listen', target: string, options: string[]): Promise<void> {
+  return new Promise((resolve) => {
+    const title = mode === 'match' ? '🔍 找一找' : '👂 聽一聽';
+    const hint = mode === 'match' ? '找出一樣的符號！' : '聽聲音，選出聽到的符號！';
+    const card = mode === 'match'
+      ? `<div class="lesson-card" style="font-size:72px;font-weight:700;text-align:center;line-height:1.1;margin:6px 0">${target}</div>`
+      : `<div style="text-align:center;margin:6px 0"><button class="btn" data-a="replay">🔊 再聽一次</button></div>`;
+    const m = openModal(`<h2>${title}</h2><p id="lmsg" style="min-height:1.5em">${hint}</p>${card}
+      <div class="foot" style="justify-content:center;gap:10px;flex-wrap:wrap">${options.map((o) => `<button class="btn" data-a="lp" data-ch="${o}" style="font-size:36px;min-width:84px">${o}</button>`).join('')}</div>`);
+    m.dataset.lessonTarget = target; // 給端對端機器人讀（孩子看不到）
+    const say = (t: string) => { const e = m.querySelector('#lmsg'); if (e) e.textContent = t; };
+    const play = () => { if (!audio.playSymbol(target)) say('這個聲音現在聽不到，用看的也可以喔！'); };
+    if (mode === 'listen') play(); else audio.speak(hint);
+    delegate(m, (a, el) => {
+      if (a === 'replay') { play(); return; }
+      if (a !== 'lp') return;
+      if (el.dataset.ch === target) { audio.sfx('levelup'); delete m.dataset.lessonTarget; closeModal(); resolve(); return; }
+      audio.sfx('tap');
+      say(mode === 'match' ? '再找找看～' : '再聽一次～');
+      if (mode === 'listen') play();
+    });
+  });
+}
+
 /** 世界地圖：列出去過的主島，選一個就搭船過去。回傳地圖 id；按「先不要」回傳 null。 */
 export function openWorldMap(dests: { id: string; name: string }[]): Promise<string | null> {
   return new Promise((resolve) => {
@@ -177,14 +202,14 @@ export function openWorldMap(dests: { id: string; name: string }[]): Promise<str
  * 寫字：照著虛線描出注音（每一畫要依序經過關鍵點才算過）。
  * 全部寫完回傳 true；按「先不要」回傳 false。沒有這個符號的筆順資料時不擋，直接回傳 true。
  */
-export function openWriteSymbol(symbol: string): Promise<boolean> {
+export function openWriteSymbol(symbol: string, opts: { required?: boolean } = {}): Promise<boolean> {
   const strokes = STROKES[symbol];
   if (!strokes?.length) return Promise.resolve(true);
   return new Promise((resolve) => {
     const SIZE = Math.max(220, Math.min(360, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.6)));
     const m = openModal(`<h2>✍️ 寫出「${symbol}」</h2><p id="wmsg" style="min-height:1.5em">照著箭頭，從圓點開始描一描。</p>
       <div style="display:flex;justify-content:center"><canvas id="writecv" width="${SIZE}" height="${SIZE}" style="width:${SIZE}px;height:${SIZE}px;touch-action:none;background:#fffaf0;border:4px solid var(--ink);border-radius:14px"></canvas></div>
-      <div class="foot" style="justify-content:center"><button class="btn small" data-a="no">先不要</button></div>`);
+      ${opts.required ? '' : '<div class="foot" style="justify-content:center"><button class="btn small" data-a="no">先不要</button></div>'}`);
     audio.speak('照著箭頭，從圓點開始描一描');
     const cv = m.querySelector<HTMLCanvasElement>('#writecv')!;
     const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
@@ -262,7 +287,7 @@ export function openWriteSymbol(symbol: string): Promise<boolean> {
         cur++; trail = [];
         if (cur >= strokes.length) {
           draw(); audio.sfx('correct'); msg('寫好了！');
-          m.querySelector<HTMLButtonElement>('[data-a=no]')!.disabled = true; // 已經寫完：不能再取消
+          const noBtn = m.querySelector<HTMLButtonElement>('[data-a=no]'); if (noBtn) noBtn.disabled = true; // 已經寫完：不能再取消
           setTimeout(() => close(true), G.settings.reduceMotion ? 350 : 700);
           return;
         }

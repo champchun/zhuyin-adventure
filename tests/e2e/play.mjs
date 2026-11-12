@@ -59,11 +59,13 @@ async function pump(cond, label, maxMs = 900000) {
       const low = !!heal && top.length > 0 && me.hp <= 9; // 像玩家一樣：血量低就喝藥水
       const itemPick = document.querySelector('#battleui [data-a=it]');
       const pick = vis('#modal') ? document.querySelector('#modal [data-a=c][data-i="0"]') : null; // choose() 選擇視窗
-      return { low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
+      const lesson = document.querySelector('#modal[data-lesson-target]')?.dataset.lessonTarget ?? ''; // 第一次認識符號的小課程
+      return { lesson, low, heal, itemPick: !!itemPick, top, dlg, pick: !!pick, note: !!note, move: !!move, opts: opts.map((o) => o.dataset.ch), big, glow: glow?.dataset.ch, results: !!results, msg: document.querySelector('#battleui .msg')?.textContent ?? '' };
     });
     // 頭目護盾：訊息只會閃一下（之後被「反擊了」蓋掉），所以記起來，直到看到「護盾被魔法打破了」或戰鬥結束
     if (/護盾擋住了|攻擊被彈開/.test(st.msg)) shieldUp = true;
     else if (/護盾被魔法打破/.test(st.msg) || st.results) shieldUp = false; // 回音怪（被彈開）打贏時由 results 清掉
+    if (st.lesson) { await sleep(300); await page.click(`#modal [data-a=lp][data-ch="${st.lesson}"]`).catch(() => {}); await sleep(200); continue; } // 第一次認識符號的小課程：點對的符號
     if (st.pick) { await sleep(300); await page.click('#modal [data-a=c][data-i="0"]').catch(() => {}); await sleep(150); continue; }
     if (st.dlg) { await sleep(300); await page.click('#dialog [data-a=next]').catch(() => {}); }
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
@@ -179,6 +181,7 @@ if (!f.practiceDone) throw new Error('練習戰沒有完成');
 await snap('practice-done');
 if (!(await save()).abilities.includes('blast') || !(await save()).abilities.includes('gust')) throw new Error('練習戰後沒有爆破拳／噴風');
 log('✓ 小關A（ㄅㄆ）練習戰完成，學會爆破拳與噴風');
+const intro1 = (await save()).introduced; if (!intro1 || !intro1.includes('ㄅ') || !intro1.includes('ㄆ')) throw new Error('練習戰之後 ㄅㄆ 應該已經上過課 ' + JSON.stringify(intro1));
 // ───── 寫字施法：開啟寫字挑戰，用滑鼠依筆順描出 ㄅ，石頭才會碎 ─────
 await ev(() => { window.__game.G.settings.writeChallenge = true; });
 await doTap(23, 5, '走到裂石前'); // 石頭在牆缺口 (23,4)，可走的前一格是 (23,5)；此時還沒開寫字畫布，doTap 安全
@@ -358,6 +361,7 @@ s = await save();
 if (!s.flags.boss_d || !s.abilities.includes('nasal') || !s.abilities.includes('stream')) throw new Error('鼓王沒有打贏，或沒有學到嗯嗯泡／流水衝 ' + JSON.stringify(s.abilities));
 await snap('after-boss-d');
 log('✓ 鼓王咚咚打贏了，學會嗯嗯泡與流水衝');
+const intro2 = (await save()).introduced; if (!intro2 || !intro2.includes('ㄋ') || !intro2.includes('ㄌ')) throw new Error('鼓王之後 ㄋㄌ 應該已經上過課 ' + JSON.stringify(intro2));
 await doTap(18, 15, '小水壩（流水衝）'); await doTap(18, 16, '水壩後寶箱');
 await doTap(6, 5, '泡泡球（嗯嗯泡）'); await doTap(6, 4, '泡泡後寶箱');
 f = await flags();
@@ -461,6 +465,7 @@ s = await save();
 if (!s.flags.boss_g || !s.abilities.includes('breath')) throw new Error('蝙蝠王沒有打贏，或沒有學到 breath（ㄏ） ' + JSON.stringify({ flags: s.flags.boss_g, abilities: s.abilities }));
 await snap('after-boss-g');
 log('✓ 蝙蝠王打贏了（護盾被魔法打破），學會 breath（ㄏ）');
+const intro3 = (await save()).introduced; if (!intro3 || !intro3.includes('ㄏ')) throw new Error('蝙蝠王之後 ㄏ 應該已經上過課 ' + JSON.stringify(intro3));
 await tapObj('chest_boss', '頭目寶箱');
 if (!(await flags())['c:gc2:chest_boss']) throw new Error('蝙蝠王的寶箱沒拿到');
 await tapObj('up', '回 1 樓的樓梯');
