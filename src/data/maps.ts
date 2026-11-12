@@ -1,5 +1,6 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
 import { fromAscii } from './ascii';
+import { MAZES } from './mazes';
 export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper' | 'frogstone';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
@@ -529,57 +530,50 @@ MAPS.g = {
   ],
 };
 
-// ───────── 回音洞窟（兩層，每層 21×9）─────────
-const GC1 = fromAscii([
-  '#####################',
-  '#<....##.....##.....#',
-  '#...................#',
-  '#.....##.....##.....#',
-  '###R######.######D###',
-  '#.....##.....##.....#',
-  '#.....##.....##.....#',
-  '#..C..##..K..##..>..#',
-  '#####################',
-], {
-  '<': { id: 'up', kind: 'stairs', to: { map: 'g', x: 24, y: 5 }, label: '出口' },
-  '>': { id: 'down', kind: 'stairs', to: { map: 'gc2', x: 2, y: 1 }, label: '往下' },
-  R: { id: 'rock_f', kind: 'rock' },
-  C: { id: 'chest_f', kind: 'chest', item: 'berry' },
-  K: { id: 'chest_key', kind: 'chest', item: 'key' },
-  D: { id: 'door', kind: 'lockdoor', lockText: ['門被鎖住了。', '要先找到小鑰匙。'] },
-});
+// ───────── 回音洞窟：由 tools/gen-dungeon.mjs 產生的迷宮（兩層，每層 31×22）─────────
+/** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
+function mazeObjects(mapId: 'gc1' | 'gc2', up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
+  const f = MAZES[mapId];
+  const objs: MapObj[] = [];
+  const counter: Record<string, number> = {};
+  const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
+  for (const o of f.objects) {
+    const at = { x: o.x, y: o.y };
+    switch (o.role) {
+      case 'up': objs.push({ id: 'up', kind: 'stairs', ...at, to: up, label: mapId === 'gc1' ? '出口' : '回 1 樓' }); break;
+      case 'down': objs.push({ id: 'down', kind: 'stairs', ...at, to: down, label: '往下' }); break;
+      case 'key': objs.push({ id: 'chest_key', kind: 'chest', ...at, item: 'key' }); break;
+      case 'door': objs.push({ id: 'door', kind: 'lockdoor', ...at, lockText: ['門被鎖住了。', '要先找到小鑰匙。'] }); break;
+      case 'barrier': objs.push({ id: 'barrier1', kind: 'barrier', ...at, hideIf: 'g:gc2:switch1', lockText: ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'] }); break;
+      case 'switch': objs.push({
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'knock', fx: 'knock',
+        lockText: ['一個樹洞，洞口緊緊關著。', '用啄木鳥「ㄎ」的敲擊，也許會有回音……'],
+        hitText: ['夥伴「ㄎ」地輕輕一敲，樹洞「喀」地打開了！', '遠處傳來「轟隆」一聲，好像有一道牆打開了！'],
+        doneText: ['樹洞開著，裡面空空的。'],
+      }); break;
+      case 'rock': objs.push({ id: 'rock_h', kind: 'rock', ...at }); break;
+      case 'closet': objs.push({ id: 'chest_h', kind: 'chest', ...at, item: 'berry' }); break;
+      case 'chest': { const n = nth('chest'); objs.push({ id: `chest_${n}`, kind: 'chest', ...at, item: n % 2 ? 'potion' : 'berry' }); break; }
+      case 'boss': objs.push({ id: 'boss', kind: 'monster', ...at, battle: 'boss_g', hideIf: 'boss_g' }); break;
+      case 'bossChest': objs.push({ id: 'chest_boss', kind: 'chest', ...at, item: 'bigpotion', showIf: 'boss_g' }); break;
+      case 'monster': {
+        const n = nth('monster');
+        objs.push({ id: `mon${n}`, kind: 'monster', ...at, battle: `${mapId}m${n === 1 ? '' : n}`, ai: o.ai, ...(o.patrol ? { patrol: o.patrol } : {}) });
+        break;
+      }
+    }
+  }
+  return objs;
+}
 MAPS.gc1 = {
-  id: 'gc1', name: '回音洞窟 1F', w: GC1.w, h: GC1.h, tiles: GC1.tiles, theme: 'valley', group: 'gc',
+  id: 'gc1', name: '回音洞窟 1F', w: MAZES.gc1.w, h: MAZES.gc1.h, tiles: MAZES.gc1.rows, theme: 'valley', group: 'gc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
-  objects: [...GC1.objects, { id: 'm1', kind: 'monster', x: 9, y: 1, battle: 'gc1m', ai: 'patrol', patrol: [{ x: 10, y: 1 }, { x: 11, y: 1 }] }],
+  objects: mazeObjects('gc1', { map: 'g', x: 24, y: 5 }, { map: 'gc2', x: 2, y: 1 }),
 };
-const GC2 = fromAscii([
-  '#####################',
-  '#<....##.....##.....#',
-  '#...................#',
-  '#.....##...H.##..W..#',
-  '##########B##########',
-  '########.....########',
-  '########..X..########',
-  '########..C..########',
-  '#####################',
-], {
-  '<': { id: 'up', kind: 'stairs', to: { map: 'gc1', x: 17, y: 6 }, label: '回 1 樓' },
-  H: { id: 'm2', kind: 'monster', battle: 'gc2m', ai: 'chase' },
-  W: {
-    id: 'switch1', kind: 'gimmick', sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'knock', fx: 'knock',
-    lockText: ['一個樹洞，洞口緊緊關著。', '用啄木鳥「ㄎ」的敲擊，也許會有回音……'],
-    hitText: ['夥伴「ㄎ」地輕輕一敲，樹洞「喀」地打開了！', '遠處傳來「轟隆」一聲，好像有一道牆打開了！'],
-    doneText: ['樹洞開著，裡面空空的。'],
-  },
-  B: { id: 'barrier1', kind: 'barrier', hideIf: 'g:gc2:switch1', lockText: ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'] },
-  X: { id: 'boss', kind: 'monster', battle: 'boss_g', hideIf: 'boss_g' },
-  C: { id: 'chest_boss', kind: 'chest', item: 'bigpotion', showIf: 'boss_g' },
-});
 MAPS.gc2 = {
-  id: 'gc2', name: '回音洞窟 2F', w: GC2.w, h: GC2.h, tiles: GC2.tiles, theme: 'valley', group: 'gc',
+  id: 'gc2', name: '回音洞窟 2F', w: MAZES.gc2.w, h: MAZES.gc2.h, tiles: MAZES.gc2.rows, theme: 'valley', group: 'gc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
-  objects: GC2.objects,
+  objects: mazeObjects('gc2', { map: 'gc1', x: MAZES.gc1.downArrive!.x, y: MAZES.gc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {

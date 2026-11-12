@@ -69,7 +69,10 @@ export class WorldScene extends Phaser.Scene {
   /** 由 main 呼叫：載入存檔位置並開始（新遊戲會播放開場）。 */
   async begin(isNew: boolean) {
     this.queue = []; this.pending = undefined; this.moving = false; this.busy = false;
-    this.loadMap(G.save.mapId, G.save.x, G.save.y);
+    const saved = MAPS[G.save.mapId];
+    const blocked = !saved || BLOCKED_TILES.has(saved.tiles[G.save.y]?.[G.save.x] ?? 'S');
+    const spot = blocked && saved ? saved.start : { x: G.save.x, y: G.save.y };
+    this.loadMap(G.save.mapId, spot.x, spot.y);
     this.ready = true;
     if (isNew) {
       this.busy = true;

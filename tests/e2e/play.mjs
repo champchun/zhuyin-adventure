@@ -106,6 +106,27 @@ const doTap = async (x, y, label) => {
   throw new Error('走不到：' + label + ' ' + JSON.stringify(await ev(() => { const w = window.__game.world(); return { tx: w.tx, ty: w.ty, v: w.cameras.main.worldView.toString(), objs: [...w.objs.keys()].join() }; })));
 };
 
+/** 讀出目前這張地圖上某個物件的座標；找不到就丟出錯誤（hideIf／showIf 隱藏或已消失的物件不在列表裡） */
+const objPos = async (id) => {
+  const p = await ev((id) => { const o = window.__game.world().objs.get(id); return o ? { x: o.def.x, y: o.def.y } : null; }, id);
+  if (!p) throw new Error('找不到物件：' + id);
+  return p;
+};
+const hasObj = (id) => ev((id) => window.__game.world().objs.has(id), id);
+/** 走到某個物件並點它；路被小怪擋住（走不到）時，先把還在的小怪打掉再重試 */
+const tapObj = async (id, label) => {
+  for (let round = 0; round < 2; round++) {
+    try { const p = await objPos(id); await doTap(p.x, p.y, label); return; }
+    catch (e) {
+      if (round === 1) throw e;
+      for (const m of ['mon1', 'mon2', 'mon3', 'mon4']) {
+        if (m === id || !(await hasObj(m))) continue;
+        try { const q = await objPos(m); await doTap(q.x, q.y, label + '→擋路的' + m); } catch { /* 這隻也走不到就換下一隻 */ }
+      }
+    }
+  }
+};
+
 // ───── 開始 ─────
 await page.goto(URL);
 await page.waitForSelector('#screen .menu');
@@ -417,36 +438,34 @@ await doTap(20, 15, '森林小怪 3');
 await doTap(24, 4, '洞窟入口');
 if ((await save()).mapId !== 'gc1') throw new Error('沒有進入回音洞窟 1 樓');
 await snap('gcave-1f');
-await doTap(9, 1, '洞窟 1 樓小怪');
-await doTap(3, 4, '裂石'); await doTap(3, 7, '隱藏房間的寶箱');
+await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
 f = await flags();
-if (!f['r:gc1:rock_f'] || !f['c:gc1:chest_f']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
-await doTap(10, 7, '鑰匙寶箱');
+if (!f['r:gc1:rock_h'] || !f['c:gc1:chest_h']) throw new Error('回音洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+await tapObj('chest_key', '鑰匙寶箱');
 if (((await save()).items.key ?? 0) !== 1) throw new Error('回音洞窟沒有拿到小鑰匙');
-await doTap(17, 4, '鎖住的門');
+await tapObj('door', '鎖住的門');
 f = await flags();
 if (!f['k:gc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('回音洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
 log('✓ 回音洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
-await doTap(17, 7, '往 2 樓的樓梯');
+await tapObj('down', '往 2 樓的樓梯');
 if ((await save()).mapId !== 'gc2') throw new Error('沒有走到回音洞窟 2 樓');
 await snap('gcave-2f');
 await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：蝙蝠是回音怪，要用魔法攻擊才有傷害
-await doTap(11, 3, '洞窟 2 樓小怪');
-await doTap(17, 3, '樹洞開關（ㄎ）');
+await tapObj('switch1', '樹洞開關（ㄎ）');
 f = await flags();
 if (!f['g:gc2:switch1']) throw new Error('回音洞窟 2 樓的樹洞機關沒有啟動 ' + JSON.stringify(f));
 log('✓ 回音洞窟 2 樓：敲開樹洞、石牆消失');
 await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 機器人的目的是走完流程，不是考驗魔力管理：補魔力讓它破得了蝙蝠王的護盾
-await doTap(10, 6, '蝙蝠王');
+await tapObj('boss', '蝙蝠王');
 s = await save();
 if (!s.flags.boss_g || !s.abilities.includes('breath')) throw new Error('蝙蝠王沒有打贏，或沒有學到 breath（ㄏ） ' + JSON.stringify({ flags: s.flags.boss_g, abilities: s.abilities }));
 await snap('after-boss-g');
 log('✓ 蝙蝠王打贏了（護盾被魔法打破），學會 breath（ㄏ）');
-await doTap(10, 7, '頭目寶箱');
+await tapObj('chest_boss', '頭目寶箱');
 if (!(await flags())['c:gc2:chest_boss']) throw new Error('蝙蝠王的寶箱沒拿到');
-await doTap(1, 1, '回 1 樓的樓梯');
+await tapObj('up', '回 1 樓的樓梯');
 if ((await save()).mapId !== 'gc1') throw new Error('沒有回到回音洞窟 1 樓');
-await doTap(1, 1, '回森林的出口');
+await tapObj('up', '回森林的出口');
 if ((await save()).mapId !== 'g') throw new Error('沒有走回回音森林');
 await doTap(22, 9, '冰塊（ㄏ）'); await doTap(22, 8, '冰塊後寶箱');
 f = await flags();

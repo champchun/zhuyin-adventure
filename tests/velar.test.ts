@@ -52,7 +52,7 @@ describe('第三關（舌根音）的資料', () => {
     expect(b.reward!.abilities).toEqual(['breath']);
   });
   it('本關的小怪考 ㄍㄎㄏ，並複習上一關的符號', () => {
-    for (const id of ['g1', 'g2', 'g3', 'gc1m', 'gc2m']) {
+    for (const id of ['g1', 'g2', 'g3', 'gc1m', 'gc1m2', 'gc1m3', 'gc1m4', 'gc2m', 'gc2m2', 'gc2m3']) {
       const b = BATTLES[id];
       expect(b, id).toBeDefined();
       expect(b.respawn, `${id} 野生怪要會重生`).toBe(true);
@@ -158,5 +158,33 @@ describe('蛙鳴灣：荷葉池塘水鄉', () => {
     expect(gh.objects.find((o) => o.id === 'dock_dh')).toMatchObject({ x: 14, y: 18 });
     expect(gh.objects.find((o) => o.id === 'dock_isle')).toMatchObject({ x: 3, y: 10 });
     for (const id of ['frog_fan', 'captain', 'angler']) expect(gh.objects.find((o) => o.id === id)!.kind).toBe('npc');
+  });
+});
+
+describe('回音洞窟（產生的迷宮）：用 reachReport 驗證一定解得開', () => {
+  const abilities = ['blast', 'gust', 'croak', 'knock'];
+  it('兩層一起走：沒有走不到的地板與物件，鑰匙剛好用完', () => {
+    const r = reachReport([MAPS.gc1, MAPS.gc2], { map: 'gc1', x: 2, y: 1 }, abilities);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+  });
+  it('沒有 knock 招式時，石牆後面走不到（機關一定要用招式啟動）', () => {
+    const r = reachReport([MAPS.gc1, MAPS.gc2], { map: 'gc1', x: 2, y: 1 }, ['blast', 'gust']);
+    expect(r.unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('沒有 blast 招式時，隱藏小密室走不到（裂石要用招式打）', () => {
+    const r = reachReport([MAPS.gc1, MAPS.gc2], { map: 'gc1', x: 2, y: 1 }, ['gust', 'croak', 'knock']);
+    expect(r.unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('尺寸 31×22；一樓有一把鎖門與一把鑰匙；二樓有石牆、開關、頭目與頭目寶箱', () => {
+    for (const m of [MAPS.gc1, MAPS.gc2]) { expect(m.w).toBe(31); expect(m.h).toBe(22); }
+    const has = (m: typeof MAPS.gc1, id: string) => m.objects.some((o) => o.id === id);
+    expect(has(MAPS.gc1, 'door')).toBe(true);
+    expect(has(MAPS.gc1, 'chest_key')).toBe(true);
+    for (const id of ['barrier1', 'switch1', 'boss', 'chest_boss']) expect(has(MAPS.gc2, id), id).toBe(true);
+  });
+  it('怪物 id 不和獎勵旗標（m1、m2）撞名', () => {
+    for (const m of [MAPS.gc1, MAPS.gc2]) for (const o of m.objects.filter((x) => x.kind === 'monster' && x.id !== 'boss')) expect(o.id).toMatch(/^mon\d+$/);
   });
 });
