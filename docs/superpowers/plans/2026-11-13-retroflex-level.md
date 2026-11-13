@@ -66,7 +66,7 @@
 
 **Files:** `tools/gen-dungeon.mjs`（+ `.d.mts`）、`src/data/mazes.ts`（產生）、`src/data/maps.ts`（`zc1`／`zc2`）、測試。
 
-- `zc1`／`zc2` 兩層，固定種子 53、59，31×22；樓梯、機關（二樓開關用 `roar`，fx 自訂，外觀改成熔岩閘門）、頭目 `boss_z`、頭目寶箱與前兩個洞窟一致。入口從 `z` 進。地板用岩地、牆用懸崖。
+- `zc1`／`zc2` 兩層，固定種子 53、59，31×22；樓梯、機關（二樓開關用 `web`（頭目前就學到；roar 要打倒 boss_z 才拿到，不能當開關），fx `web`，外觀改成熔岩閘門）、頭目 `boss_z`、頭目寶箱與前兩個洞窟一致。入口從 `z` 進。地板用岩地、牆用懸崖。
 - `mazeObjects` 的 `ice`／`boss` 判斷要擴充成支援第三種主題（沙漠），不要破壞 gc／xc 的行為。
 - [ ] 加設定、重跑產生器；`reachReport` 對兩層為綠（把 `zc1`/`zc2` 加進 `tests/dungeon.test.ts`、`tests/mazegen.test.ts`）；同步測試通過；commit。
 

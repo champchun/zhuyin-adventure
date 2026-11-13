@@ -824,10 +824,11 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
           : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
       case 'switch': objs.push(theme === 'desert' ? {
-        id: 'switch1', kind: 'gimmick', ...at, sprite: 'sandstone', ability: 'roar', fx: 'roar', vanish: true,
-        lockText: ['一塊大砂岩，壓在熔岩閘門的機關上。', '用獅子「ㄕ」的大吼，也許能把它震碎……'],
-        hitText: ['夥伴像獅子一樣大吼一聲「ㄕ」，砂岩被震得碎成沙子！', '遠處傳來「轟隆」一聲，好像有一道熔岩閘門打開了！'],
-        doneText: ['砂岩已經碎掉了。'],
+        // 開關要在打倒頭目之前就解得開，所以用練習戰學到的 web（roar 是打倒 boss_z 才拿到）
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'web', fx: 'web',
+        lockText: ['岩壁上有個小洞，洞裡藏著一根拉桿，手伸不進去。', '用蜘蛛「ㄓ」吐出蜘蛛絲，也許能勾住它……'],
+        hitText: ['夥伴舌頭一翹「ㄓ」，蜘蛛絲勾住了拉桿，用力一拉！', '遠處傳來「轟隆」一聲，好像有一道熔岩閘門打開了！'],
+        doneText: ['拉桿已經拉下來了。'],
       } : theme === 'ice' ? {
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'ice_rock', ability: 'slide', fx: 'slide', vanish: true,
         lockText: ['冰面上有一塊大冰石，卡在機關的凹槽上。', '用企鵝「ㄑ」的滑行，也許能把它推開……'],

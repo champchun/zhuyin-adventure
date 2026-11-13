@@ -268,7 +268,7 @@ describe('第五關的地圖：綠洲鎮 zh 與火山沙漠 z', () => {
 });
 
 describe('熔岩洞窟（產生的迷宮）：用 reachReport 驗證一定解得開', () => {
-  const abilities = ['blast', 'gust', 'web', 'gulp', 'roar', 'sun'];
+  const abilities = ['blast', 'gust', 'web', 'gulp']; // 打頭目前的能力（roar、sun 要打倒 boss_z 才拿到）
   const start = { map: 'zc1', x: 2, y: 1 };
   const zc1 = MAPS.zc1, zc2 = MAPS.zc2, z = MAPS.z;
   it('兩層一起走：沒有走不到的地板與物件，鑰匙剛好用完', () => {
@@ -277,9 +277,17 @@ describe('熔岩洞窟（產生的迷宮）：用 reachReport 驗證一定解得
     expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
     expect(r.keysLeft).toBe(0);
   });
-  it('沒有 roar 招式時，熔岩閘門後面走不到；沒有 blast 時，隱藏小密室走不到', () => {
-    expect(reachReport([zc1, zc2], start, ['blast', 'web', 'gulp', 'sun']).unreachableFloor.length).toBeGreaterThan(0);
-    expect(reachReport([zc1, zc2], start, ['roar']).unreachableFloor.length).toBeGreaterThan(0);
+  it('打頭目前的能力就走得到頭目（不需要 roar、sun）', () => {
+    const r = reachReport([zc1, zc2], start, abilities);
+    expect(r.unreachableFloor).toEqual([]);
+    expect(r.unreachableObjects).not.toContain('zc2/boss');
+    const reward = BATTLES.boss_z.reward.abilities!;
+    expect(reward).toEqual(['roar', 'sun']);
+    expect(abilities.some((a) => reward.includes(a))).toBe(false);
+  });
+  it('沒有 web 招式時，熔岩閘門後面走不到；沒有 blast 時，隱藏小密室走不到', () => {
+    expect(reachReport([zc1, zc2], start, ['blast', 'gulp']).unreachableFloor.length).toBeGreaterThan(0);
+    expect(reachReport([zc1, zc2], start, ['web', 'gulp']).unreachableFloor.length).toBeGreaterThan(0);
   });
   it('尺寸、物件、同一個 group、岩地、樓梯與出口位置', () => {
     for (const m of [zc1, zc2]) {
@@ -292,8 +300,8 @@ describe('熔岩洞窟（產生的迷宮）：用 reachReport 驗證一定解得
     expect(has(zc1, 'chest_key')).toBe(true);
     for (const id of ['barrier1', 'switch1', 'boss', 'chest_boss']) expect(has(zc2, id), id).toBe(true);
     const sw = zc2.objects.find((o) => o.id === 'switch1')!;
-    expect(sw.ability).toBe('roar');
-    expect(sw.fx).toBe('roar');
+    expect(sw.ability).toBe('web');
+    expect(sw.fx).toBe('web');
     const boss = zc2.objects.find((o) => o.id === 'boss')!;
     expect(boss.battle).toBe('boss_z');
     expect(boss.hideIf).toBe('boss_z');
