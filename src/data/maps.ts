@@ -767,7 +767,7 @@ MAPS.zh_shop = {
 // ───────── ㄓㄔㄕㄖ：火山沙漠 ─────────
 // 一條南北向的熔岩河把沙漠切成兩半：西岸是入口、機關與（之後的）洞窟，東岸要先在河中間唯一的沙坑織出蜘蛛網橋才過得去。
 // 沙坑那一格是沙地，夾在熔岩之間；機關物件（passable）織網後換成網橋圖，仍留在原地但可以走過去。
-// 洞窟入口 cave（showIf zPractice）留給 Task 4：預定放在 (11,4)，從洞窟出來落在 (11,5)。
+// 洞窟入口 cave 在 (11,4)（練習戰後才出現），從熔岩洞窟出來落在 (11,5)。
 const desertIsle = (() => {
   const g = new Grid(28, 20, 's').border('V');
   g.rect('V', 13, 1, 1, 18).set(13, 10, 's'); // 熔岩河與沙坑那一格
@@ -782,6 +782,7 @@ MAPS.z = {
   start: { x: 2, y: 3 }, respawn: { x: 2, y: 3 },
   objects: [
     { id: 'gate_back', kind: 'stairs', x: 1, y: 3, to: { map: 'zh', x: 25, y: 9 }, label: '回綠洲鎮' }, // 回主島的沙漠大門
+    { id: 'cave', kind: 'stairs', x: 11, y: 4, to: { map: 'zc1', x: 2, y: 1 }, label: '洞窟', showIf: 'zPractice' },
     { id: 'sign1', kind: 'sign', x: 3, y: 5, text: ['火山沙漠。', '這座島的注音，都是舌頭翹起來發出來的：ㄓ ㄔ，還有兩個要等你自己發現。', '島上有沙坑、仙人掌、砂岩和流沙，學會新招式，也許就能通過它們！'] },
     { id: 'dummy', kind: 'monster', x: 4, y: 3, battle: 'zpractice', hideIf: 'zPractice' },
     { id: 'chest_1', kind: 'chest', x: 3, y: 8, item: 'potion' },
@@ -800,13 +801,13 @@ MAPS.z = {
   ],
 };
 
-// ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
-type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2';
+// ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2';
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
-  const ice = mapId.startsWith('x');
-  const boss = ice ? 'boss_x' : 'boss_g';
+  const theme: 'forest' | 'ice' | 'desert' = mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : 'forest';
+  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z' }[theme];
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
@@ -819,9 +820,15 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
       case 'door': objs.push({ id: 'door', kind: 'lockdoor', ...at, lockText: ['門被鎖住了。', '要先找到小鑰匙。'] }); break;
       case 'barrier': objs.push({
         id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
-        lockText: ice ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
+        lockText: theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
+          : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
-      case 'switch': objs.push(ice ? {
+      case 'switch': objs.push(theme === 'desert' ? {
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'sandstone', ability: 'roar', fx: 'roar', vanish: true,
+        lockText: ['一塊大砂岩，壓在熔岩閘門的機關上。', '用獅子「ㄕ」的大吼，也許能把它震碎……'],
+        hitText: ['夥伴像獅子一樣大吼一聲「ㄕ」，砂岩被震得碎成沙子！', '遠處傳來「轟隆」一聲，好像有一道熔岩閘門打開了！'],
+        doneText: ['砂岩已經碎掉了。'],
+      } : theme === 'ice' ? {
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'ice_rock', ability: 'slide', fx: 'slide', vanish: true,
         lockText: ['冰面上有一塊大冰石，卡在機關的凹槽上。', '用企鵝「ㄑ」的滑行，也許能把它推開……'],
         hitText: ['夥伴像企鵝一樣「ㄑ」地一滑，冰石「咻」地滑走了！', '遠處傳來「轟隆」一聲，好像有一道冰牆打開了！'],
@@ -867,6 +874,19 @@ MAPS.xc2 = {
   id: 'xc2', name: '冰晶洞窟 2F', w: MAZES.xc2.w, h: MAZES.xc2.h, tiles: iceRows(MAZES.xc2.rows), theme: 'valley', group: 'xc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('xc2', { map: 'xc1', x: MAZES.xc1.downArrive!.x, y: MAZES.xc1.downArrive!.y }, undefined),
+};
+
+// 熔岩洞窟：地板用岩地 v、牆用懸崖 S；出口回火山沙漠洞口 (11,4) 的下方一格
+const desertRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'v'));
+MAPS.zc1 = {
+  id: 'zc1', name: '熔岩洞窟 1F', w: MAZES.zc1.w, h: MAZES.zc1.h, tiles: desertRows(MAZES.zc1.rows), theme: 'valley', group: 'zc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('zc1', { map: 'z', x: 11, y: 5 }, { map: 'zc2', x: 2, y: 1 }),
+};
+MAPS.zc2 = {
+  id: 'zc2', name: '熔岩洞窟 2F', w: MAZES.zc2.w, h: MAZES.zc2.h, tiles: desertRows(MAZES.zc2.rows), theme: 'valley', group: 'zc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('zc2', { map: 'zc1', x: MAZES.zc1.downArrive!.x, y: MAZES.zc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {

@@ -241,12 +241,15 @@ export const FLOORS = {
   // 冰晶洞窟（雪花鎮的企鵝冰原）
   xc1: { seed: 37, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } },
   xc2: { seed: 41, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } },
+  // 熔岩洞窟（火山沙漠）
+  zc1: { seed: 53, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } },
+  zc2: { seed: 59, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } },
 };
 /** 產生 src/data/mazes.ts 的內容（字串）。測試用它比對檔案有沒有和產生器同步。 */
 export function renderMazes() {
   const out = Object.fromEntries(Object.entries(FLOORS).map(([id, cfg]) => [id, generateFloor(cfg)]));
   return `// 由 tools/gen-dungeon.mjs 產生，不要手改。要換迷宮：改 tools/gen-dungeon.mjs 裡的種子，重跑 node tools/gen-dungeon.mjs\n` +
-    `import type { Floor } from '../../tools/gen-dungeon.mjs';\n\nexport const MAZES: Record<'gc1' | 'gc2' | 'xc1' | 'xc2', Floor> = ${JSON.stringify(out, null, 2)};\n`;
+    `import type { Floor } from '../../tools/gen-dungeon.mjs';\n\nexport const MAZES: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2', Floor> = ${JSON.stringify(out, null, 2)};\n`;
 }
 import { fileURLToPath } from 'node:url';
 import { writeFileSync } from 'node:fs';

@@ -254,12 +254,62 @@ describe('第五關的地圖：綠洲鎮 zh 與火山沙漠 z', () => {
       expect(objectDepth(o, 176, false), o.id).toBe(176);
     }
   });
-  it('洞窟入口 cave 留給 Task 4：這裡先確認 z 沒有引用不存在的地圖', () => {
-    // Task 4 完成後移除這一條，改驗 cave（showIf zPractice、通 zc1）
+  it('洞窟入口 cave：練習完才出現、通 zc1 起點，洞窟出口落在它下方一格', () => {
+    const cave = z.objects.find((o) => o.id === 'cave')!;
+    expect(cave).toMatchObject({ kind: 'stairs', x: 11, y: 4, showIf: 'zPractice' });
+    expect(cave.to).toEqual({ map: 'zc1', x: 2, y: 1 });
+    expect(MAPS.zc1.objects.find((o) => o.id === 'up')!.to).toEqual({ map: 'z', x: 11, y: 5 });
     for (const o of z.objects) if (o.to) expect(MAPS[o.to.map], o.id).toBeDefined();
   });
   it('格局和前三個主島不同，並有綠洲池', () => {
     for (const id of ['dh', 'gh', 'xh']) expect(MAPS[id].tiles.join('')).not.toBe(zh.tiles.join(''));
     expect(zh.tiles.join('')).toMatch(/w/);
+  });
+});
+
+describe('熔岩洞窟（產生的迷宮）：用 reachReport 驗證一定解得開', () => {
+  const abilities = ['blast', 'gust', 'web', 'gulp', 'roar', 'sun'];
+  const start = { map: 'zc1', x: 2, y: 1 };
+  const zc1 = MAPS.zc1, zc2 = MAPS.zc2, z = MAPS.z;
+  it('兩層一起走：沒有走不到的地板與物件，鑰匙剛好用完', () => {
+    const r = reachReport([zc1, zc2], start, abilities);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+  });
+  it('沒有 roar 招式時，熔岩閘門後面走不到；沒有 blast 時，隱藏小密室走不到', () => {
+    expect(reachReport([zc1, zc2], start, ['blast', 'web', 'gulp', 'sun']).unreachableFloor.length).toBeGreaterThan(0);
+    expect(reachReport([zc1, zc2], start, ['roar']).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('尺寸、物件、同一個 group、岩地、樓梯與出口位置', () => {
+    for (const m of [zc1, zc2]) {
+      expect(m.w).toBe(31); expect(m.h).toBe(22); expect(m.group).toBe('zc');
+      const t = m.tiles.join('');
+      expect(t).toMatch(/v/); expect(t).not.toMatch(/[:j]/);
+    }
+    const has = (m: typeof zc1, id: string) => m.objects.some((o) => o.id === id);
+    expect(has(zc1, 'door')).toBe(true);
+    expect(has(zc1, 'chest_key')).toBe(true);
+    for (const id of ['barrier1', 'switch1', 'boss', 'chest_boss']) expect(has(zc2, id), id).toBe(true);
+    const sw = zc2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw.ability).toBe('roar');
+    expect(sw.fx).toBe('roar');
+    const boss = zc2.objects.find((o) => o.id === 'boss')!;
+    expect(boss.battle).toBe('boss_z');
+    expect(boss.hideIf).toBe('boss_z');
+    expect(zc2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_z');
+    expect(zc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('zc2');
+    expect(zc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('zc1');
+    const exit = zc1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit.map).toBe('z');
+    expect(BLOCKED_TILES.has(z.tiles[exit.y][exit.x])).toBe(false);
+    expect(z.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在，用沙漠怪', () => {
+    for (const m of [zc1, zc2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon\d+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+      expect(['scorpion', 'cactusman', 'mummy']).toContain(BATTLES[o.battle!].enemy);
+    }
   });
 });
