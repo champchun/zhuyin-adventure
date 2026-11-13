@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
 import { BLOCKED_TILES, MAPS, TILE_KEY, abilityOf, objectDepth } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
-import { BATTLES, LEVELS, STORY } from '../data/levels';
+import { BATTLES, ENDING_LINES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
 import { ENEMIES, ITEMS, SPECIES, castSymbol } from '../data/monsters';
 import { STROKES } from '../data/strokes';
@@ -15,6 +15,7 @@ import { choose, openLessonPick, openParty, openResults, openSettings, openShop,
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { starDoorOpen } from '../core/stars';
+import { grantEnding } from '../core/ending';
 import { STAR_DOOR_NEED } from '../data/rewards';
 import { accOffset, accTexture } from '../gfx/accessory';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
@@ -1025,6 +1026,11 @@ export class WorldScene extends Phaser.Scene {
     }
     if (res === 'run') { const st = this.mons.get(o.def.id); if (st) stunMon(st); return; } // 撤退：這隻怪暫停幾步，讓孩子來得及走開
     await this.applyReward(def, o);
+    // 結算與獎勵說完後才播結尾（只播一次：grantEnding 以 endingSeen 判斷）
+    if (def.id === 'boss_s' && grantEnding(G.save).granted) {
+      saveGame();
+      await say(ENDING_LINES);
+    }
   }
 
   /** 第一次認識符號的小課程：每個新符號依序「選符號 → 聽符號 → 寫符號」，不能跳過、沒有處罰；上完記進 introduced。 */

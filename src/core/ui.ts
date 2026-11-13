@@ -8,7 +8,7 @@ import { STROKES } from '../data/strokes';
 import { sampleStroke, strokeDone } from './strokes';
 import type { Pt } from './strokes';
 import { PROMPT_LINES } from '../data/voiceLines';
-import { REWARDS, rewardById } from '../data/rewards';
+import { REWARDS, SHOP_REWARDS, rewardById } from '../data/rewards';
 import type { AccessoryId } from '../data/rewards';
 import { availableStars, canRedeem, equip, isOwned, redeem, setTitle, titleName } from './stars';
 
@@ -159,7 +159,7 @@ export function openStarShop(onChange?: () => void): Promise<void> {
       const titles = REWARDS.filter((r) => r.type === 'title' && (s.titles ?? []).includes(r.id));
       const html = `<h2>⭐ 星星婆婆</h2>
         <div class="note" style="font-size:20px;font-weight:800">可用星星 ${availableStars(s)} 顆（累計 ${s.stars} 顆）</div>
-        <div class="foot" style="flex-direction:column;gap:8px;align-items:stretch">${REWARDS.map((r) => {
+        <div class="foot" style="flex-direction:column;gap:8px;align-items:stretch">${SHOP_REWARDS.map((r) => {
           const have = isOwned(s, r);
           const poor = !have && !canRedeem(s, r).ok;
           return `<button class="btn ${have || poor ? '' : 'primary'}" data-a="redeem" data-id="${r.id}" ${have || poor ? 'style="opacity:.45"' : ''}>

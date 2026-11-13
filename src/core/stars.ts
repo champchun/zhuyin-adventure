@@ -7,7 +7,7 @@ type StarSave = Pick<SaveData, 'stars' | 'starsSpent' | 'titles' | 'accessories'
 /** 可用星星 = 累計 − 已花掉 */
 export const availableStars = (s: StarSave): number => Math.max(0, s.stars - (s.starsSpent ?? 0));
 
-export type CanRedeem = { ok: true } | { ok: false; reason: 'poor' | 'owned' };
+export type CanRedeem = { ok: true } | { ok: false; reason: 'poor' | 'owned' | 'free' };
 
 function owned(s: StarSave, r: RewardDef): boolean {
   if (r.type === 'title') return (s.titles ?? []).includes(r.id);
@@ -17,6 +17,7 @@ function owned(s: StarSave, r: RewardDef): boolean {
 export const isOwned = owned;
 
 export function canRedeem(s: StarSave, r: RewardDef): CanRedeem {
+  if (r.free) return { ok: false, reason: 'free' };
   if (owned(s, r)) return { ok: false, reason: 'owned' };
   if (availableStars(s) < r.cost) return { ok: false, reason: 'poor' };
   return { ok: true };
@@ -24,7 +25,7 @@ export function canRedeem(s: StarSave, r: RewardDef): CanRedeem {
 
 export type RedeemResult =
   | { ok: true; reward: RewardDef; gift?: { item: string; count: number } }
-  | { ok: false; reason: 'poor' | 'owned' };
+  | { ok: false; reason: 'poor' | 'owned' | 'free' };
 
 /** 兌換：直接修改傳入的存檔。只增加 starsSpent，不動累計 stars。 */
 export function redeem(s: StarSave, r: RewardDef): RedeemResult {

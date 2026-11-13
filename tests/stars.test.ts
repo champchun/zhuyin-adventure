@@ -121,7 +121,8 @@ describe('獎勵資料', () => {
   it('id 唯一、cost 為正整數、類型欄位完整', () => {
     expect(new Set(REWARDS.map((r) => r.id)).size).toBe(REWARDS.length);
     for (const r of REWARDS) {
-      expect(Number.isInteger(r.cost) && r.cost > 0).toBe(true);
+      if (r.free) expect(r.cost).toBe(0); // 免費獎勵不花星星
+      else expect(Number.isInteger(r.cost) && r.cost > 0).toBe(true);
       expect(r.name && r.icon).toBeTruthy();
       if (r.type === 'accessory') expect(['bow', 'crown']).toContain(r.accessory);
       if (r.type === 'gift') { expect(r.item).toBeTruthy(); expect(r.count).toBeGreaterThan(0); }

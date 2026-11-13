@@ -14,6 +14,8 @@ export interface RewardDef {
   /** 禮物：給的道具與數量（禮物可重複兌換） */
   item?: string;
   count?: number;
+  /** true＝不能用星星兌換（劇情自動給），不出現在星星婆婆的清單，cost 為 0 */
+  free?: boolean;
 }
 
 /** 累計星星達到這個數，雪花鎮的星光門才會醒來（看累計，不看可用） */
@@ -25,6 +27,11 @@ export const REWARDS: RewardDef[] = [
   { id: 'title_master', type: 'title', cost: 20, name: '注音小達人', icon: '🏅' },
   { id: 'acc_crown', type: 'accessory', cost: 30, name: '小皇冠', icon: '👑', accessory: 'crown' },
   { id: 'gift_potion', type: 'gift', cost: 40, name: '大藥水 ×2', icon: '🧴', item: 'bigpotion', count: 2 },
+  // 免費稱號：打倒最終頭目後自動獲得（見 core/ending.ts）
+  { id: 'title_hero', type: 'title', cost: 0, name: '注音大英雄', icon: '🌟', free: true },
 ];
+
+/** 星星婆婆賣的清單（不含免費獎勵） */
+export const SHOP_REWARDS: RewardDef[] = REWARDS.filter((r) => !r.free);
 
 export const rewardById = (id: string): RewardDef | undefined => REWARDS.find((r) => r.id === id);
