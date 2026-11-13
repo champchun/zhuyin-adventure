@@ -120,9 +120,7 @@ describe('夥伴像素圖', () => {
       rows.forEach((r) => expect(r.length).toBe(32));
     }
     for (const sp of Object.values(SPECIES)) for (const key of sp.sprites) expect(MONSTER_ART[key], `${sp.id}/${key}`).toBeDefined();
-    // 第五關的敵人貼圖（scorpion、cactusman、mummy、lavabeast）在貼圖 Task 才補，補完就移除這個例外
-    const pendingArt = ['scorpion', 'cactusman', 'mummy', 'lavabeast'];
-    for (const en of Object.values(ENEMIES)) if (!pendingArt.includes(en.id)) expect(MONSTER_ART[en.sprite], `敵人 ${en.id}`).toBeDefined();
+    for (const en of Object.values(ENEMIES)) expect(MONSTER_ART[en.sprite], `敵人 ${en.id}`).toBeDefined();
   });
 });
 

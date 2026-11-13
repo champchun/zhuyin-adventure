@@ -259,6 +259,50 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'spark', 8, 36, 480);
         break;
       }
+      case 'web': {
+        audio.sfx('wind');
+        for (let i = 0; i < 6; i++) {
+          const l = this.add.image(from.x, from.y - 12 + i * 5, 'windline').setDepth(40).setTint(0xffffff).setAlpha(0.95);
+          this.tweens.add({ targets: l, x: to.x, duration: 340, delay: i * 40, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(2, 0xffffff).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 10, alpha: 0, duration: 420, delay: i * 70, onComplete: () => ring.destroy() });
+        }
+        this.burst(to.x, to.y, 'puff', 6, 26, 400);
+        break;
+      }
+      case 'gulp': {
+        audio.sfx('hit');
+        for (let i = 0; i < 8; i++) {
+          const b = this.add.circle(to.x + 40 + (i % 4) * 6, to.y - 18 + i * 5, 3, 0xffb36b, 0.9).setDepth(40);
+          this.tweens.add({ targets: b, x: from.x + 24, y: from.y, duration: 380, delay: i * 40, onComplete: () => b.destroy() });
+        }
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 6, 28, 400);
+        break;
+      }
+      case 'roar': {
+        audio.sfx('drum');
+        for (let i = 0; i < 4; i++) {
+          const ring = this.add.circle(from.x + 20, from.y, 6, 0xffffff, 0).setStrokeStyle(4, 0xffb23a).setDepth(40);
+          this.tweens.add({ targets: ring, x: to.x, radius: 30, alpha: 0, duration: 440, delay: i * 110, onComplete: () => ring.destroy() });
+        }
+        await sleep(600);
+        this.burst(to.x, to.y, 'spark', 8, 36, 450);
+        if (!G.settings.reduceMotion) this.cameras.main.shake(200, 0.005);
+        break;
+      }
+      case 'sun': {
+        audio.sfx('blast');
+        const sun = this.add.circle(to.x, to.y - 40, 14, 0xffd84a, 1).setStrokeStyle(4, 0xff8a2a).setDepth(40);
+        this.tweens.add({ targets: sun, y: to.y - 12, scale: 1.8, alpha: 0, duration: 560, onComplete: () => sun.destroy() });
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 10, 40, 480);
+        this.burst(to.x, to.y, 'puff', 4, 22, 400);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');

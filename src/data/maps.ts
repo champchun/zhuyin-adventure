@@ -70,7 +70,9 @@ export interface MapDef {
 /** 阻擋通行的地形字元 */
 export const BLOCKED_TILES = new Set(['#', 'h', 'H', 'i', 'I', 'k', 'K', 'l', 'Y', 'D', '~', 'S', 'W', 'T', 'L',
   // 第四關（雪地）：雪色民宅／旅館／商店的屋頂與牆、結冰小池、枯樹、雪人（n 雪地、j 冰面、z 冰橋可走）
-  'm', 'M', 'g', 'G', 'o', 'O', 'q', 'd', 'u']);
+  'm', 'M', 'g', 'G', 'o', 'O', 'q', 'd', 'u',
+  // 第五關（沙漠）：沙屋民宅／旅館／商店的屋頂與牆、綠洲池、仙人掌、棕櫚樹、熔岩、駱駝（s 沙地、v 岩地可走）
+  'e', 'E', 'b', 'B', 'x', 'X', 'w', 'c', 'p', 'V', 'C']);
 
 /** 招式互動物件固定需要的招式（障礙物：裂石、落葉、迷霧；機關：鈴鐺、風車）。機關物件 gimmick 看它自己的 ability。 */
 const KIND_ABILITY: Partial<Record<ObjKind, string>> = { rock: 'blast', leaves: 'gust', windmill: 'gust', bell: 'hum', fog: 'fog' };
@@ -760,4 +762,7 @@ export const TILE_KEY: Record<string, string> = {
   // 第四關（雪地）
   n: 't_snow', j: 't_ice', q: 't_pond_ice', z: 't_icebridge', d: 't_tree_dead', u: 't_snowman',
   m: 't_roof_snow', M: 't_wall_snow', g: 't_roof_inn_snow', G: 't_wall_inn_snow', o: 't_roof_shop_snow', O: 't_wall_shop_snow',
+  // 第五關（沙漠）
+  s: 't_dsand', v: 't_rockfloor', w: 't_oasis', c: 't_cactus', p: 't_palm', V: 't_lava', C: 't_camel',
+  e: 't_roof_sand', E: 't_wall_sand', b: 't_roof_inn_sand', B: 't_wall_inn_sand', x: 't_roof_shop_sand', X: 't_wall_shop_sand',
 };
