@@ -23,6 +23,9 @@ export const SYMBOLS: SymbolDef[] = [
   { ch: 'ㄔ', word: '吃', tip: '「吃飯」的第一個音' },
   { ch: 'ㄕ', word: '獅', tip: '「獅子」的第一個音' },
   { ch: 'ㄖ', word: '日', tip: '「日出」的第一個音' },
+  { ch: 'ㄗ', word: '資', tip: '「資料」的第一個音' },
+  { ch: 'ㄘ', word: '詞', tip: '「詞語」的第一個音' },
+  { ch: 'ㄙ', word: '四', tip: '「四個」的第一個音' },
 ];
 /** 教學進度：每一步教哪些符號，以及要完成什麼旗標才會開始出現（沒有 flag 就是一開始就有） */
 export const LEARN_STEPS: { symbols: string[]; flag?: string }[] = [
@@ -36,6 +39,8 @@ export const LEARN_STEPS: { symbols: string[]; flag?: string }[] = [
   { symbols: ['ㄐ'], flag: 'xPractice' },
   { symbols: ['ㄓ', 'ㄔ'], flag: 'zEntered' },
   { symbols: ['ㄕ', 'ㄖ'], flag: 'zPractice' },
+  { symbols: ['ㄗ', 'ㄘ'], flag: 'sEntered' },
+  { symbols: ['ㄙ'], flag: 'sPractice' },
 ];
 /** 全部 37 個注音與例字（僅供家長設定的「發音測試」；遊戲出題只用 SYMBOLS 與家長開放的範圍） */
 export const ZHUYIN_TEST: { group: string; list: [string, string][] }[] = [

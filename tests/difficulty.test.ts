@@ -8,6 +8,7 @@ const LEVELS: { name: string; smalls: string[]; boss: string }[] = [
   { name: '第 2 關（回音森林）', smalls: ['froggy', 'pecker', 'bat'], boss: 'batking' },
   { name: '第 3 關（企鵝冰原）', smalls: ['snowball', 'penguin', 'icebat'], boss: 'icequeen' },
   { name: '第 4 關（火山沙漠）', smalls: ['scorpion', 'cactusman', 'mummy'], boss: 'lavabeast' },
+  { name: '第 5 關（天空島）', smalls: ['cloudy', 'sprite', 'comet'], boss: 'skydragon' },
 ];
 const range = (ids: string[], k: 'hp' | 'atk') => ({ min: Math.min(...ids.map((i) => ENEMIES[i][k])), max: Math.max(...ids.map((i) => ENEMIES[i][k])) });
 
@@ -30,5 +31,17 @@ describe('怪物強度隨關卡遞增', () => {
         expect(b.atk, `${cur.name} 頭目攻擊力不能比上一關低`).toBeGreaterThanOrEqual(p.atk);
       }
     }
+  });
+});
+
+describe('第六關的小王（星門守衛）', () => {
+  it('強度介於同一關的小怪與最終頭目之間', () => {
+    const g = ENEMIES.starguard, d = ENEMIES.skydragon;
+    for (const k of ['hp', 'atk'] as const) {
+      expect(g[k], `小王 ${k} 要不低於小怪`).toBeGreaterThanOrEqual(Math.max(ENEMIES.cloudy[k], ENEMIES.sprite[k], ENEMIES.comet[k]));
+      expect(g[k], `小王 ${k} 不能高過最終頭目`).toBeLessThanOrEqual(d[k]);
+    }
+    expect(g.hp).toBeGreaterThan(Math.max(ENEMIES.cloudy.hp, ENEMIES.sprite.hp, ENEMIES.comet.hp));
+    expect(g.hp).toBeLessThan(d.hp);
   });
 });

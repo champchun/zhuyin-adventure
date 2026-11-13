@@ -130,6 +130,9 @@ export function loadSettings() {
   // 第五關之前的「全開」是 ㄅ～ㄒ 共 14 個：同樣要升級，ㄓㄔㄕㄖ 才會出題（只在完整舊預設時升級；家長取消勾選過的客製清單不動）
   const OLD_ALL4 = [...OLD_ALL3, 'ㄐ', 'ㄑ', 'ㄒ'];
   if (OLD_ALL4.every((s) => G.settings.allowed.includes(s)) && !['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'].some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
+  // 第六關之前的「全開」是 ㄅ～ㄖ 共 18 個：同樣要升級，ㄗㄘㄙ 才會出題（只在完整舊預設時升級；家長取消勾選過的客製清單不動）
+  const OLD_ALL5 = [...OLD_ALL4, 'ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'];
+  if (OLD_ALL5.every((s) => G.settings.allowed.includes(s)) && !['ㄗ', 'ㄘ', 'ㄙ'].some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
   if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));

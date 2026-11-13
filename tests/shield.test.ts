@@ -60,7 +60,8 @@ describe('戰鬥資料與護盾、回音怪', () => {
   it('只有第三關以後的戰鬥使用護盾與回音怪（鼓王咚咚以前的都不用）', () => {
     const velar = new Set(['boss_g', 'g1', 'g2', 'g3', 'gc1m', 'gc1m2', 'gc1m3', 'gc1m4', 'gc2m', 'gc2m2', 'gc2m3',
       'boss_x', 'x1', 'x2', 'x3', 'xc1m', 'xc1m2', 'xc1m3', 'xc1m4', 'xc2m', 'xc2m2', 'xc2m3',
-      'boss_z', 'z1', 'z2', 'z3', 'zc1m', 'zc1m2', 'zc1m3', 'zc1m4', 'zc2m', 'zc2m2', 'zc2m3']);
+      'boss_z', 'z1', 'z2', 'z3', 'zc1m', 'zc1m2', 'zc1m3', 'zc1m4', 'zc2m', 'zc2m2', 'zc2m3',
+      'boss_s1', 'boss_s', 's1', 's2', 's3', 'sc1m', 'sc1m2', 'sc1m3', 'sc1m4', 'sc2m', 'sc2m2', 'sc2m3']);
     for (const b of Object.values(BATTLES)) {
       if (velar.has(b.id)) continue;
       expect(b.shield, `${b.id} 不該有護盾`).toBeFalsy();

@@ -1,4 +1,5 @@
 // 關卡、戰鬥與劇情資料（資料驅動）。進度與學習難度分開：tier 只決定題型。
+import { ALL_SYMBOLS } from './symbols';
 export type Tier = 1 | 2 | 3;
 
 export interface LevelDef {
@@ -16,10 +17,13 @@ export const LEVELS: Record<string, LevelDef> = {
   g: { id: 'g', symbol: 'ㄍㄎㄏ', name: '舌根音島（回音森林）', open: true, mapId: 'gh', partner: '夥伴' },
   x: { id: 'x', symbol: 'ㄐㄑㄒ', name: '舌面音島（企鵝冰原）', open: true, mapId: 'xh', partner: '夥伴' },
   z: { id: 'z', symbol: 'ㄓㄔㄕㄖ', name: '翹舌音島（火山沙漠）', open: true, mapId: 'zh', partner: '夥伴' },
+  s: { id: 's', symbol: 'ㄗㄘㄙ', name: '舌尖前音島（天空島）', open: true, mapId: 'sh', partner: '夥伴' },
 };
 
 export interface RewardDef {
   flag: string;
+  /** 打贏時一併設的其他旗標（例如小王打倒後同時解開 ㄙ 的學習進度） */
+  flags?: string[];
   exp: number;
   abilities?: string[];
   /** 打贏就得到的金幣 */
@@ -189,6 +193,42 @@ export const BATTLES: Record<string, BattleDef> = {
   zc2m: wild('zc2m', 'cactusman', 3, ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], ['ㄐ', 'ㄒ', 'ㄑ'], 'm:zc2:mon1'),
   zc2m2: wild('zc2m2', 'mummy', 3, ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], ['ㄐ', 'ㄒ', 'ㄑ'], 'm:zc2:mon2'),
   zc2m3: wild('zc2m3', 'cactusman', 3, ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], ['ㄐ', 'ㄒ', 'ㄑ'], 'm:zc2:mon3'),
+  // 第 6 座島（最終關）：舌尖前音島（ㄗㄘㄙ、天空島）。一進島先練習 ㄗㄘ，ㄙ 要打倒小王才出現（地圖與機關之後才做）
+  spractice: {
+    id: 'spractice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄗ', 'ㄘ'], review: [], guided: true,
+    intro: ['雲上也有稻草布偶，先來練習！', '這一次要認的是「ㄗ」和「ㄘ」。舌尖輕輕抵在牙齒後面，不用翹起來！'],
+    reward: {
+      flag: 'spracticeDone', exp: 8, coins: 14, abilities: ['zip', 'spike'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄗ」舌尖抵住牙齒再放開，夥伴學會了拉鍊！', '「ㄘ」舌尖抵住牙齒，用力吐一口氣，夥伴學會了刺球！', '星空島上還有守衛在等著你，往前走走看吧！'],
+    },
+  },
+  s1: wild('s1', 'cloudy', 1, ['ㄗ', 'ㄘ'], ['ㄓ', 'ㄔ'], 'm:s:m1'),
+  s2: { ...wild('s2', 'sprite', 2, ['ㄗ', 'ㄘ'], ['ㄕ', 'ㄖ'], 'm:s:m2'), intro: ['星星小精靈擋住了路！', '牠會考「ㄗ」和「ㄘ」。'] },
+  s3: { ...wild('s3', 'comet', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:s:m3'), intro: ['彗星怪飛過來了！', '牠會考「ㄗ」和「ㄘ」。'] },
+  boss_s1: {
+    id: 'boss_s1', enemy: 'starguard', penalty: true, shield: true, phases: 2, tier: 3, focus: ['ㄗ', 'ㄘ', 'ㄓ', 'ㄔ'], review: ['ㄕ', 'ㄖ', 'ㄐ', 'ㄑ', 'ㄒ'],
+    intro: ['站住！我是星門守衛小王，沒有通過考驗，不能進星塔！', '一共兩個小回合，累了隨時都可以離開。'],
+    reward: {
+      flag: 'boss_s1', flags: ['sPractice'], exp: 30, coins: 130, abilities: ['whistle'], items: { potion: 2, berry: 2 },
+      story: ['小王點點頭，讓開了星塔的大門！', '「ㄙ」舌尖靠在牙齒中間，氣從縫裡漏出來，夥伴學會了口哨風！', '星塔裡的風車等著你，用新招式吹吹看吧！'],
+    },
+  },
+  boss_s: {
+    id: 'boss_s', enemy: 'skydragon', penalty: true, shield: true, phases: 3, tier: 3, focus: [...ALL_SYMBOLS], review: [...ALL_SYMBOLS],
+    intro: ['轟隆隆～星空龍王擋在星塔的最高處！', '這是畢業考，所有學過的注音都要用上！一共三個小回合。'],
+    reward: {
+      flag: 'boss_s', exp: 36, coins: 160, items: { potion: 2, berry: 2 },
+      story: ['星空龍王服氣地點點頭，天空亮起了滿天星星！', '你把所有的注音都學會了，真棒！'],
+    },
+  },
+  // 星塔（天空島的小迷宮）：怪物旗標獨立，不與島上的 s1～s3 共用
+  sc1m: wild('sc1m', 'cloudy', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc1:mon1'),
+  sc1m2: wild('sc1m2', 'cloudy', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc1:mon2'),
+  sc1m3: wild('sc1m3', 'cloudy', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc1:mon3'),
+  sc1m4: wild('sc1m4', 'cloudy', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc1:mon4'),
+  sc2m: wild('sc2m', 'sprite', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon1'),
+  sc2m2: wild('sc2m2', 'comet', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon2'),
+  sc2m3: wild('sc2m3', 'sprite', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon3'),
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),

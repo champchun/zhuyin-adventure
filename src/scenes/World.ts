@@ -1018,6 +1018,7 @@ export class WorldScene extends Phaser.Scene {
     const rw = def.reward;
     const claimed = flag(`claimed:${def.id}`);
     setFlag(rw.flag);
+    for (const f of rw.flags ?? []) setFlag(f);
     if (!flag(`m:${this.map.id}:${o.def.id}`)) setFlag(`m:${this.map.id}:${o.def.id}`);
     setFlag(`claimed:${def.id}`);
     const me = G.save.party[G.save.active] ?? G.save.party[0];

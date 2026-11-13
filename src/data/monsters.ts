@@ -4,7 +4,7 @@ export interface MoveDef {
   /** 魔法攻擊（聽聲音）時顯示的名字 */
   magicName: string;
   power: number;
-  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun';
+  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
   /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
@@ -76,22 +76,25 @@ export const MOVES: Record<string, MoveDef> = {
   gulp: { id: 'gulp', magicName: '大口吃魔法', symbol: 'ㄔ', name: '大口吃', power: 7, fx: 'gulp', needAbility: 'gulp', desc: '「ㄔ」舌頭翹起來，用力吐出一口氣，張大嘴巴一口吞下去，能吃掉擋路的仙人掌。和「ㄑ」不一樣，舌頭要翹起來喔！' },
   roar: { id: 'roar', magicName: '獅子吼魔法', symbol: 'ㄕ', name: '獅子吼', power: 8, fx: 'roar', needAbility: 'roar', desc: '「ㄕ」舌頭翹起來，氣從舌頭和上顎中間「嘶」地擠出來，像獅子大吼，能震開沙漠裡的大石頭。和「ㄒ」不一樣，舌頭要翹起來喔！' },
   sun: { id: 'sun', magicName: '烈日魔法', symbol: 'ㄖ', name: '烈日', power: 8, fx: 'sun', needAbility: 'sun', desc: '「ㄖ」舌頭翹起來，聲音震動著發出來，像太陽變得好熱，能曬乾流沙。舌頭翹起來是翹舌音的特色喔！' },
+  zip: { id: 'zip', magicName: '拉鍊魔法', symbol: 'ㄗ', name: '拉鍊', power: 8, fx: 'zip', needAbility: 'zip', desc: '「ㄗ」舌尖輕輕抵住上下牙齒的後面，再放開，像把拉鍊「刷」地拉開，能拉開雲裡的封印。舌尖在牙齒附近，不是翹起來，和翹舌音的「ㄓ」不一樣喔！' },
+  spike: { id: 'spike', magicName: '刺球魔法', symbol: 'ㄘ', name: '刺球', power: 8, fx: 'spike', needAbility: 'spike', desc: '「ㄘ」舌尖抵住上下牙齒附近，用力吐出一口氣，像射出一顆刺球，能把擋路的雲球戳破。舌尖在牙齒附近，不用翹起來，和翹舌音的「ㄔ」不一樣喔！' },
+  whistle: { id: 'whistle', magicName: '口哨風魔法', symbol: 'ㄙ', name: '口哨風', power: 9, fx: 'whistle', needAbility: 'whistle', desc: '「ㄙ」舌尖靠在上下牙齒中間，氣從牙齒的縫裡「絲～」地漏出來，像吹口哨，能吹動星塔的風。舌尖在牙齒附近，舌頭不翹起來，和翹舌音的「ㄕ」不一樣喔！' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun], color: '#f59a3c',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle], color: '#f59a3c',
     desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun], color: '#4fb3a4',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle], color: '#4fb3a4',
     desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun], color: '#ff8a3a',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle], color: '#ff8a3a',
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
@@ -128,5 +131,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
   cactusman: { id: 'cactusman', name: '仙人掌怪', sprite: 'en_cactusman', hp: 32, atk: 5, scale: 2.25, echo: true },
   mummy: { id: 'mummy', name: '木乃伊', sprite: 'en_mummy', hp: 34, atk: 6, scale: 2.25, echo: true },
   lavabeast: { id: 'lavabeast', name: '熔岩獸', sprite: 'en_lavabeast', hp: 42, atk: 7, scale: 2.75 },
+  cloudy: { id: 'cloudy', name: '雲朵怪', sprite: 'en_cloudy', hp: 36, atk: 6, scale: 2.25 },
+  sprite: { id: 'sprite', name: '星星小精靈', sprite: 'en_sprite', hp: 38, atk: 6, scale: 2.25, echo: true },
+  comet: { id: 'comet', name: '彗星怪', sprite: 'en_comet', hp: 40, atk: 7, scale: 2.25, echo: true },
+  starguard: { id: 'starguard', name: '星門守衛小王', sprite: 'en_starguard', hp: 46, atk: 7, scale: 2.75 },
+  skydragon: { id: 'skydragon', name: '星空龍王', sprite: 'en_skydragon', hp: 52, atk: 8, scale: 2.75 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };
