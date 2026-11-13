@@ -8,6 +8,8 @@ const cfgX1: FloorConfig = { seed: 37, lock: true, closet: true, chests: 3, mons
 const cfgX2: FloorConfig = { seed: 41, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } };
 const cfgZ1: FloorConfig = { seed: 53, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } };
 const cfgZ2: FloorConfig = { seed: 59, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } };
+const cfgS1: FloorConfig = { seed: 67, lock: true, closet: true, chests: 3, monsters: { ai: 'patrol', count: 4 } };
+const cfgS2: FloorConfig = { seed: 71, barrier: true, boss: true, closet: true, chests: 3, monsters: { ai: 'chase', count: 3 } };
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 /** 從 (sx,sy) 出發能走到的地板（不看物件） */
@@ -25,7 +27,7 @@ function flood(rows: string[], sx: number, sy: number): Set<string> {
   return seen;
 }
 
-describe.each([['一樓', cfg1], ['二樓', cfg2], ['冰晶一樓', cfgX1], ['冰晶二樓', cfgX2], ['熔岩一樓', cfgZ1], ['熔岩二樓', cfgZ2]] as const)('generateFloor：%s', (_n, cfg) => {
+describe.each([['一樓', cfg1], ['二樓', cfg2], ['冰晶一樓', cfgX1], ['冰晶二樓', cfgX2], ['熔岩一樓', cfgZ1], ['熔岩二樓', cfgZ2], ['星塔一樓', cfgS1], ['星塔二樓', cfgS2]] as const)('generateFloor：%s', (_n, cfg) => {
   const f = generateFloor(cfg);
   it('大小是 31×22、每列長度一致、只有 S 與 :', () => {
     expect(f.w).toBe(31);

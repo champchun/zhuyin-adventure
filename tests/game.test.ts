@@ -67,6 +67,7 @@ describe('maps', () => {
       const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice', 'chest_slide', 'chest_bridge1', 'chest_bridge2', 'chest_cactus', 'chest_stone', 'chest_web1', 'chest_web2', 'chest_zip', 'chest_spike', 'chest_r1', 'chest_r2']);
       for (const o of m.objects) {
         if (['rock', 'woodgate', 'leaves', 'fog'].includes(o.kind) || sealed.has(o.id)) continue;
+        if (m.id === 's' && o.id === 'cave') continue; // 星塔入口在小王後面（小王擋路，打倒才出現），由 tests/skymap.test.ts 驗證
         expect(adjReach(seen, o), `${m.id}/${o.id} 無法抵達`).toBe(true);
       }
     });

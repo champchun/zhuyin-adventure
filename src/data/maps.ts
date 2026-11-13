@@ -910,6 +910,7 @@ MAPS.s = {
     { id: 'sign2', kind: 'sign', x: 8, y: 8, text: ['前面是星塔的方向。', '一位星門守衛擋在雲牆的缺口，要通過他的考驗才能往前走。'] },
     // 小王：守在雲牆唯一的缺口，西岸入口到這裡不需要任何招式；打倒後北邊 (10,3) 會出現星塔入口 cave
     { id: 'guard', kind: 'monster', x: 10, y: 6, battle: 'boss_s1', hideIf: 'boss_s1' },
+    { id: 'cave', kind: 'stairs', x: 10, y: 3, to: { map: 'sc1', x: 2, y: 1 }, label: '星塔', showIf: 'boss_s1' },
     // 彩虹橋：缺口那一格（河中間）。ㄙ 要打倒小王才學到，所以對岸的寶箱是小王之後才拿得到
     { id: 'rainbow', kind: 'gimmick', x: 19, y: 10, sprite: 'rainbow_gap', sprite2: 'rainbow_bridge', ability: 'whistle', fx: 'whistle', passable: true, lockText: ['星光河上缺了一塊，過不去。', '要是有一陣風，把彩虹吹出來架成橋就好了……'], hitText: ['夥伴舌尖一吹「ㄙ」，口哨風把彩虹吹了出來！', '彩虹架成了一座橋，可以走到對岸了！'] },
     { id: 'chest_r1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
@@ -917,13 +918,13 @@ MAPS.s = {
   ],
 };
 
-// ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
-type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2';
+// ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc、星塔 sc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2';
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
-  const theme: 'forest' | 'ice' | 'desert' = mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : 'forest';
-  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z' }[theme];
+  const theme: 'forest' | 'ice' | 'desert' | 'sky' = mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
+  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s' }[theme];
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
@@ -937,9 +938,16 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
       case 'barrier': objs.push({
         id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
         lockText: theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
-          : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
+          : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……']
+          : theme === 'sky' ? ['一道厚厚的雲牆擋住了路，牆上閃著星門的微光。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
-      case 'switch': objs.push(theme === 'desert' ? {
+      case 'switch': objs.push(theme === 'sky' ? {
+        // 開關用 whistle（小王 boss_s1 的獎勵）；星塔入口 cave 要打倒小王才出現，所以進得了星塔的人一定已經會 whistle
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'cloud_block', ability: 'whistle', fx: 'whistle', vanish: true,
+        lockText: ['一團厚厚的雲，卡在星門機關的凹槽上。', '用口哨風「ㄙ」吹一口氣，也許能把它吹走……'],
+        hitText: ['夥伴舌尖一吹「ㄙ」，口哨風把雲團吹走了！', '遠處傳來「轟隆」一聲，好像有一道雲牆打開了！'],
+        doneText: ['雲團已經被吹走了。'],
+      } : theme === 'desert' ? {
         // 開關要在打倒頭目之前就解得開，所以用練習戰學到的 web（roar 是打倒 boss_z 才拿到）
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'tree_hole', sprite2: 'tree_hole_open', ability: 'web', fx: 'web',
         lockText: ['岩壁上有個小洞，洞裡藏著一根拉桿，手伸不進去。', '用蜘蛛「ㄓ」吐出蜘蛛絲，也許能勾住它……'],
@@ -1004,6 +1012,19 @@ MAPS.zc2 = {
   id: 'zc2', name: '熔岩洞窟 2F', w: MAZES.zc2.w, h: MAZES.zc2.h, tiles: desertRows(MAZES.zc2.rows), theme: 'valley', group: 'zc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('zc2', { map: 'zc1', x: MAZES.zc1.downArrive!.x, y: MAZES.zc1.downArrive!.y }, undefined),
+};
+
+// 星塔：地板用雲地 A、牆用雲牆 Z；出口回星空島星塔入口 cave (10,3) 的下方一格
+const skyRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'A').replace(/S/g, 'Z'));
+MAPS.sc1 = {
+  id: 'sc1', name: '星塔 1F', w: MAZES.sc1.w, h: MAZES.sc1.h, tiles: skyRows(MAZES.sc1.rows), theme: 'valley', group: 'sc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('sc1', { map: 's', x: 10, y: 4 }, { map: 'sc2', x: 2, y: 1 }),
+};
+MAPS.sc2 = {
+  id: 'sc2', name: '星塔 2F', w: MAZES.sc2.w, h: MAZES.sc2.h, tiles: skyRows(MAZES.sc2.rows), theme: 'valley', group: 'sc',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('sc2', { map: 'sc1', x: MAZES.sc1.downArrive!.x, y: MAZES.sc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {

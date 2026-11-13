@@ -227,14 +227,14 @@ describe('星空島 s', () => {
     const guard = s.objects.find((o) => o.id === 'guard')!;
     const noGuardPass = floodFrom(s, {}, (o) => o.id === 'guard');
     expect(adj(noGuardPass, guard)).toBe(true);
-    // 小王擋著：北邊（cave 預留位置）走不到
+    // 小王擋著：北邊（星塔入口 cave）走不到
     expect(noGuardPass.has('10,3')).toBe(false);
     expect(noGuardPass.has('10,7')).toBe(true);
     // 打倒小王後：走得到
     const after = floodFrom(s, { boss_s1: true }, () => false);
-    expect(after.has('10,3')).toBe(true);
+    expect(after.has('10,4')).toBe(true); // 星塔入口 (10,3) 本身是樓梯物件，走到它下方一格就能進去
     expect(walk(s, 10, 3)).toBe(true);
-    expect(s.objects.some((o) => o.x === 10 && o.y === 3)).toBe(false);
+    expect(s.objects.filter((o) => o.x === 10 && o.y === 3).map((o) => o.id)).toEqual(['cave']);
     expect(s.objects.some((o) => o.x === 10 && o.y === 4)).toBe(false);
     expect(walk(s, 10, 4)).toBe(true);
   });
@@ -260,5 +260,84 @@ describe('星空島 s', () => {
     expect(s.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['sh']);
     const save = { flags: { 'visited:sh': true } as Record<string, boolean>, homeMap: 'sh' as string | undefined };
     expect(defeatSpot(save.homeMap)).toEqual({ map: 'sh', x: sh.respawn.x, y: sh.respawn.y });
+  });
+});
+
+describe('星塔（產生的迷宮）：用 reachReport 驗證一定解得開，且沒有死結', () => {
+  // 打倒小王 boss_s1 之後的能力（含 whistle）；boss_s 沒有能力獎勵，所以不混進任何頭目獎勵
+  const afterGuard = ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle'];
+  const beforeGuard = afterGuard.filter((a) => a !== 'whistle');
+  const start = { map: 'sc1', x: 2, y: 1 };
+  const sc1 = MAPS.sc1, sc2 = MAPS.sc2, s = MAPS.s;
+  it('兩層一起走：用小王之後的能力，沒有走不到的地板與物件（含最終頭目），鑰匙剛好用完', () => {
+    const r = reachReport([sc1, sc2], start, afterGuard);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.unreachableObjects).not.toContain('sc2/boss');
+    expect(r.keysLeft).toBe(0);
+  });
+  it('沒有 whistle：二樓石牆後（含頭目）走不到；沒有 blast：隱藏小密室走不到', () => {
+    const noWhistle = reachReport([sc1, sc2], start, beforeGuard);
+    expect(noWhistle.unreachableFloor.length).toBeGreaterThan(0);
+    // reachReport 不把怪物與 showIf 物件算進 unreachableObjects，所以用頭目與頭目寶箱所在的格子判斷
+    const bossAt = sc2.objects.find((o) => o.id === 'boss')!, chestAt = sc2.objects.find((o) => o.id === 'chest_boss')!;
+    expect(noWhistle.unreachableFloor).toContain(`sc2:${bossAt.x},${bossAt.y}`);
+    expect(noWhistle.unreachableFloor).toContain(`sc2:${chestAt.x},${chestAt.y}`);
+    expect(reachReport([sc1, sc2], start, afterGuard.filter((a) => a !== 'blast')).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('守門（避免第五關那種死結）：whistle 只來自 boss_s1；boss_s 沒有能力獎勵；cave 要打倒小王才出現', () => {
+    expect(BATTLES.boss_s.reward.abilities ?? []).toEqual([]);
+    expect(BATTLES.boss_s1.reward.abilities).toContain('whistle');
+    // 通往 boss_s 之路需要 whistle，而它在 boss_s1（含）之前就取得
+    const bossAt = sc2.objects.find((o) => o.id === 'boss')!;
+    const bossCell = `sc2:${bossAt.x},${bossAt.y}`;
+    expect(reachReport([sc1, sc2], start, beforeGuard).unreachableFloor).toContain(bossCell);
+    expect(reachReport([sc1, sc2], start, afterGuard).unreachableFloor).not.toContain(bossCell);
+    // 沒有 boss_s1 就沒有 cave → 進不了星塔（不靠 boss_s 的任何東西）
+    const cave = s.objects.find((o) => o.id === 'cave')!;
+    expect(cave.showIf).toBe('boss_s1');
+    expect(BATTLES.boss_s1.reward.flag).toBe('boss_s1');
+    for (const m of Object.values(MAPS)) {
+      for (const o of m.objects) if (o.to?.map === 'sc1' && m.id !== 'sc2') expect(o.showIf, `${m.id}/${o.id}`).toBe('boss_s1');
+    }
+  });
+  it('星空島 cave：通 sc1 起點，星塔出口落在它下方一格（可走、沒有物件）', () => {
+    const cave = s.objects.find((o) => o.id === 'cave')!;
+    expect(cave).toMatchObject({ kind: 'stairs', x: 10, y: 3, label: '星塔', showIf: 'boss_s1' });
+    expect(cave.to).toEqual({ map: 'sc1', x: 2, y: 1 });
+    const exit = sc1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit).toEqual({ map: 's', x: 10, y: 4 });
+    expect(walk(s, exit.x, exit.y)).toBe(true);
+    expect(s.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+  });
+  it('尺寸、地形（雲地 A、雲牆 Z）、同一個 group、物件與頭目設定', () => {
+    for (const m of [sc1, sc2]) {
+      expect(m.w).toBe(31); expect(m.h).toBe(22); expect(m.group).toBe('sc');
+      const t = m.tiles.join('');
+      expect(t).toMatch(/A/); expect(t).toMatch(/Z/); expect(t).not.toMatch(/[:S]/);
+    }
+    const has = (m: typeof sc1, id: string) => m.objects.some((o) => o.id === id);
+    expect(has(sc1, 'door')).toBe(true);
+    expect(has(sc1, 'chest_key')).toBe(true);
+    for (const id of ['barrier1', 'switch1', 'boss', 'chest_boss']) expect(has(sc2, id), id).toBe(true);
+    const sw = sc2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw).toMatchObject({ ability: 'whistle', fx: 'whistle' });
+    const boss = sc2.objects.find((o) => o.id === 'boss')!;
+    expect(boss.battle).toBe('boss_s');
+    expect(boss.hideIf).toBe('boss_s');
+    expect(sc2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_s');
+    expect(sc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('sc2');
+    expect(sc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('sc1');
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在且數量對得上，用天空怪', () => {
+    const names: string[] = [];
+    for (const m of [sc1, sc2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon[0-9]+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+      expect(BATTLES[o.battle!].reward.flag).toBe(`m:${m.id}:${o.id}`);
+      expect(['cloudy', 'sprite', 'comet']).toContain(BATTLES[o.battle!].enemy);
+      names.push(o.battle!);
+    }
+    expect(names.sort()).toEqual(['sc1m', 'sc1m2', 'sc1m3', 'sc1m4', 'sc2m', 'sc2m2', 'sc2m3']);
   });
 });
