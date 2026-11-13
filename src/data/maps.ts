@@ -33,7 +33,7 @@ export interface MapObj {
   sprite?: string;
   /** gimmick（用招式啟動的機關）：需要的能力、特效、啟動前後的圖與說明 */
   ability?: string;
-  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun';
+  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle';
   sprite2?: string;
   /** 啟動後這個物件就消失（例如泡泡球、小水壩） */
   vanish?: boolean;
@@ -47,6 +47,8 @@ export interface MapObj {
   patrol?: { x: number; y: number }[];
   /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
   dockTo?: { map: string; x: number; y: number };
+  /** dock：交通工具的種類。有設就不是船（熱氣球、雲朵小船），碼頭旁不必有水；沒設就是一般的船碼頭 */
+  vehicle?: 'balloon' | 'cloudboat';
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
   /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
@@ -243,6 +245,11 @@ export const MAPS: Record<string, MapDef> = {
       // 打倒冰晶女王後出現：村子東邊的沙漠小路，通往綠洲鎮（和 zh 的 road_home 互為回程）。選在池塘上方的空地：不壓既有物件與抵達格
       { id: 'desert_road', kind: 'stairs', x: 26, y: 6, sprite: 'desert_road', to: { map: 'zh', x: 2, y: 9 }, label: '沙漠小路', showIf: 'boss_x' },
       { id: 'desert_sign', kind: 'sign', x: 25, y: 8, showIf: 'boss_x', text: ['沙漠小路：通往綠洲鎮。', '沿著小路走，就能到達綠洲鎮，那裡是火山沙漠的入口。', '小路是雙向的，綠洲鎮那邊也有一條路走回村子。'] },
+      // 打倒熔岩獸後（學會 ㄖ）：村子東南角的熱氣球。沒氣的氣球（balloon_empty）用 sun 烤熱後消失，同一格換成可以搭乘的熱氣球（balloon，兩者的 showIf 互斥）。
+      // 選在池塘下方的空地：不壓既有物件與抵達格；從雲上小鎮飛回來落在 (25,16)，告示牌在 (24,16)
+      { id: 'balloon_empty', kind: 'gimmick', x: 25, y: 17, sprite: 'balloon_empty', ability: 'sun', fx: 'sun', vanish: true, showIf: 'boss_z', lockText: ['一顆沒有氣的大氣球，軟軟地躺在地上。', '要是有大太陽，把裡面的空氣烤熱，它就會飛起來……'], hitText: ['夥伴舌頭一翹「ㄖ」，召來了大太陽，把氣球烤得熱熱的！', '氣球慢慢鼓起來了，可以搭乘了！'] },
+      { id: 'balloon', kind: 'dock', vehicle: 'balloon', x: 25, y: 17, sprite: 'balloon', showIf: 'g:village:balloon_empty', dockTo: { map: 'sh', x: 4, y: 16 } },
+      { id: 'balloon_sign', kind: 'sign', x: 24, y: 16, showIf: 'boss_z', text: ['熱氣球：通往雲上小鎮。', '氣球沒有氣的時候飛不起來，要用太陽把它烤熱。', '烤熱了就能搭乘，雲上小鎮那邊也有一顆氣球可以飛回來。'] },
       ...villageGates,
     ],
   },
@@ -800,6 +807,113 @@ MAPS.z = {
     { id: 'pit', kind: 'gimmick', x: 13, y: 10, sprite: 'sand_pit', sprite2: 'web_bridge', ability: 'web', fx: 'web', passable: true, lockText: ['一道熔岩河把沙漠切成兩半，只有一個沙坑可以走。', '沙坑太深了，過不去。要是能織一張網橋就好了……'], hitText: ['夥伴舌頭一翹「ㄓ」，吐出一條條蜘蛛絲！', '蜘蛛絲織成了一座網橋，可以走到對岸了！'], }, // 網橋織好後可以走過去，點不到它，所以不需要 doneText
     { id: 'chest_web1', kind: 'chest', x: 16, y: 10, item: 'potion' },
     { id: 'chest_web2', kind: 'chest', x: 24, y: 4, item: 'bigpotion' },
+  ],
+};
+
+// ───────── 雲上小鎮：舌尖前音這一關的主島（第六關，天空島）─────────
+// 沒有海，也沒有一般碼頭：從起始村搭熱氣球飛上來，落在西南角的停機坪（balloon_back）；東邊的雲朵小船（boat_s）通往星空島。
+// 中間是星光水池；旅館在北邊偏左、商店在北邊偏右，兩間雲屋散落在西邊與東南。
+const shGrid = (() => {
+  const g = new Grid(28, 20, 'A').border('Z');
+  g.rect('J', 6, 2, 4, 1).rect('U', 6, 3, 4, 1).set(7, 3, 'D'); // 旅館：門在 (7,3)
+  g.rect('y', 18, 2, 4, 1).rect('t', 18, 3, 4, 1).set(19, 3, 'D'); // 商店：門在 (19,3)
+  g.rect('Q', 3, 8, 4, 1).rect('R', 3, 9, 4, 1).rect('Q', 21, 15, 4, 1).rect('R', 21, 16, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('N', 12, 8, 4, 4).many('*', [[11, 7], [16, 7], [11, 12], [16, 12]]); // 星光水池與星形裝飾
+  g.many('F', [[9, 14], [10, 15], [20, 6], [22, 5], [5, 12], [24, 12]]); // 霧氣
+  return g;
+})();
+MAPS.sh = {
+  id: 'sh', name: '雲上小鎮', w: 28, h: 20, tiles: shGrid.rows(), theme: 'island',
+  start: { x: 4, y: 16 }, respawn: { x: 4, y: 15 },
+  hub: { dock: { x: 4, y: 16 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 7, y: 3, to: { map: 'sh_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 19, y: 3, to: { map: 'sh_shop', x: 4, y: 6 } },
+    // 西南角停機坪：熱氣球飛回起始村，起始村的 balloon 飛來這裡 (4,16)
+    { id: 'balloon_back', kind: 'dock', vehicle: 'balloon', x: 3, y: 16, sprite: 'balloon', dockTo: { map: 'village', x: 25, y: 16 } },
+    { id: 'platform_sign', kind: 'sign', x: 4, y: 17, text: ['停機坪：搭熱氣球回起始村。', '熱氣球是雙向的，起始村那邊也有一顆可以飛上來。'] },
+    // 東邊：雲朵小船通往星空島，星空島的 boat_back 開回這裡 (24,10)
+    { id: 'boat_s', kind: 'dock', vehicle: 'cloudboat', x: 25, y: 10, sprite: 'cloud_boat', dockTo: { map: 's', x: 3, y: 17 } },
+    { id: 'boat_sign', kind: 'sign', x: 24, y: 11, text: ['雲朵小船：通往星空島。', '船是雙向的，星空島那邊也有一艘可以開回來。'] },
+    { id: 'granny', kind: 'granny', x: 11, y: 14, label: '星星婆婆' }, // 星光水池西南邊
+    { id: 'giver', kind: 'giver', x: 17, y: 5, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'cloudkid', kind: 'npc', x: 8, y: 11, sprite: 'npc_kid', label: '雲朵小弟',
+      talk: [
+        { not: 'sEntered', lines: ['歡迎來到雲上小鎮！', '這裡在天空上，腳下都是軟軟的雲。', '東邊有一艘雲朵小船，坐上去就是星空島。島上有稻草布偶，先去練習看看吧！'] },
+        { not: 'spracticeDone', lines: ['島上的稻草布偶，可以讓夥伴練習新招式。', '練習完，路上的拉鍊和雲團，就有辦法對付了。'] },
+        { not: 'boss_s1', lines: ['星空島的路上，有一位很嚴格的守衛叫小王。', '記得先在旅館睡一覺，再去找他。'] },
+        { lines: ['小王讓你過去了！太棒了！', '聽說星塔就在那邊，最高的地方住著星空龍王。'] },
+      ],
+    },
+    {
+      id: 'stargazer', kind: 'npc', x: 22, y: 8, sprite: 'npc_elder', label: '看星星的阿姨',
+      talk: [
+        { not: 'spracticeDone', lines: ['夜裡的天空島，星星特別亮。', '星空島上有一道拉得緊緊的雲幕，還有一團團刺刺的雲，後面好像藏著寶箱。'] },
+        { not: 'boss_s1', lines: ['島中間有一條星光河，河上缺了一塊，好像在等一陣風來補。', '等你打倒守衛、學會新招式，再回來看看。'] },
+        { not: 'boss_s', lines: ['河上的彩虹橋，搭起來了嗎？', '星塔裡有風車，用新學會的招式吹吹看。'] },
+        { lines: ['你已經把所有的注音都學會了！', '天空島的星星，都在為你閃耀。'] },
+      ],
+    },
+    {
+      id: 'cloudgirl', kind: 'npc', x: 16, y: 15, sprite: 'npc_girl', label: '雲朵妹妹',
+      talk: [
+        { not: 'boss_s', lines: ['旅館住一晚 25 金幣，累了就來睡一覺。', '夥伴的體力和魔力，睡醒就都回來了。'] },
+        { lines: ['打倒龍王的人，就是你！', '雲上小鎮永遠歡迎你。'] },
+      ],
+    },
+  ],
+};
+MAPS.sh_inn = {
+  id: 'sh_inn', name: '雲上小鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'sh', x: 7, y: 4 } },
+  ],
+};
+MAPS.sh_shop = {
+  id: 'sh_shop', name: '雲上小鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'sh', x: 19, y: 4 } },
+  ],
+};
+
+// ───────── ㄗㄘㄙ：星空島（天空島）─────────
+// 一條南北向的星光河（x=19）把島切成兩半：西岸是入口、機關與守衛，東岸要先在河中間唯一的缺口搭起彩虹橋才過得去（ㄙ，打倒小王後才學到）。
+// 西岸再被一道雲牆（y=6）切成南北兩塊，唯一的缺口 (10,6) 是小王守著的路；打倒小王後，北邊 (10,3) 出現星塔入口 cave（Task 4 才加）。
+const skyIsle = (() => {
+  const g = new Grid(28, 20, 'A').border('Z');
+  g.rect('N', 19, 1, 1, 18).set(19, 10, 'A'); // 星光河與缺口那一格
+  g.rect('Z', 1, 6, 18, 1).set(10, 6, 'A'); // 雲牆與小王站的缺口
+  g.many('Z', [[5, 11], [7, 11], [6, 10], [11, 17], [13, 17], [12, 18]]); // 圍住兩個寶箱：拉鍊雲幕與雲團後面的寶箱
+  g.many('*', [[3, 3], [15, 3], [22, 2], [25, 14], [22, 16]]).many('F', [[14, 12], [8, 13], [21, 7], [24, 10]]);
+  return g;
+})();
+MAPS.s = {
+  id: 's', name: '星空島（ㄗㄘㄙ）', w: 28, h: 20, tiles: skyIsle.rows(), theme: 'meadow',
+  start: { x: 3, y: 17 }, respawn: { x: 3, y: 17 },
+  objects: [
+    { id: 'boat_back', kind: 'dock', vehicle: 'cloudboat', x: 2, y: 17, sprite: 'cloud_boat', dockTo: { map: 'sh', x: 24, y: 10 } }, // 回雲上小鎮的雲朵小船
+    { id: 'sign1', kind: 'sign', x: 3, y: 15, text: ['星空島。', '這座島的注音，舌尖都要輕輕碰到牙齒：ㄗ ㄘ，還有一個要等你自己發現。', '島上有雲幕、雲團和一條星光河，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 5, y: 17, battle: 'spractice', hideIf: 'spracticeDone' },
+    { id: 'chest_1', kind: 'chest', x: 8, y: 17, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 9, y: 14, battle: 's1', ai: 'patrol', patrol: [{ x: 10, y: 14 }, { x: 11, y: 14 }] },
+    { id: 'zip_curtain', kind: 'gimmick', x: 6, y: 12, sprite: 'zip_curtain', ability: 'zip', fx: 'zip', vanish: true, lockText: ['一道拉得緊緊的雲幕，把後面的寶箱遮住了。', '舌尖抵住牙齒再放開，像拉開拉鍊一樣，也許能拉開它……'], hitText: ['夥伴舌尖一放「ㄗ」，雲幕像拉鍊一樣被拉開了！', '後面露出了一個寶箱！'] },
+    { id: 'chest_zip', kind: 'chest', x: 6, y: 11, item: 'berry' },
+    { id: 'm2', kind: 'monster', x: 14, y: 9, battle: 's2', ai: 'patrol', patrol: [{ x: 15, y: 9 }, { x: 16, y: 9 }] },
+    { id: 'm3', kind: 'monster', x: 5, y: 8, battle: 's3', showIf: 'spracticeDone', ai: 'patrol', patrol: [{ x: 6, y: 8 }, { x: 7, y: 8 }] },
+    { id: 'cloud_block', kind: 'gimmick', x: 12, y: 16, sprite: 'cloud_block', ability: 'spike', fx: 'spike', vanish: true, lockText: ['一團刺刺的雲，擋住了後面的寶箱。', '舌尖抵住牙齒，用力吐一口氣，也許能把它吹散……'], hitText: ['夥伴舌尖一吐「ㄘ」，刺球飛出去，把雲團打散了！', '後面露出了一個寶箱！'] },
+    { id: 'chest_spike', kind: 'chest', x: 12, y: 17, item: 'potion' },
+    { id: 'sign2', kind: 'sign', x: 8, y: 8, text: ['前面是星塔的方向。', '一位星門守衛擋在雲牆的缺口，要通過他的考驗才能往前走。'] },
+    // 小王：守在雲牆唯一的缺口，西岸入口到這裡不需要任何招式；打倒後北邊 (10,3) 會出現星塔入口 cave
+    { id: 'guard', kind: 'monster', x: 10, y: 6, battle: 'boss_s1', hideIf: 'boss_s1' },
+    // 彩虹橋：缺口那一格（河中間）。ㄙ 要打倒小王才學到，所以對岸的寶箱是小王之後才拿得到
+    { id: 'rainbow', kind: 'gimmick', x: 19, y: 10, sprite: 'rainbow_gap', sprite2: 'rainbow_bridge', ability: 'whistle', fx: 'whistle', passable: true, lockText: ['星光河上缺了一塊，過不去。', '要是有一陣風，把彩虹吹出來架成橋就好了……'], hitText: ['夥伴舌尖一吹「ㄙ」，口哨風把彩虹吹了出來！', '彩虹架成了一座橋，可以走到對岸了！'] },
+    { id: 'chest_r1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
+    { id: 'chest_r2', kind: 'chest', x: 24, y: 5, item: 'berry' },
   ],
 };
 

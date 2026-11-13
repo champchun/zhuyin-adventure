@@ -139,7 +139,7 @@ describe('第四關的地圖', () => {
       expect(sg.text!.join('')).not.toMatch(/單向|只能/);
     }
     // 起始村的物件之間不重疊
-    const keys = v.objects.map((o) => `${o.x},${o.y}`);
+    const keys = v.objects.filter((o) => o.id !== 'balloon').map((o) => `${o.x},${o.y}`); // balloon 與沒氣的氣球同一格（showIf 互斥，見 skymap.test.ts）
     expect(new Set(keys).size).toBe(keys.length);
   });
   it('企鵝冰原：三個機關、洞窟入口練習完才出現、通往 xc1、小怪戰鬥存在', () => {

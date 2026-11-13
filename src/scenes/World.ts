@@ -134,6 +134,7 @@ export class WorldScene extends Phaser.Scene {
     if (m.id === 'g' && !flag('gEntered')) setFlag('gEntered'); // 進到回音森林：開始教 ㄍㄎ
     if (m.id === 'x' && !flag('xEntered')) setFlag('xEntered'); // 進到企鵝冰原：開始教 ㄒㄑ
     if (m.id === 'z' && !flag('zEntered')) setFlag('zEntered'); // 進到火山沙漠：開始教 ㄓㄔ
+    if (m.id === 's' && !flag('sEntered')) setFlag('sEntered'); // 進到星空島：開始教 ㄗㄘ
     markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
@@ -231,7 +232,7 @@ export class WorldScene extends Phaser.Scene {
         case 'giver': shadow(); spr = this.add.image(px + 8, py + 16, 'giver').setOrigin(0.5, 1).setDepth(depth); break;
         case 'stardoor': spr = this.add.image(px, py, starDoorOpen(G.save) ? 'star_door_open' : 'star_door').setOrigin(0).setDepth(depth); break;
         case 'statue': spr = this.add.image(px, py, 'star_statue').setOrigin(0).setDepth(depth); break;
-        case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
+        case 'dock': spr = this.add.image(px, py, def.sprite ?? 'dock').setOrigin(0).setDepth(depth); break;
         case 'stairs': spr = this.add.image(px, py, def.sprite ?? 'stairs').setOrigin(0).setDepth(depth); break;
         case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
         case 'barrier': spr = this.add.image(px, py, 'barrier').setOrigin(0).setDepth(depth); break;
@@ -562,7 +563,11 @@ export class WorldScene extends Phaser.Scene {
   private async useDock(d: MapObj) {
     const to = d.dockTo!;
     const name = MAPS[to.map].name;
-    const i = await choose(`搭船去${name}？`, '搭船不用錢。', ['出發 ⛵', '先不要']);
+    // 交通工具（vehicle）沿用碼頭：一個只通一個地方、免費，只是文字不同
+    const how = d.vehicle === 'balloon' ? { ask: `搭熱氣球去${name}？`, go: '出發 🎈', note: '搭熱氣球不用錢。' }
+      : d.vehicle === 'cloudboat' ? { ask: `搭雲朵小船去${name}？`, go: '出發 ☁️', note: '搭小船不用錢。' }
+      : { ask: `搭船去${name}？`, go: '出發 ⛵', note: '搭船不用錢。' };
+    const i = await choose(how.ask, how.note, [how.go, '先不要']);
     if (i !== 0) return;
     await this.travel(to.map, to.x, to.y);
   }
@@ -903,6 +908,30 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < 6; i++) {
         const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffb36b);
         this.tweens.add({ targets: s, y: y - 24 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'zip') {
+      audio.sfx('hint');
+      for (let i = 0; i < 8; i++) { // 由上往下像拉鍊一樣一格一格拉開
+        const s = this.add.image(x, y - 14 + i * 4, 'spark').setDepth(9999).setTint(0xffffff).setAlpha(0);
+        this.tweens.add({ targets: s, alpha: 1, x: x + (i % 2 ? 6 : -6), duration: 160, delay: i * 60, yoyo: true, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'spike') {
+      audio.sfx('blast');
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const s = this.add.image(x, y, 'spark').setDepth(9999).setTint(0xe8514a);
+        this.tweens.add({ targets: s, x: x + Math.cos(a) * 22, y: y + Math.sin(a) * 22, alpha: 0, duration: 500, onComplete: () => s.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(120, 0.003);
+    } else if (fx === 'whistle') {
+      audio.sfx('wind');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x - 10, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xffd84a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 650, delay: i * 150, onComplete: () => c.destroy() });
+      }
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 16, y + (i - 3) * 3, 'windline').setDepth(9999).setTint(0xffffff);
+        this.tweens.add({ targets: s, x: x + 20, alpha: 0, duration: 550, delay: i * 50, onComplete: () => s.destroy() });
       }
     } else {
       audio.sfx('splash');

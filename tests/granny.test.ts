@@ -6,7 +6,7 @@ import { ACC_OFFSET, accOffset } from '../src/gfx/accessory';
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 describe('星星婆婆', () => {
-  for (const id of ['dh', 'gh', 'xh', 'zh']) {
+  for (const id of ['dh', 'gh', 'xh', 'zh', 'sh']) {
     it(`${id}：有一位 id 為 granny 的婆婆，站在可走的地形上，旁邊有可走的空格`, () => {
       const m = MAPS[id];
       const gs = m.objects.filter((o) => o.kind === 'granny');

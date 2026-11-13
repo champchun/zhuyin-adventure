@@ -64,7 +64,7 @@ describe('maps', () => {
       if (m.group) return; // 迷宮樓層有鎖門、機關、裂石，由 tests/dungeon.test.ts 用模擬來驗證
       const solid = new Set(m.objects.map((o) => `${o.x},${o.y}`));
       const seen = reach(m.id, m.start, solid);
-      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice', 'chest_slide', 'chest_bridge1', 'chest_bridge2', 'chest_cactus', 'chest_stone', 'chest_web1', 'chest_web2']);
+      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice', 'chest_slide', 'chest_bridge1', 'chest_bridge2', 'chest_cactus', 'chest_stone', 'chest_web1', 'chest_web2', 'chest_zip', 'chest_spike', 'chest_r1', 'chest_r2']);
       for (const o of m.objects) {
         if (['rock', 'woodgate', 'leaves', 'fog'].includes(o.kind) || sealed.has(o.id)) continue;
         expect(adjReach(seen, o), `${m.id}/${o.id} 無法抵達`).toBe(true);
@@ -213,8 +213,7 @@ describe('怪物重生', () => {
 describe('levels', () => {
   it('已開放關卡有地圖，其餘保留為尚未開放', () => {
     for (const L of Object.values(LEVELS)) {
-      // 第六關的地圖（sh）在地圖 Task 才建，建完就移除這個例外（完成後移除）
-      if (L.open) { if (L.id !== 's') expect(MAPS[L.mapId!]).toBeDefined(); } else expect(L.mapId).toBeUndefined();
+      if (L.open) expect(MAPS[L.mapId!]).toBeDefined(); else expect(L.mapId).toBeUndefined();
     }
     expect(Object.keys(LEVELS)).toEqual(['b', 'p', 'd', 'g', 'x', 'z', 's']);
   });

@@ -147,8 +147,8 @@ describe('第五關的地圖：綠洲鎮 zh 與火山沙漠 z', () => {
       'fog_a: 10,4', 'chest_fog: 10,2', 'trail_xh: 20,10', 'trail_sign_v: 19,10', 'gate_b: 4,17', 'gate_p: 7,17'];
     const now = v.objects.map((o) => `${o.id}: ${o.x},${o.y}`);
     for (const l of before) expect(now, l).toContain(l);
-    expect(v.objects.map((o) => o.id).filter((id) => !before.some((l) => l.startsWith(id + ':'))).sort()).toEqual(['desert_road', 'desert_sign']);
-    const keys = v.objects.map((o) => `${o.x},${o.y}`);
+    expect(v.objects.map((o) => o.id).filter((id) => !before.some((l) => l.startsWith(id + ':'))).sort()).toEqual(['balloon', 'balloon_empty', 'balloon_sign', 'desert_road', 'desert_sign']); // 第六關新增三個熱氣球物件
+    const keys = v.objects.filter((o) => o.id !== 'balloon').map((o) => `${o.x},${o.y}`);
     expect(new Set(keys).size).toBe(keys.length);
     // 其他地圖通到起始村的抵達格也不能壓在新物件上
     for (const m of Object.values(MAPS)) for (const o of m.objects) {
