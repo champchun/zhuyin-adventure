@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
-import { BLOCKED_TILES, MAPS, TILE_KEY, abilityOf } from '../data/maps';
+import { BLOCKED_TILES, MAPS, TILE_KEY, abilityOf, objectDepth } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
 import { BATTLES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
@@ -204,7 +204,7 @@ export class WorldScene extends Phaser.Scene {
       const px = ox * T, py = oy * T;
       const extra: Phaser.GameObjects.GameObject[] = [];
       let spr: Phaser.GameObjects.Image;
-      const depth = py + T;
+      const depth = objectDepth(def, py + T, flag(`g:${m.id}:${def.id}`));
       const shadow = (s = 1) => { extra.push(this.add.image(px + 8, py + 14, 'shadow').setDepth(1).setScale(s)); };
       const bob = (target: Phaser.GameObjects.Image, amp = 1.5, dur = 600) => {
         if (G.settings.reduceMotion) return;

@@ -3,7 +3,7 @@ import { BATTLES, LEVELS } from '../src/data/levels';
 import { ENEMIES, MOVES, SPECIES, castSymbol, moveFor } from '../src/data/monsters';
 import { LEARN_STEPS } from '../src/data/symbols';
 import { STROKES } from '../src/data/strokes';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { BLOCKED_TILES, MAPS, TERRAIN_DEPTH, objectDepth } from '../src/data/maps';
 import { reachReport } from '../src/core/dungeon';
 import { defeatSpot, markArrival } from '../src/core/travel';
 import { GIVER_HUBS } from '../src/core/giver';
@@ -242,6 +242,17 @@ describe('第五關的地圖：綠洲鎮 zh 與火山沙漠 z', () => {
     expect(z.tiles[p.y][p.x]).toBe('s');
     expect(z.tiles[p.y - 1][p.x]).toBe('V');
     expect(z.tiles[p.y + 1][p.x]).toBe('V');
+  });
+  it('蜘蛛網橋啟動後用地形等級的深度（玩家站上去不被蓋住），其他物件深度不變', () => {
+    const pit = z.objects.find((o) => o.id === 'pit')!;
+    expect(TERRAIN_DEPTH).toBeLessThan(1); // 低於影子與角色
+    expect(TERRAIN_DEPTH).toBeGreaterThan(-100); // 高於地形貼圖
+    expect(objectDepth(pit, 176, true)).toBe(TERRAIN_DEPTH);
+    expect(objectDepth(pit, 176, false)).toBe(176);
+    for (const o of z.objects.filter((p) => p.id !== 'pit')) {
+      expect(objectDepth(o, 176, true), o.id).toBe(176);
+      expect(objectDepth(o, 176, false), o.id).toBe(176);
+    }
   });
   it('洞窟入口 cave 留給 Task 4：這裡先確認 z 沒有引用不存在的地圖', () => {
     // Task 4 完成後移除這一條，改驗 cave（showIf zPractice、通 zc1）

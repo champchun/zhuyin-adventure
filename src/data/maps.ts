@@ -76,6 +76,12 @@ export const BLOCKED_TILES = new Set(['#', 'h', 'H', 'i', 'I', 'k', 'K', 'l', 'Y
   // 第五關（沙漠）：沙屋民宅／旅館／商店的屋頂與牆、綠洲池、仙人掌、棕櫚樹、熔岩、駱駝（s 沙地、v 岩地可走）
   'e', 'E', 'b', 'B', 'x', 'X', 'w', 'c', 'p', 'V', 'C']);
 
+/** 地形等級的深度：高於地形貼圖（-100）、低於影子與角色。已啟動的 passable 機關（蜘蛛網橋）用它，玩家站上去才不會被橋圖蓋住 */
+export const TERRAIN_DEPTH = -50;
+/** 物件的繪製深度：預設是腳下那條線（baseDepth＝py + T）；已啟動的 passable 機關改成地形等級，其他不變 */
+export const objectDepth = (o: MapObj, baseDepth: number, activated: boolean): number =>
+  o.kind === 'gimmick' && o.passable && activated ? TERRAIN_DEPTH : baseDepth;
+
 /** 招式互動物件固定需要的招式（障礙物：裂石、落葉、迷霧；機關：鈴鐺、風車）。機關物件 gimmick 看它自己的 ability。 */
 const KIND_ABILITY: Partial<Record<ObjKind, string>> = { rock: 'blast', leaves: 'gust', windmill: 'gust', bell: 'hum', fog: 'fog' };
 /** 這個物件要用哪一招處理；不是招式互動物件（木門、寶箱、NPC…）就是 undefined */
@@ -788,7 +794,7 @@ MAPS.z = {
     { id: 'm3', kind: 'monster', x: 4, y: 18, battle: 'z3', showIf: 'zPractice', ai: 'patrol', patrol: [{ x: 5, y: 18 }, { x: 6, y: 18 }] },
     { id: 'stone', kind: 'gimmick', x: 9, y: 16, sprite: 'sandstone', ability: 'roar', fx: 'roar', vanish: true, lockText: ['一塊大砂岩，擋住了後面的寶箱。', '要用很大很大的聲音，才震得碎它。'], hitText: ['夥伴大吼一聲「ㄕ」，砂岩被震得碎成沙子！', '後面露出了一個寶箱！'] },
     { id: 'chest_stone', kind: 'chest', x: 9, y: 15, item: 'potion' },
-    { id: 'pit', kind: 'gimmick', x: 13, y: 10, sprite: 'sand_pit', sprite2: 'web_bridge', ability: 'web', fx: 'web', passable: true, lockText: ['一道熔岩河把沙漠切成兩半，只有一個沙坑可以走。', '沙坑太深了，過不去。要是能織一張網橋就好了……'], hitText: ['夥伴舌頭一翹「ㄓ」，吐出一條條蜘蛛絲！', '蜘蛛絲織成了一座網橋，可以走到對岸了！'], doneText: ['蜘蛛網橋很結實，可以放心走過去。'] },
+    { id: 'pit', kind: 'gimmick', x: 13, y: 10, sprite: 'sand_pit', sprite2: 'web_bridge', ability: 'web', fx: 'web', passable: true, lockText: ['一道熔岩河把沙漠切成兩半，只有一個沙坑可以走。', '沙坑太深了，過不去。要是能織一張網橋就好了……'], hitText: ['夥伴舌頭一翹「ㄓ」，吐出一條條蜘蛛絲！', '蜘蛛絲織成了一座網橋，可以走到對岸了！'], }, // 網橋織好後可以走過去，點不到它，所以不需要 doneText
     { id: 'chest_web1', kind: 'chest', x: 16, y: 10, item: 'potion' },
     { id: 'chest_web2', kind: 'chest', x: 24, y: 4, item: 'bigpotion' },
   ],
