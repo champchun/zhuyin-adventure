@@ -34,13 +34,14 @@ describe('金幣爺爺', () => {
     expect(giverVisible(mk(['dh', 'gh'], 0), 'gh')).toBe(false);
   });
   it('nextGiverMap', () => {
-    const s = mk(['dh', 'gh', 'xh'], 0, 'dh');
+    const s = mk(['dh', 'gh', 'xh', 'zh'], 0, 'dh');
     expect(nextGiverMap(s, () => 0)).toBe('gh');
-    expect(nextGiverMap(s, () => 0.99)).toBe('xh');
+    expect(nextGiverMap(s, () => 0.5)).toBe('xh');
+    expect(nextGiverMap(s, () => 0.99)).toBe('zh');
     expect(nextGiverMap(mk(['dh'], 0, 'dh'))).toBe('dh');
     for (const r of [0, 0.3, 0.5, 0.7, 0.99]) {
-      for (const at of ['dh', 'gh', 'xh']) {
-        const t = mk(['dh', 'gh', 'xh'], 0, at);
+      for (const at of ['dh', 'gh', 'xh', 'zh']) {
+        const t = mk(['dh', 'gh', 'xh', 'zh'], 0, at);
         expect(nextGiverMap(t, () => r)).not.toBe(at);
       }
     }
@@ -54,7 +55,7 @@ describe('金幣爺爺', () => {
 });
 
 describe('金幣爺爺：地圖', () => {
-  for (const id of ['dh', 'gh', 'xh']) {
+  for (const id of ['dh', 'gh', 'xh', 'zh']) {
     it(`${id}：有一位 id 為 giver 的爺爺，站在可走的地形上，不與其他物件重疊，四周有可走的空格`, () => {
       const m = MAPS[id];
       const gs = m.objects.filter((o) => o.kind === 'giver');

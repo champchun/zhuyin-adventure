@@ -5,7 +5,7 @@ export const POOR_COINS = 25;
 /** 答對後爺爺給的金幣 */
 export const GIVER_REWARD = 100;
 /** 爺爺會出現的主島 */
-export const GIVER_HUBS: readonly string[] = ['dh', 'gh', 'xh'];
+export const GIVER_HUBS: readonly string[] = ['dh', 'gh', 'xh', 'zh'];
 
 export function isPoor(coins: number): boolean {
   return coins < POOR_COINS;

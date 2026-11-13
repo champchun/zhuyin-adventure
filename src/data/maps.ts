@@ -33,10 +33,12 @@ export interface MapObj {
   sprite?: string;
   /** gimmick（用招式啟動的機關）：需要的能力、特效、啟動前後的圖與說明 */
   ability?: string;
-  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze';
+  fx?: 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun';
   sprite2?: string;
   /** 啟動後這個物件就消失（例如泡泡球、小水壩） */
   vanish?: boolean;
+  /** gimmick：啟動後留在原地（換成 sprite2），但可以走過去（例如蜘蛛網橋） */
+  passable?: boolean;
   hitText?: string[];
   doneText?: string[];
   /** monster：怎麼移動。patrol＝沿 patrol 路線來回走；chase＝看到主角就追（最短路 ≤ 5 步）。沒有 ai 的怪物不會動 */
@@ -230,6 +232,9 @@ export const MAPS: Record<string, MapDef> = {
       { id: 'chest_fog', kind: 'chest', x: 10, y: 2 },
       { id: 'trail_xh', kind: 'stairs', x: 20, y: 10, sprite: 'snow_trail', to: { map: 'xh', x: 24, y: 10 }, label: '雪地小路', showIf: 'boss_x' }, // 打倒冰晶女王後出現：走回雪花鎮（和 xh 的 trail 互為回程）
       { id: 'trail_sign_v', kind: 'sign', x: 19, y: 10, showIf: 'boss_x', text: ['雪地小路：通往雪花鎮。', '沿著小路走，就能回到雪花鎮，不用搭船。'] },
+      // 打倒冰晶女王後出現：村子東邊的沙漠小路，通往綠洲鎮（和 zh 的 road_home 互為回程）。選在池塘上方的空地：不壓既有物件與抵達格
+      { id: 'desert_road', kind: 'stairs', x: 26, y: 6, sprite: 'desert_road', to: { map: 'zh', x: 2, y: 9 }, label: '沙漠小路', showIf: 'boss_x' },
+      { id: 'desert_sign', kind: 'sign', x: 25, y: 8, showIf: 'boss_x', text: ['沙漠小路：通往綠洲鎮。', '沿著小路走，就能到達綠洲鎮，那裡是火山沙漠的入口。', '小路是雙向的，綠洲鎮那邊也有一條路走回村子。'] },
       ...villageGates,
     ],
   },
@@ -682,6 +687,110 @@ MAPS.x = {
     { id: 'bridge', kind: 'gimmick', x: 13, y: 10, sprite: 't_water', ability: 'freeze', fx: 'freeze', vanish: true, lockText: ['一條小河，水流很急，過不去。', '要是河水能結成冰就好了……'], hitText: ['夥伴「ㄐ」地吹出冷冷的氣，河面結成了一座冰橋！', '現在可以走到對岸了！'] },
     { id: 'chest_bridge1', kind: 'chest', x: 16, y: 10, item: 'potion' },
     { id: 'chest_bridge2', kind: 'chest', x: 24, y: 4, item: 'bigpotion' },
+  ],
+};
+
+// ───────── 綠洲鎮：翹舌音這一關的主島（第五關）─────────
+// 沒有海：一座圓形廣場，中間是綠洲的池子；西邊是從起始村來的沙漠小路（出口 road_home），東邊是通往火山沙漠的沙漠大門。
+// 旅館在西北、商店在東南，沒有碼頭。起始村那頭的小路要打倒冰晶女王才看得到。
+const zhGrid = (() => {
+  const g = new Grid(28, 20, 's').border('c');
+  g.rect('v', 8, 5, 12, 9).rect('v', 2, 9, 6, 1).rect('v', 5, 5, 1, 4).rect('v', 20, 9, 6, 1).rect('v', 19, 14, 4, 1); // 廣場與道路
+  g.rect('w', 12, 7, 4, 4).many('p', [[11, 6], [16, 6], [11, 11], [16, 11], [10, 16]]); // 綠洲的池子與棕櫚樹
+  g.rect('b', 3, 3, 5, 1).rect('B', 3, 4, 5, 1).set(5, 4, 'D'); // 旅館：門在 (5,4)
+  g.rect('x', 21, 12, 4, 1).rect('X', 21, 13, 4, 1).set(22, 13, 'D'); // 商店：門在 (22,13)
+  g.rect('e', 3, 14, 4, 1).rect('E', 3, 15, 4, 1).rect('e', 21, 3, 4, 1).rect('E', 21, 4, 4, 1); // 兩間民宅（只是裝飾）
+  g.many('C', [[9, 17], [25, 6], [16, 16]]).many('c', [[3, 7], [7, 17], [26, 13], [18, 2], [10, 2], [24, 16]]);
+  return g;
+})();
+MAPS.zh = {
+  id: 'zh', name: '綠洲鎮', w: 28, h: 20, tiles: zhGrid.rows(), theme: 'island',
+  start: { x: 2, y: 9 }, respawn: { x: 5, y: 5 },
+  hub: { dock: { x: 2, y: 9 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 5, y: 4, to: { map: 'zh_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 22, y: 13, to: { map: 'zh_shop', x: 4, y: 6 } },
+    { id: 'road_home', kind: 'stairs', x: 1, y: 9, sprite: 'desert_road', to: { map: 'village', x: 25, y: 6 }, label: '沙漠小路' }, // 西邊：回起始村，起始村的 desert_road 走回這裡 (2,9)
+    { id: 'road_sign', kind: 'sign', x: 2, y: 10, text: ['沙漠小路：通往起始村。', '這條小路是雙向的，起始村那邊也有一條路可以走回綠洲鎮。'] },
+    { id: 'desert_gate', kind: 'stairs', x: 26, y: 9, to: { map: 'z', x: 2, y: 3 }, label: '沙漠大門' }, // 東邊：去火山沙漠
+    { id: 'gate_sign', kind: 'sign', x: 25, y: 8, text: ['沙漠大門：通往火山沙漠。', '大門另一邊很熱，累了就回來綠洲鎮的旅館休息。'] },
+    { id: 'granny', kind: 'granny', x: 10, y: 12, label: '星星婆婆' }, // 廣場西南、綠洲池邊
+    { id: 'giver', kind: 'giver', x: 14, y: 3, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'camelkid', kind: 'npc', x: 6, y: 11, sprite: 'npc_kid', label: '駱駝小弟',
+      talk: [
+        { not: 'zEntered', lines: ['歡迎來到綠洲鎮！', '這裡又熱又乾，到處都是沙子，不過綠洲的水涼涼的，很舒服。', '東邊有一扇沙漠大門，過了門就是火山沙漠。島上有稻草布偶，先去練習看看吧！'] },
+        { not: 'boss_z', lines: ['聽說火山沙漠的洞窟裡，住著一隻熔岩獸，是牠把沙漠烤得好熱。', '要先練習完，才找得到洞窟的入口喔。', '累了就來旅館住一晚！'] },
+        { lines: ['沙漠沒那麼熱了！謝謝你！', '沙漠裡有些地方，用新學會的招式回頭看看，也許有驚喜。'] },
+      ],
+    },
+    {
+      id: 'oasis_granny', kind: 'npc', x: 18, y: 11, sprite: 'npc_elder', label: '綠洲奶奶',
+      talk: [
+        { not: 'zPractice', lines: ['沙坑那邊有一道熔岩，把路切成兩半，只有一個地方過得去。', '聽說舌頭翹起來吐絲，就能織出一座橋。', '還有一大叢仙人掌，好像可以一口吃掉。'] },
+        { not: 'boss_z', lines: ['有些大石頭和流沙，要等你學會新招式才打得開。', '洞窟裡的熔岩獸很厲害，記得先在旅館睡一覺再去。'] },
+        { lines: ['砂岩震碎了嗎？流沙曬乾了嗎？', '聽說下面藏著好幾個寶箱呢。'] },
+      ],
+    },
+    {
+      id: 'caravan', kind: 'npc', x: 23, y: 8, sprite: 'npc_girl', label: '商隊小桃',
+      talk: [
+        { not: 'boss_x', lines: ['這條路通往火山沙漠，聽說那邊很熱。', '打倒怪獸會得到金幣，旅館住一晚 25 金幣。'] },
+        { lines: ['西邊的沙漠小路，通到起始村的池塘邊，不用搭船。', '那條路是雙向的，從起始村也能走回來喔！', '東邊是沙漠大門，過了門就是火山沙漠。'] },
+      ],
+    },
+  ],
+};
+MAPS.zh_inn = {
+  id: 'zh_inn', name: '綠洲鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'zh', x: 5, y: 5 } },
+  ],
+};
+MAPS.zh_shop = {
+  id: 'zh_shop', name: '綠洲鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'zh', x: 22, y: 14 } },
+  ],
+};
+
+// ───────── ㄓㄔㄕㄖ：火山沙漠 ─────────
+// 一條南北向的熔岩河把沙漠切成兩半：西岸是入口、機關與（之後的）洞窟，東岸要先在河中間唯一的沙坑織出蜘蛛網橋才過得去。
+// 沙坑那一格是沙地，夾在熔岩之間；機關物件（passable）織網後換成網橋圖，仍留在原地但可以走過去。
+// 洞窟入口 cave（showIf zPractice）留給 Task 4：預定放在 (11,4)，從洞窟出來落在 (11,5)。
+const desertIsle = (() => {
+  const g = new Grid(28, 20, 's').border('V');
+  g.rect('V', 13, 1, 1, 18).set(13, 10, 's'); // 熔岩河與沙坑那一格
+  g.rect('v', 3, 12, 8, 5).rect('v', 17, 3, 6, 4); // 岩地
+  g.many('c', [[5, 5], [7, 5], [6, 4], [8, 15], [10, 15], [9, 14]]); // 圍住兩個寶箱：仙人掌與砂岩後面的寶箱
+  g.many('c', [[8, 7], [11, 6], [2, 15], [11, 17], [19, 10], [26, 6], [16, 17], [24, 17]]);
+  g.many('p', [[18, 2], [22, 9], [25, 16]]).rect('w', 23, 12, 3, 2);
+  return g;
+})();
+MAPS.z = {
+  id: 'z', name: '火山沙漠（ㄓㄔㄕㄖ）', w: 28, h: 20, tiles: desertIsle.rows(), theme: 'meadow',
+  start: { x: 2, y: 3 }, respawn: { x: 2, y: 3 },
+  objects: [
+    { id: 'gate_back', kind: 'stairs', x: 1, y: 3, to: { map: 'zh', x: 25, y: 9 }, label: '回綠洲鎮' }, // 回主島的沙漠大門
+    { id: 'sign1', kind: 'sign', x: 3, y: 5, text: ['火山沙漠。', '這座島的注音，都是舌頭翹起來發出來的：ㄓ ㄔ，還有兩個要等你自己發現。', '島上有沙坑、仙人掌、砂岩和流沙，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 4, y: 3, battle: 'zpractice', hideIf: 'zPractice' },
+    { id: 'chest_1', kind: 'chest', x: 3, y: 8, item: 'potion' },
+    { id: 'cactus', kind: 'gimmick', x: 6, y: 6, sprite: 'cactus_block', ability: 'gulp', fx: 'gulp', vanish: true, lockText: ['一大叢仙人掌，擋住了小路，後面好像藏著什麼。', '舌頭翹起來大口吃，也許能把它吃掉……'], hitText: ['夥伴舌頭一翹「ㄔ」，大口把仙人掌吃掉了！', '後面露出了一個寶箱！'] },
+    { id: 'chest_cactus', kind: 'chest', x: 6, y: 5, item: 'berry' },
+    { id: 'm1', kind: 'monster', x: 9, y: 8, battle: 'z1', ai: 'patrol', patrol: [{ x: 10, y: 8 }, { x: 11, y: 8 }] },
+    { id: 'quicksand', kind: 'gimmick', x: 7, y: 9, sprite: 'quicksand', sprite2: 'quicksand_dry', ability: 'sun', fx: 'sun', lockText: ['一片流沙，好像把什麼東西埋在下面。', '要是有大太陽，把沙子曬乾就好了……'], hitText: ['夥伴舌頭一翹「ㄖ」，召來了大太陽，把流沙曬得乾乾的！', '流沙下面出現了一個寶箱！'], doneText: ['流沙已經被曬乾了。'] },
+    { id: 'chest_sun', kind: 'chest', x: 7, y: 8, showIf: 'g:z:quicksand', item: 'bigpotion' },
+    { id: 'm2', kind: 'monster', x: 9, y: 2, battle: 'z2', ai: 'patrol', patrol: [{ x: 10, y: 2 }, { x: 11, y: 2 }] },
+    { id: 'm3', kind: 'monster', x: 4, y: 18, battle: 'z3', showIf: 'zPractice', ai: 'patrol', patrol: [{ x: 5, y: 18 }, { x: 6, y: 18 }] },
+    { id: 'stone', kind: 'gimmick', x: 9, y: 16, sprite: 'sandstone', ability: 'roar', fx: 'roar', vanish: true, lockText: ['一塊大砂岩，擋住了後面的寶箱。', '要用很大很大的聲音，才震得碎它。'], hitText: ['夥伴大吼一聲「ㄕ」，砂岩被震得碎成沙子！', '後面露出了一個寶箱！'] },
+    { id: 'chest_stone', kind: 'chest', x: 9, y: 15, item: 'potion' },
+    { id: 'pit', kind: 'gimmick', x: 13, y: 10, sprite: 'sand_pit', sprite2: 'web_bridge', ability: 'web', fx: 'web', passable: true, lockText: ['一道熔岩河把沙漠切成兩半，只有一個沙坑可以走。', '沙坑太深了，過不去。要是能織一張網橋就好了……'], hitText: ['夥伴舌頭一翹「ㄓ」，吐出一條條蜘蛛絲！', '蜘蛛絲織成了一座網橋，可以走到對岸了！'], doneText: ['蜘蛛網橋很結實，可以放心走過去。'] },
+    { id: 'chest_web1', kind: 'chest', x: 16, y: 10, item: 'potion' },
+    { id: 'chest_web2', kind: 'chest', x: 24, y: 4, item: 'bigpotion' },
   ],
 };
 

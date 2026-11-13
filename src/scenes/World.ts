@@ -133,6 +133,7 @@ export class WorldScene extends Phaser.Scene {
     if (m.id === 'd' && !flag('dEntered')) setFlag('dEntered'); // 進到舌尖中音島：開始教 ㄉㄊ
     if (m.id === 'g' && !flag('gEntered')) setFlag('gEntered'); // 進到回音森林：開始教 ㄍㄎ
     if (m.id === 'x' && !flag('xEntered')) setFlag('xEntered'); // 進到企鵝冰原：開始教 ㄒㄑ
+    if (m.id === 'z' && !flag('zEntered')) setFlag('zEntered'); // 進到火山沙漠：開始教 ㄓㄔ
     markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
@@ -279,7 +280,11 @@ export class WorldScene extends Phaser.Scene {
 
   // ───────── 通行判定與尋路 ─────────
   private objAt(x: number, y: number): Obj | undefined {
-    for (const o of this.objs.values()) if (o.x === x && o.y === y) return o;
+    for (const o of this.objs.values()) {
+      if (o.x !== x || o.y !== y) continue;
+      if (o.def.kind === 'gimmick' && o.def.passable && flag(`g:${this.map.id}:${o.def.id}`)) continue; // 蜘蛛網橋織好後可以走過去
+      return o;
+    }
     return undefined;
   }
   private walkable(x: number, y: number): boolean {
@@ -591,6 +596,7 @@ export class WorldScene extends Phaser.Scene {
     if (!flag('guideMet')) { await say2(STORY.guide1); setFlag('guideMet'); }
     else if (!flag('starterChosen')) await say2(STORY.guideChoose);
     else if (!flag('giftGiven')) await this.starterTest();
+    else if (flag('boss_z')) await say2(STORY.guideEndZ);
     else if (flag('boss_x')) await say2(STORY.guideEndX);
     else if (flag('boss_g')) await say2(STORY.guideEndG);
     else if (flag('boss_d')) await say2(STORY.guideEndD);
@@ -870,6 +876,33 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < 6; i++) {
         const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xbfe9ff);
         this.tweens.add({ targets: s, y: y - 22 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'web') {
+      audio.sfx('hint');
+      for (let i = 0; i < 8; i++) {
+        const s = this.add.image(x - 14, y + (i - 4) * 3, 'windline').setDepth(9999).setTint(0xffffff);
+        this.tweens.add({ targets: s, x: x + 14, alpha: 0, duration: 600, delay: i * 40, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'gulp') {
+      audio.sfx('wind');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 22 + (i % 2) * 44, y - 10 + i * 4, 'puff').setDepth(9999).setTint(0x7ad27a);
+        this.tweens.add({ targets: s, x, y, alpha: 0, duration: 500, delay: i * 60, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'roar') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xe8a23a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 26, alpha: 0, duration: 600, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(180, 0.004);
+    } else if (fx === 'sun') {
+      audio.sfx('wind');
+      const c = this.add.circle(x, y - 14, 5, 0xffd84a).setDepth(9999);
+      this.tweens.add({ targets: c, radius: calm ? 7 : 9, alpha: 0, duration: 800, onComplete: () => c.destroy() });
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffb36b);
+        this.tweens.add({ targets: s, y: y - 24 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
       }
     } else {
       audio.sfx('splash');

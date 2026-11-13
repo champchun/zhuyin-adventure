@@ -19,7 +19,7 @@ const key = (map: string, x: number, y: number) => `${map}:${x},${y}`;
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 /** 用對的招式／鑰匙之後會消失的物件種類 */
 const REMOVABLE = new Set(['rock', 'leaves', 'fog', 'lockdoor']);
-const removable = (o: MapObj) => REMOVABLE.has(o.kind) || (o.kind === 'gimmick' && !!o.vanish);
+const removable = (o: MapObj) => REMOVABLE.has(o.kind) || (o.kind === 'gimmick' && (!!o.vanish || !!o.passable));
 
 /**
  * 模擬走迷宮。注意：鑰匙不分彼此，鎖門依物件順序「貪心」地開，
