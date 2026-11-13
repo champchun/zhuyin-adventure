@@ -74,7 +74,9 @@ export const BLOCKED_TILES = new Set(['#', 'h', 'H', 'i', 'I', 'k', 'K', 'l', 'Y
   // 第四關（雪地）：雪色民宅／旅館／商店的屋頂與牆、結冰小池、枯樹、雪人（n 雪地、j 冰面、z 冰橋可走）
   'm', 'M', 'g', 'G', 'o', 'O', 'q', 'd', 'u',
   // 第五關（沙漠）：沙屋民宅／旅館／商店的屋頂與牆、綠洲池、仙人掌、棕櫚樹、熔岩、駱駝（s 沙地、v 岩地可走）
-  'e', 'E', 'b', 'B', 'x', 'X', 'w', 'c', 'p', 'V', 'C']);
+  'e', 'E', 'b', 'B', 'x', 'X', 'w', 'c', 'p', 'V', 'C',
+  // 第六關（天空島）：雲屋民宅／旅館／商店的屋頂與牆、星光水池、星形裝飾、雲牆（A 雲地、F 霧氣可走）
+  'Q', 'R', 'J', 'U', 'y', 't', 'N', '*', 'Z']);
 
 /** 地形等級的深度：高於地形貼圖（-100）、低於影子與角色。已啟動的 passable 機關（蜘蛛網橋）用它，玩家站上去才不會被橋圖蓋住 */
 export const TERRAIN_DEPTH = -50;
@@ -901,4 +903,7 @@ export const TILE_KEY: Record<string, string> = {
   // 第五關（沙漠）
   s: 't_dsand', v: 't_rockfloor', w: 't_oasis', c: 't_cactus', p: 't_palm', V: 't_lava', C: 't_camel',
   e: 't_roof_sand', E: 't_wall_sand', b: 't_roof_inn_sand', B: 't_wall_inn_sand', x: 't_roof_shop_sand', X: 't_wall_shop_sand',
+  // 第六關（天空島）
+  A: 't_cloud', F: 't_mist', N: 't_starpool', '*': 't_starstar', Z: 't_cloudwall',
+  Q: 't_roof_cloud', R: 't_wall_cloud', J: 't_roof_inn_cloud', U: 't_wall_inn_cloud', y: 't_roof_shop_cloud', t: 't_wall_shop_cloud',
 };

@@ -303,6 +303,45 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'puff', 4, 22, 400);
         break;
       }
+      case 'zip': {
+        // 金色拉鍊從夥伴那邊「刷」地拉過去，到對手身上拉開一圈星光
+        audio.sfx('wind');
+        for (let i = 0; i < 8; i++) {
+          const z = this.add.rectangle(from.x + 16, from.y - 10 + (i % 2) * 8, 6, 3, i % 2 ? 0xffd84a : 0xffffff, 1).setDepth(40);
+          this.tweens.add({ targets: z, x: to.x, duration: 320, delay: i * 40, onComplete: () => z.destroy() });
+        }
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 6, 28, 400);
+        break;
+      }
+      case 'spike': {
+        // 幾顆尖尖的刺球從對手四周往中間飛
+        audio.sfx('hit');
+        for (let i = 0; i < 6; i++) {
+          const a = (Math.PI * 2 * i) / 6;
+          const b = this.add.star(to.x + Math.cos(a) * 44, to.y + Math.sin(a) * 36, 8, 3, 7, 0xc4d4ec, 1).setStrokeStyle(2, 0x5a78b0).setDepth(40);
+          this.tweens.add({ targets: b, x: to.x, y: to.y, angle: 180, duration: 360, delay: i * 40, onComplete: () => b.destroy() });
+        }
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 8, 32, 420);
+        break;
+      }
+      case 'whistle': {
+        // 幾圈淡藍的音波與小音符飄過去
+        audio.sfx('wind');
+        for (let i = 0; i < 4; i++) {
+          const ring = this.add.circle(from.x + 20, from.y - 6, 6, 0xffffff, 0).setStrokeStyle(3, 0x9fd8ff).setDepth(40);
+          this.tweens.add({ targets: ring, x: to.x, radius: 22, alpha: 0, duration: 440, delay: i * 100, onComplete: () => ring.destroy() });
+        }
+        for (let i = 0; i < 5; i++) {
+          const l = this.add.image(from.x, from.y - 10 + i * 5, 'windline').setDepth(40).setTint(0xdff1ff).setAlpha(0.9);
+          this.tweens.add({ targets: l, x: to.x, duration: 360, delay: i * 40, onComplete: () => l.destroy() });
+        }
+        await sleep(600);
+        this.burst(to.x, to.y, 'puff', 6, 26, 400);
+        this.burst(to.x, to.y, 'spark', 4, 30, 400);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');
