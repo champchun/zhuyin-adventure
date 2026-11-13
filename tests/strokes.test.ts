@@ -134,7 +134,7 @@ describe('招式互動物件要寫的注音（由招式自動決定）', () => {
 });
 
 describe('全部筆順資料的品質', () => {
-  const EXPECTED: Record<string, number> = { 'ㄅ': 1, 'ㄆ': 2, 'ㄇ': 2, 'ㄈ': 2, 'ㄉ': 2, 'ㄊ': 3, 'ㄋ': 1, 'ㄌ': 2, 'ㄍ': 2, 'ㄎ': 2, 'ㄏ': 2, 'ㄐ': 2, 'ㄑ': 1, 'ㄒ': 2 };
+  const EXPECTED: Record<string, number> = { 'ㄅ': 1, 'ㄆ': 2, 'ㄇ': 2, 'ㄈ': 2, 'ㄉ': 2, 'ㄊ': 3, 'ㄋ': 1, 'ㄌ': 2, 'ㄍ': 2, 'ㄎ': 2, 'ㄏ': 2, 'ㄐ': 2, 'ㄑ': 1, 'ㄒ': 2, 'ㄓ': 4, 'ㄔ': 3, 'ㄕ': 3, 'ㄖ': 4 };
   it('有筆順的符號和筆畫數，照筆順圖', () => {
     expect(Object.keys(STROKES).sort()).toEqual(Object.keys(EXPECTED).sort());
     for (const [ch, n] of Object.entries(EXPECTED)) expect(STROKES[ch], ch).toHaveLength(n);

@@ -15,6 +15,7 @@ export const LEVELS: Record<string, LevelDef> = {
   d: { id: 'd', symbol: 'ㄉㄊ', name: '舌尖中音島（鼓與流水）', open: true, mapId: 'dh', partner: '夥伴' },
   g: { id: 'g', symbol: 'ㄍㄎㄏ', name: '舌根音島（回音森林）', open: true, mapId: 'gh', partner: '夥伴' },
   x: { id: 'x', symbol: 'ㄐㄑㄒ', name: '舌面音島（企鵝冰原）', open: true, mapId: 'xh', partner: '夥伴' },
+  z: { id: 'z', symbol: 'ㄓㄔㄕㄖ', name: '翹舌音島（火山沙漠）', open: true, mapId: 'zh', partner: '夥伴' },
 };
 
 export interface RewardDef {
@@ -160,6 +161,26 @@ export const BATTLES: Record<string, BattleDef> = {
   xc2m: wild('xc2m', 'icebat', 3, ['ㄐ', 'ㄒ', 'ㄑ'], ['ㄍ', 'ㄎ', 'ㄏ'], 'm:xc2:mon1'),
   xc2m2: wild('xc2m2', 'icebat', 3, ['ㄐ', 'ㄒ', 'ㄑ'], ['ㄍ', 'ㄎ', 'ㄏ'], 'm:xc2:mon2'),
   xc2m3: wild('xc2m3', 'icebat', 3, ['ㄐ', 'ㄒ', 'ㄑ'], ['ㄍ', 'ㄎ', 'ㄏ'], 'm:xc2:mon3'),
+  // 第 4 座島：翹舌音島（ㄓㄔㄕㄖ）。一進島先練習 ㄓㄔ，ㄕㄖ 要等練習完才出現（地圖與機關之後才做）
+  zpractice: {
+    id: 'zpractice', enemy: 'dummy', phases: 2, tier: 1, focus: ['ㄓ', 'ㄔ'], review: [], guided: true,
+    intro: ['沙漠裡也有稻草布偶，先來練習！', '這一次要認的是「ㄓ」和「ㄔ」。舌頭要翹起來，才念得準！'],
+    reward: {
+      flag: 'zPractice', exp: 7, coins: 12, abilities: ['web', 'gulp'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄓ」舌頭翹起來再放開，夥伴學會了蜘蛛絲！', '「ㄔ」舌頭翹起來吐一口氣，夥伴學會了大口吃！', '沙漠裡還有「ㄕ」和「ㄖ」在等著你，往前走走看吧！'],
+    },
+  },
+  z1: wild('z1', 'scorpion', 1, ['ㄓ', 'ㄔ'], ['ㄒ', 'ㄑ'], 'm:z:m1'),
+  z2: { ...wild('z2', 'cactusman', 2, ['ㄓ', 'ㄔ'], ['ㄐ', 'ㄒ'], 'm:z:m2'), intro: ['仙人掌怪擋住了路！', '牠會考「ㄓ」和「ㄔ」。'] },
+  z3: { ...wild('z3', 'mummy', 3, ['ㄕ', 'ㄖ', 'ㄓ'], ['ㄔ', 'ㄑ', 'ㄐ'], 'm:z:m3'), intro: ['木乃伊慢慢走過來了！', '牠會考新的注音：「ㄕ」和「ㄖ」。'] },
+  boss_z: {
+    id: 'boss_z', enemy: 'lavabeast', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄕ', 'ㄖ', 'ㄓ', 'ㄔ'], review: ['ㄐ', 'ㄑ', 'ㄒ', 'ㄍ', 'ㄎ', 'ㄏ'],
+    intro: ['轟轟轟～熔岩獸把整座火山沙漠都烤得熱呼呼！', '一共三個小回合，累了隨時都可以離開。'],
+    reward: {
+      flag: 'boss_z', exp: 28, coins: 120, abilities: ['roar', 'sun'], items: { potion: 2, berry: 2 },
+      story: ['熔岩獸安靜下來，沙漠不再那麼熱了！', '「ㄕ」舌頭翹起來「嘶」地吹氣，夥伴學會了獅子吼！', '「ㄖ」舌頭翹起來震動發聲，夥伴學會了烈日！', '沙漠裡有些地方，回頭用新招式試試看吧！'],
+    },
+  },
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),
