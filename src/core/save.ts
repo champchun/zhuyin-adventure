@@ -65,6 +65,8 @@ export interface SaveData {
   introduced?: string[];
   /** 已經花掉的星星（可用星星 = stars − starsSpent；stars 仍是累計） */
   starsSpent?: number;
+  /** 金幣爺爺目前所在的主島 */
+  giverAt?: string;
   /** 已擁有的稱號（獎勵 id）與飾品（'bow'|'crown'） */
   titles?: string[];
   accessories?: string[];
