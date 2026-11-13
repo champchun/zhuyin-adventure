@@ -1,7 +1,7 @@
 // 地圖資料：以程式建構格子，再列出物件。新增關卡只要在這裡加一張地圖。
 import { fromAscii } from './ascii';
 import { MAZES } from './mazes';
-export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper' | 'frogstone' | 'granny' | 'stardoor' | 'statue';
+export type ObjKind = 'npc' | 'chest' | 'rock' | 'monster' | 'exit' | 'door' | 'bed' | 'starter' | 'gate' | 'sign' | 'windmill' | 'leaves' | 'woodgate' | 'bell' | 'fog' | 'gimmick' | 'dock' | 'stairs' | 'lockdoor' | 'barrier' | 'innkeeper' | 'frogstone' | 'granny' | 'stardoor' | 'statue' | 'giver';
 
 /** 村民依進度說不同的話：由上往下，第一個符合條件（if 旗標為真、not 旗標為假）的會被說出 */
 export interface TalkVariant { if?: string; not?: string; lines: string[]; set?: string }
@@ -418,6 +418,7 @@ MAPS.dh = {
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'd', x: 4, y: 17 } }, // 西邊：去舌尖中音島
     { id: 'dock_gh', kind: 'dock', x: 14, y: 18, showIf: 'boss_d', dockTo: { map: 'gh', x: 14, y: 17 } }, // 南邊：去蛙鳴灣（打倒鼓王後）
     { id: 'granny', kind: 'granny', x: 21, y: 9, label: '星星婆婆' }, // 東邊碼頭旁
+    { id: 'giver', kind: 'giver', x: 16, y: 8, label: '金幣爺爺' }, // 廣場東北，離碼頭與婆婆都有一段距離（窮才出現）
     {
       id: 'drummer', kind: 'npc', x: 10, y: 8, sprite: 'npc_kid', label: '小鼓手',
       talk: [
@@ -482,6 +483,7 @@ MAPS.gh = {
     { id: 'door_shop', kind: 'door', x: 21, y: 3, to: { map: 'gh_shop', x: 4, y: 6 } },
     { id: 'dock_dh', kind: 'dock', x: 14, y: 18, dockTo: { map: 'dh', x: 14, y: 17 } }, // 南邊：回鼓聲港
     { id: 'granny', kind: 'granny', x: 16, y: 17, label: '星星婆婆' }, // 南邊碼頭旁
+    { id: 'giver', kind: 'giver', x: 18, y: 5, label: '金幣爺爺' }, // 橫路下方、池塘北岸（窮才出現）
     { id: 'dock_isle', kind: 'dock', x: 3, y: 10, dockTo: { map: 'g', x: 4, y: 17 } }, // 西邊：去回音森林
     { id: 'dock_xh', kind: 'dock', x: 26, y: 10, showIf: 'boss_g', dockTo: { map: 'xh', x: 4, y: 10 } }, // 東邊：去雪花鎮（打倒蝙蝠王後）
     { id: 'frog', kind: 'frogstone', x: 17, y: 10, label: '青蛙聽音石' }, // 荷葉上的聽音石
@@ -587,6 +589,7 @@ MAPS.xh = {
     { id: 'door_shop', kind: 'door', x: 21, y: 13, to: { map: 'xh_shop', x: 4, y: 6 } },
     { id: 'dock_gh', kind: 'dock', x: 3, y: 10, dockTo: { map: 'gh', x: 25, y: 10 } }, // 西邊：回蛙鳴灣
     { id: 'granny', kind: 'granny', x: 5, y: 11, label: '星星婆婆' }, // 西邊碼頭旁
+    { id: 'giver', kind: 'giver', x: 16, y: 4, label: '金幣爺爺' }, // 北邊雪地空地、民宅前（窮才出現）
     { id: 'star_door', kind: 'stardoor', x: 24, y: 3, to: { map: 'xh_star', x: 4, y: 6 }, label: '星光門' }, // 東北角：累計星星夠了才打得開
     { id: 'dock_isle', kind: 'dock', x: 24, y: 15, dockTo: { map: 'x', x: 2, y: 3 } }, // 東南：去企鵝冰原
     { id: 'trail', kind: 'stairs', x: 25, y: 10, sprite: 'snow_trail', to: { map: 'village', x: 20, y: 11 }, label: '雪地小路', showIf: 'boss_x' }, // 雙向：通到起始村池塘旁的空地，起始村的 trail_xh 走回這裡 (24,10)

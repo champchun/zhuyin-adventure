@@ -7,6 +7,7 @@ const ANCHORS: Record<string, string[]> = {
     'start: 14,17', 'respawn: 7,4', 'hubDock: 22,10',
     'door_inn: 6,3', 'door_shop: 21,3', 'dock_village: 23,10', 'dock_isle: 3,10', 'dock_gh: 14,18',
     'drummer: 10,8', 'fisher: 18,12', 'sailor: 8,15', 'granny: 21,9', // 星星婆婆（Task 3 新增）
+    'giver: 16,8', // 金幣爺爺（金幣爺爺 Task 3 新增）
     'arrive_from_d: 4,10', 'arrive_from_gh: 14,17', 'back_inn: 6,4', 'back_shop: 21,4',
   ],
   d: [

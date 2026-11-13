@@ -18,10 +18,11 @@ import { starDoorOpen } from '../core/stars';
 import { STAR_DOOR_NEED } from '../data/rewards';
 import { accOffset, accTexture } from '../gfx/accessory';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
+import { GIVER_REWARD, giverVisible, nextGiverMap } from '../core/giver';
 import { makeMon, stepMonsters, stunMon } from '../core/monsters';
 import type { MonState } from '../core/monsters';
 import { bui } from '../core/battleui';
-import { QuestionRun, shuffle } from '../core/learning';
+import { QuestionRun, effectiveOptionCount, makeQuestion, shuffle } from '../core/learning';
 import type { BattleOutcome } from './Battle';
 import { PROMPT_LINES } from '../data/voiceLines';
 
@@ -43,6 +44,8 @@ export class WorldScene extends Phaser.Scene {
   private followers: { spr: Phaser.GameObjects.Image; sh: Phaser.GameObjects.Image; acc?: Phaser.GameObjects.Image; off?: { x: number; y: number } }[] = [];
   /** 這張地圖上的星星婆婆（有的話每一幀更新光暈、小星星與杖尖動畫） */
   private granny?: Obj;
+  /** 這張地圖上的金幣爺爺（有的話每一幀換兩格動畫） */
+  private giver?: Obj;
   private trail: { x: number; y: number }[] = [];
   private tx = 0;
   private ty = 0;
@@ -161,6 +164,7 @@ export class WorldScene extends Phaser.Scene {
     const m = this.map.id;
     if (o.showIf && !flag(o.showIf)) return false;
     if (o.hideIf && flag(o.hideIf)) return false;
+    if (o.kind === 'giver') return giverVisible(G.save, m);
     if (o.kind === 'monster' && flag(`m:${m}:${o.id}`)) return false;
     if (o.kind === 'rock' && flag(`r:${m}:${o.id}`)) return false;
     if (o.kind === 'leaves' && flag(`l:${m}:${o.id}`)) return false;
@@ -189,6 +193,7 @@ export class WorldScene extends Phaser.Scene {
     this.objs.forEach((o) => { o.spr.destroy(); o.extra.forEach((e) => e.destroy()); });
     this.objs.clear();
     this.granny = undefined;
+    this.giver = undefined;
     this.labels = [];
     const m = this.map;
     for (const def of m.objects) {
@@ -222,6 +227,7 @@ export class WorldScene extends Phaser.Scene {
           for (let i = 0; i < 3; i++) extra.push(this.add.image(px + 8, py + 6, 'spark').setDepth(depth + 1).setScale(0.8));
           break;
         }
+        case 'giver': shadow(); spr = this.add.image(px + 8, py + 16, 'giver').setOrigin(0.5, 1).setDepth(depth); break;
         case 'stardoor': spr = this.add.image(px, py, starDoorOpen(G.save) ? 'star_door_open' : 'star_door').setOrigin(0).setDepth(depth); break;
         case 'statue': spr = this.add.image(px, py, 'star_statue').setOrigin(0).setDepth(depth); break;
         case 'dock': spr = this.add.image(px, py, 'dock').setOrigin(0).setDepth(depth); break;
@@ -267,6 +273,7 @@ export class WorldScene extends Phaser.Scene {
       const obj: Obj = { def, spr, extra, x: ox, y: oy };
       this.objs.set(def.id, obj);
       if (def.kind === 'granny') this.granny = obj;
+      if (def.kind === 'giver') this.giver = obj;
     }
   }
 
@@ -373,6 +380,10 @@ export class WorldScene extends Phaser.Scene {
       if (f.acc && f.off) f.acc.setPosition(f.spr.x + (f.off.x - 16) * 0.5, f.spr.y + (f.off.y - 32) * 0.5).setDepth(f.spr.depth + 0.2);
     });
     if (this.granny) this.animGranny(this.granny);
+    if (this.giver) {
+      const frame = !G.settings.reduceMotion && Math.floor(this.time.now / 500) % 2 ? 'giver2' : 'giver';
+      if (this.giver.spr.texture.key !== frame) this.giver.spr.setTexture(frame);
+    }
     if (this.moving || this.busy || ui.blocking || !this.scene.isActive()) return;
     let d: Dir | undefined;
     if (this.cursors.left.isDown || this.wasd.A.isDown) d = 'left';
@@ -472,6 +483,7 @@ export class WorldScene extends Phaser.Scene {
       case 'innkeeper': return this.useInn(d);
       case 'frogstone': return this.useFrogStone(d);
       case 'granny': return this.useGranny(d);
+      case 'giver': return this.useGiver(d);
       case 'stardoor': return this.useStarDoor(d);
       case 'statue': return say((d.text ?? []).map((text) => ({ who: d.label ?? '星星雕像', text })));
       case 'sign': return say((d.text ?? []).map((t) => ({ who: d.sprite === 'desk' ? '書桌' : '告示牌', text: t })));
@@ -637,6 +649,40 @@ export class WorldScene extends Phaser.Scene {
     }
     await openStarShop(() => this.buildFollowers());
     saveGame();
+  }
+
+  /**
+   * 金幣爺爺：窮才出現。答對一題（點對才結束、沒有處罰）就送 GIVER_REWARD 金幣；「先不要」也一樣說再見、換到別座主島。
+   * 學過的符號太少（< 2）時不發錢也不換島。
+   */
+  private async useGiver(d: MapObj) {
+    const who = d.label ?? '金幣爺爺';
+    const talk = (lines: string[]) => say(lines.map((text) => ({ who, text })));
+    if (!flag('giverMet')) {
+      await talk(STORY.giverHello);
+      setFlag('giverMet');
+      saveGame();
+    }
+    const pool = activeSymbols();
+    if (pool.length < 2) { await talk(STORY.giverNeed); return; }
+    await talk(STORY.giverAsk);
+    const i = await choose('金幣爺爺的問題', `答對就送你 ${GIVER_REWARD} 金幣！`, ['好，我來答！', '先不要']);
+    if (i === 0) {
+      const tier = G.settings.tier === 'auto' ? 3 : G.settings.tier;
+      const q = makeQuestion({
+        focus: [], review: pool, allowed: pool, tier, audioReady: audio.audioReadyFor(pool),
+        optionCount: effectiveOptionCount(G.settings.optionCount, G.save.stats), stats: G.save.stats,
+      });
+      await openLessonPick(q.type, q.target, q.options); // listen 模式會自己播放聲音；沒音檔時 makeQuestion 已降成 match
+      addCoins(GIVER_REWARD);
+      saveGame();
+      audio.sfx('levelup');
+      await talk(STORY.giverDone);
+    }
+    await talk(STORY.giverBye);
+    G.save.giverAt = nextGiverMap(G.save);
+    saveGame();
+    this.refreshObjects();
   }
 
   /** 星光門：看累計星星（不看可用星星）；不夠就說明還要幾顆，夠了就進星光小屋 */

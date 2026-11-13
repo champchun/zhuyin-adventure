@@ -23,4 +23,5 @@
 - 地形字元：`h/H` 民宅、`i/I` 旅館、`k/K` 商店、`l/Y` 研究所（屋頂/牆），`D` 門；第四關雪地：`n` 雪地、`j` 冰面、`z` 冰橋、`q` 結冰小池、`d` 枯樹、`u` 雪人、`m/M` 雪屋、`g/G` 雪旅館、`o/O` 雪商店；新字元要同時加進 `BLOCKED_TILES` 與 `TILE_KEY`。
 - 不得把未驗證的 TTS 當標準注音單音；沒有音檔時 tier 2/3 要降級成看符號配對。
 - 星星婆婆（id `granny`，鼓聲港 `dh`、蛙鳴灣 `gh`、雪花鎮 `xh` 各一位；第一次對話先播登場台詞，旗標 `grannyMet`）：星星可以換獎勵（稱號、蝴蝶結／王冠飾品、藥水）。存檔新欄位 `starsSpent`（已花星星）、`titles`、`accessories`、`equipped`、`title`（舊存檔要補預設值）。雪花鎮的星光門（`star_door`，kind `stardoor`）通往星光小屋 `xh_star`（寶箱 `chest_star`、星星雕像 `statue`）。
+- 金幣爺爺（id `giver`，kind `giver`，鼓聲港 `dh`、蛙鳴灣 `gh`、雪花鎮 `xh` 各有一個位置，同時只出現在其中一座）：金幣少於 `POOR_COINS`（25）才出現；答對一題（`openLessonPick`，點對才結束）給 `GIVER_REWARD`（100）金幣；對話結束（含「先不要」）後換到另一座到過的主島。存檔欄位 `giverAt`、旗標 `giverMet`；純邏輯在 `src/core/giver.ts`，台詞在 `STORY.giver*`。第 0 關與 `dc1`/`dc2` 不放。
 - 任何 `say()` / modal 都會增減 `ui.blocking`；新增流程務必保證成對（曾因 `say([])` 例外造成地圖輸入鎖死）。
