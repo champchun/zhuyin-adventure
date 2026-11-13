@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、lv5（綠洲鎮～火山沙漠～熔岩洞窟～沙漠小路回起始村）、all（預設，從頭玩到尾）。
+// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、lv5（綠洲鎮～火山沙漠～熔岩洞窟～沙漠小路回起始村）、lv6（熱氣球～雲上小鎮～星空島～星塔～星空龍王～結尾，回起始村）、all（預設，從頭玩到尾）。
 // 分段時前面的進度用「直接寫存檔」補上，不重打前面的戰鬥，所以只測被動到的那一段、跑得快很多。
 const SECTION = process.env.SECTION ?? 'all';
 const run = (...n) => SECTION === 'all' || n.includes(SECTION);
@@ -77,7 +77,7 @@ async function pump(cond, label, maxMs = 900000) {
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
     else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
-    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶|蠍|仙人掌|木乃伊|熔岩/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶|蠍|仙人掌|木乃伊|熔岩|星星|彗星|守衛|龍王/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
@@ -358,25 +358,32 @@ if (!run('lv0')) {
     S.cleared.push('b', 'p');
     S.coins = 150; S.items.potion = 4; S.items.berry = 2;
     m.stage = 1; m.level = 4; m.hp = 99; m.mp = 99;
-    if (sec === 'lv3' || sec === 'lv4' || sec === 'lv5') {
+    if (sec === 'lv3' || sec === 'lv4' || sec === 'lv5' || sec === 'lv6') {
       add('dEntered', 'dPractice', 'boss_d', 'visited:dh', 'visited:d');
       ab('drum', 'splash', 'nasal', 'stream');
       intro('ㄉ', 'ㄊ', 'ㄋ', 'ㄌ');
       S.cleared.push('d');
       m.level = 6; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv4' || sec === 'lv5') {
+    if (sec === 'lv4' || sec === 'lv5' || sec === 'lv6') {
       add('gEntered', 'gPractice', 'boss_g', 'visited:gh', 'visited:g');
       ab('croak', 'knock', 'breath');
       intro('ㄍ', 'ㄎ', 'ㄏ');
       S.cleared.push('g');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv5') { // 第五關從起始村的沙漠小路出發（要打倒冰晶女王才出現），所以前四關都補齊
+    if (sec === 'lv5' || sec === 'lv6') { // 第五關從起始村的沙漠小路出發（要打倒冰晶女王才出現），所以前四關都補齊
       add('xEntered', 'xPractice', 'boss_x', 'visited:xh', 'visited:x');
       ab('snow', 'slide', 'freeze');
       intro('ㄒ', 'ㄑ', 'ㄐ');
       S.cleared.push('x');
+      m.level = 8; m.hp = 99; m.mp = 99;
+    }
+    if (sec === 'lv6') { // 第六關從起始村的熱氣球出發（要打倒熔岩獸才出現），所以再補上第五關
+      add('zEntered', 'zPractice', 'boss_z', 'visited:zh', 'visited:z');
+      ab('web', 'gulp', 'roar', 'sun');
+      intro('ㄓ', 'ㄔ', 'ㄕ', 'ㄖ');
+      S.cleared.push('z');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
     window.__game.world().loadMap(sec === 'lv4' ? 'gh' : sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' || sec === 'lv4' ? 14 : 20, sec === 'lv3' || sec === 'lv4' ? 17 : 11);
@@ -768,6 +775,111 @@ if (run('lv5')) {
   await tapObj('road_home', '綠洲鎮的沙漠小路（回起始村）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從沙漠小路走回起始村');
   log('✓ 第五關走完：綠洲鎮、火山沙漠、熔岩洞窟、沙漠小路回起始村');
+}
+if (run('lv6')) {
+  // ───── 熱氣球、雲上小鎮與星空島（ㄗㄘㄙ）、星塔、星空龍王（畢業考）、結尾 ─────
+  // 起始村的熱氣球（打倒熔岩獸後出現）一開始沒有氣：要用 ㄖ（sun）烤熱，走既有的機關施放流程
+  await tapObj('balloon_empty', '起始村沒有氣的熱氣球（ㄖ）');
+  f = await flags();
+  if (!f['g:village:balloon_empty']) throw new Error('熱氣球沒有被烤熱 ' + JSON.stringify(f));
+  if (await hasObj('balloon_empty') || !(await hasObj('balloon'))) throw new Error('烤熱後應該換成可以搭乘的熱氣球');
+  log('✓ ㄖ烤熱了熱氣球');
+  await tapObj('balloon', '起始村的熱氣球（去雲上小鎮；出發選擇由 pump 自動選第一個）');
+  if ((await save()).mapId !== 'sh') throw new Error('沒有搭熱氣球到雲上小鎮');
+  f = await flags();
+  if (!f['visited:sh']) throw new Error('到雲上小鎮後應該記下去過 ' + JSON.stringify(f));
+  await snap('hub-s');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await tapObj('door_inn', '雲上小鎮旅館的門');
+  if ((await save()).mapId !== 'sh_inn') throw new Error('沒有進入雲上小鎮旅館');
+  await tapObj('keeper', '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('雲上小鎮：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await tapObj('keeper', '旅館老闆（住一晚）');
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('雲上小鎮：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 雲上小鎮旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await tapObj('door', '離開雲上小鎮旅館');
+  if ((await save()).mapId !== 'sh') throw new Error('沒有走出雲上小鎮旅館');
+  await tapObj('boat_s', '雲朵小船（去星空島）');
+  if ((await save()).mapId !== 's') throw new Error('沒有搭雲朵小船到星空島');
+  f = await flags();
+  if (!f.sEntered) throw new Error('進星空島後應該開始教 ㄗㄘ ' + JSON.stringify(f));
+  await snap('skyisle');
+  await tapObj('dummy', '星空島練習稻草布偶');
+  s = await save();
+  if (!s.flags.spracticeDone || !s.abilities.includes('zip') || !s.abilities.includes('spike')) throw new Error('練習戰後沒有學到拉鍊／刺球 ' + JSON.stringify(s.abilities));
+  const intro8 = s.introduced; if (!intro8 || !intro8.includes('ㄗ') || !intro8.includes('ㄘ')) throw new Error('練習戰之後 ㄗㄘ 應該已經上過課 ' + JSON.stringify(intro8));
+  log('✓ 星空島練習戰完成，學會 zip（ㄗ）與 spike（ㄘ）');
+  await tapObj('chest_1', '星空島寶箱');
+  await tapObj('zip_curtain', '拉鍊雲幕（ㄗ）'); await tapObj('chest_zip', '雲幕後的寶箱');
+  await tapObj('cloud_block', '刺刺的雲團（ㄘ）'); await tapObj('chest_spike', '雲團後的寶箱');
+  f = await flags();
+  if (!f['g:s:zip_curtain'] || !f['c:s:chest_zip'] || !f['g:s:cloud_block'] || !f['c:s:chest_spike']) throw new Error('雲幕／雲團機關失敗 ' + JSON.stringify(f));
+  await snap('skyisle-gimmicks');
+  log('✓ ㄗ拉開雲幕、ㄘ戳破雲團，各取得寶箱（星光河的彩虹橋要等學會 ㄙ）');
+  for (const m of ['m1', 'm2', 'm3']) if (await hasObj(m)) await tapObj(m, '星空島小怪 ' + m); // 有的小怪可能已經被前面的步驟順手打掉
+
+  // ───── 小王：星門守衛（有護盾，要用魔法才打得到）─────
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力讓它破得了護盾
+  await tapObj('guard', '星門守衛小王');
+  s = await save();
+  if (!s.flags.boss_s1 || !s.abilities.includes('whistle')) throw new Error('小王沒有打贏，或沒有學到 whistle（ㄙ） ' + JSON.stringify({ flags: s.flags.boss_s1, abilities: s.abilities }));
+  const intro9 = s.introduced; if (!intro9 || !intro9.includes('ㄙ')) throw new Error('小王之後 ㄙ 應該已經上過課 ' + JSON.stringify(intro9));
+  await snap('after-boss-s1');
+  log('✓ 小王打贏了（護盾被魔法打破），學會 whistle（ㄙ）');
+  await tapObj('rainbow', '星光河的缺口（ㄙ）');
+  if (!(await flags())['g:s:rainbow']) throw new Error('彩虹橋沒有架起來');
+  await tapObj('chest_r1', '對岸寶箱 1'); await tapObj('chest_r2', '對岸寶箱 2');
+  f = await flags();
+  if (!f['c:s:chest_r1'] || !f['c:s:chest_r2']) throw new Error('彩虹橋對岸的寶箱沒拿到 ' + JSON.stringify(f));
+  await snap('skyisle-rainbow');
+  log('✓ ㄙ吹出彩虹橋，走過星光河取得對岸的寶箱');
+
+  // ───── 星塔（星空龍王有護盾，畢業考）─────
+  await tapObj('cave', '星塔入口（打倒小王後出現）');
+  if ((await save()).mapId !== 'sc1') throw new Error('沒有進入星塔 1 樓');
+  await snap('stower-1f');
+  // 順序：鑰匙 → 鎖門 → 裂石（產生的迷宮裡裂石可能在鎖門後面）
+  await tapObj('chest_key', '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('星塔沒有拿到小鑰匙');
+  await tapObj('door', '鎖住的門');
+  f = await flags();
+  if (!f['k:sc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('星塔的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:sc1:rock_h'] || !f['c:sc1:chest_h']) throw new Error('星塔的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  log('✓ 星塔 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await tapObj('down', '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'sc2') throw new Error('沒有走到星塔 2 樓');
+  await snap('stower-2f');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：星星小精靈、彗星怪是回音怪，要用魔法攻擊才有傷害
+  await tapObj('switch1', '雲團開關（ㄙ口哨風）');
+  f = await flags();
+  if (!f['g:sc2:switch1']) throw new Error('星塔 2 樓的雲團開關沒有啟動 ' + JSON.stringify(f));
+  log('✓ 星塔 2 樓：口哨風吹走雲團、雲牆消失');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力讓它破得了星空龍王的護盾（一擊必殺開著也一樣：被護盾擋下的那一擊是 0 傷害）
+  await tapObj('boss', '星空龍王（畢業考）');
+  s = await save();
+  if (!s.flags.boss_s) throw new Error('星空龍王沒有打贏 ' + JSON.stringify(s.flags));
+  await pump(idle, '結尾劇情'); // 打贏後的結尾對話（ENDING_LINES）由 pump 一句一句點掉
+  s = await save();
+  if (!s.titles.includes('title_hero') || s.title !== 'title_hero' || !s.flags.endingSeen) throw new Error('結尾後應該得到稱號「注音大英雄」 ' + JSON.stringify({ titles: s.titles, title: s.title, endingSeen: s.flags.endingSeen }));
+  await snap('ending');
+  log('✓ 星空龍王打贏了（護盾被魔法打破），結尾劇情播完，得到稱號「注音大英雄」');
+  await tapObj('chest_boss', '頭目寶箱');
+  if (!(await flags())['c:sc2:chest_boss']) throw new Error('星空龍王的寶箱沒拿到');
+  await tapObj('up', '回 1 樓的樓梯');
+  if ((await save()).mapId !== 'sc1') throw new Error('沒有回到星塔 1 樓');
+  await tapObj('up', '回星空島的出口');
+  if ((await save()).mapId !== 's') throw new Error('沒有走回星空島');
+  await tapObj('boat_back', '星空島的雲朵小船（回雲上小鎮）');
+  if ((await save()).mapId !== 'sh') throw new Error('沒有從星空島回到雲上小鎮');
+  await tapObj('balloon_back', '雲上小鎮的停機坪（熱氣球回起始村）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有搭熱氣球回起始村');
+  log('✓ 第六關走完：熱氣球、雲上小鎮、星空島、星塔、星空龍王、結尾，搭熱氣球回起始村');
 }
 if (SECTION === 'lv2' || SECTION === 'lv3') {
   await doTap(23, 10, '主島東邊的碼頭（回起始村）');
