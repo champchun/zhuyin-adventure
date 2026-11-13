@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、all（預設，從頭玩到尾）。
+// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、lv5（綠洲鎮～火山沙漠～熔岩洞窟～沙漠小路回起始村）、all（預設，從頭玩到尾）。
 // 分段時前面的進度用「直接寫存檔」補上，不重打前面的戰鬥，所以只測被動到的那一段、跑得快很多。
 const SECTION = process.env.SECTION ?? 'all';
 const run = (...n) => SECTION === 'all' || n.includes(SECTION);
@@ -77,7 +77,7 @@ async function pump(cond, label, maxMs = 900000) {
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
     else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
-    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶|蠍|仙人掌|木乃伊|熔岩/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
@@ -358,18 +358,25 @@ if (!run('lv0')) {
     S.cleared.push('b', 'p');
     S.coins = 150; S.items.potion = 4; S.items.berry = 2;
     m.stage = 1; m.level = 4; m.hp = 99; m.mp = 99;
-    if (sec === 'lv3' || sec === 'lv4') {
+    if (sec === 'lv3' || sec === 'lv4' || sec === 'lv5') {
       add('dEntered', 'dPractice', 'boss_d', 'visited:dh', 'visited:d');
       ab('drum', 'splash', 'nasal', 'stream');
       intro('ㄉ', 'ㄊ', 'ㄋ', 'ㄌ');
       S.cleared.push('d');
       m.level = 6; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv4') {
+    if (sec === 'lv4' || sec === 'lv5') {
       add('gEntered', 'gPractice', 'boss_g', 'visited:gh', 'visited:g');
       ab('croak', 'knock', 'breath');
       intro('ㄍ', 'ㄎ', 'ㄏ');
       S.cleared.push('g');
+      m.level = 8; m.hp = 99; m.mp = 99;
+    }
+    if (sec === 'lv5') { // 第五關從起始村的沙漠小路出發（要打倒冰晶女王才出現），所以前四關都補齊
+      add('xEntered', 'xPractice', 'boss_x', 'visited:xh', 'visited:x');
+      ab('snow', 'slide', 'freeze');
+      intro('ㄒ', 'ㄑ', 'ㄐ');
+      S.cleared.push('x');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
     window.__game.world().loadMap(sec === 'lv4' ? 'gh' : sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' || sec === 'lv4' ? 14 : 20, sec === 'lv3' || sec === 'lv4' ? 17 : 11);
@@ -669,6 +676,98 @@ if (run('lv4')) {
   await tapObj('trail', '雪花鎮的雪地小路（再回起始村）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從雪花鎮再走回起始村');
   log('✓ 第四關走完：雪花鎮、企鵝冰原、冰晶洞窟、雪地小路雙向來回');
+}
+if (run('lv5')) {
+  // ───── 綠洲鎮與火山沙漠（ㄓㄔㄕㄖ）─────
+  await tapObj('desert_road', '起始村的沙漠小路（打倒冰晶女王後出現）');
+  if ((await save()).mapId !== 'zh') throw new Error('沒有從沙漠小路走到綠洲鎮');
+  f = await flags();
+  await snap('hub-z');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await tapObj('door_inn', '綠洲鎮旅館的門');
+  if ((await save()).mapId !== 'zh_inn') throw new Error('沒有進入綠洲鎮旅館');
+  await tapObj('keeper', '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('綠洲鎮：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await tapObj('keeper', '旅館老闆（住一晚）');
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('綠洲鎮：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 綠洲鎮旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await tapObj('door', '離開綠洲鎮旅館');
+  if ((await save()).mapId !== 'zh') throw new Error('沒有走出綠洲鎮旅館');
+  await tapObj('desert_gate', '沙漠大門（去火山沙漠）');
+  if ((await save()).mapId !== 'z') throw new Error('沒有進入火山沙漠');
+  f = await flags();
+  if (!f.zEntered) throw new Error('進沙漠後應該開始教 ㄓㄔ ' + JSON.stringify(f));
+  await snap('desert');
+  await tapObj('dummy', '沙漠練習稻草人');
+  s = await save();
+  if (!s.flags.zPractice || !s.abilities.includes('web') || !s.abilities.includes('gulp')) throw new Error('練習戰後沒有學到蜘蛛絲／大口吃 ' + JSON.stringify(s.abilities));
+  const intro6 = s.introduced; if (!intro6 || !intro6.includes('ㄓ') || !intro6.includes('ㄔ')) throw new Error('練習戰之後 ㄓㄔ 應該已經上過課 ' + JSON.stringify(intro6));
+  log('✓ 沙漠練習戰完成，學會 web（ㄓ）與 gulp（ㄔ）');
+  await tapObj('chest_1', '沙漠寶箱');
+  await tapObj('cactus', '仙人掌（ㄔ）'); await tapObj('chest_cactus', '仙人掌後的寶箱');
+  f = await flags();
+  if (!f['g:z:cactus'] || !f['c:z:chest_cactus']) throw new Error('仙人掌機關失敗 ' + JSON.stringify(f));
+  // 熔岩河上的沙坑：施放蜘蛛絲織成網橋（橋格啟動後可以走過去），再取對岸的寶箱
+  await tapObj('pit', '沙坑（ㄓ）');
+  f = await flags();
+  if (!f['g:z:pit']) throw new Error('蜘蛛網橋沒有織成 ' + JSON.stringify(f));
+  await tapObj('chest_web1', '對岸寶箱 1'); await tapObj('chest_web2', '對岸寶箱 2');
+  f = await flags();
+  if (!f['c:z:chest_web1'] || !f['c:z:chest_web2']) throw new Error('網橋對岸的寶箱沒拿到 ' + JSON.stringify(f));
+  await snap('desert-bridge');
+  log('✓ ㄓ織出蜘蛛網橋，走過熔岩河取得對岸的寶箱；ㄔ吃掉仙人掌取得寶箱（流沙與砂岩要等學會 ㄖㄕ）');
+  for (const m of ['m1', 'm2', 'm3']) if (await hasObj(m)) await tapObj(m, '沙漠小怪 ' + m); // 有的小怪可能已經被前面的步驟順手打掉
+
+  // ───── 熔岩洞窟（熔岩獸有護盾，要用魔法才打得到）─────
+  await tapObj('cave', '洞窟入口');
+  if ((await save()).mapId !== 'zc1') throw new Error('沒有進入熔岩洞窟 1 樓');
+  await snap('zcave-1f');
+  // 順序：鑰匙 → 鎖門 → 裂石（產生的迷宮裡裂石可能在鎖門後面）
+  await tapObj('chest_key', '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('熔岩洞窟沒有拿到小鑰匙');
+  await tapObj('door', '鎖住的門');
+  f = await flags();
+  if (!f['k:zc1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('熔岩洞窟的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:zc1:rock_h'] || !f['c:zc1:chest_h']) throw new Error('熔岩洞窟的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  log('✓ 熔岩洞窟 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await tapObj('down', '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'zc2') throw new Error('沒有走到熔岩洞窟 2 樓');
+  await snap('zcave-2f');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：仙人掌怪、木乃伊是回音怪，要用魔法攻擊才有傷害
+  await tapObj('switch1', '岩壁拉桿（ㄓ蜘蛛絲，頭目前就解得開）');
+  f = await flags();
+  if (!f['g:zc2:switch1']) throw new Error('熔岩洞窟 2 樓的拉桿機關沒有啟動 ' + JSON.stringify(f));
+  log('✓ 熔岩洞窟 2 樓：蜘蛛絲勾動拉桿、熔岩閘門消失');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力讓它破得了熔岩獸的護盾
+  await tapObj('boss', '熔岩獸');
+  s = await save();
+  if (!s.flags.boss_z || !s.abilities.includes('roar') || !s.abilities.includes('sun')) throw new Error('熔岩獸沒有打贏，或沒有學到 roar／sun（ㄕㄖ） ' + JSON.stringify({ flags: s.flags.boss_z, abilities: s.abilities }));
+  await snap('after-boss-z');
+  log('✓ 熔岩獸打贏了（護盾被魔法打破），學會 roar（ㄕ）與 sun（ㄖ）');
+  const intro7 = s.introduced; if (!intro7 || !intro7.includes('ㄕ') || !intro7.includes('ㄖ')) throw new Error('熔岩獸之後 ㄕㄖ 應該已經上過課 ' + JSON.stringify(intro7));
+  await tapObj('chest_boss', '頭目寶箱');
+  if (!(await flags())['c:zc2:chest_boss']) throw new Error('熔岩獸的寶箱沒拿到');
+  await tapObj('up', '回 1 樓的樓梯');
+  if ((await save()).mapId !== 'zc1') throw new Error('沒有回到熔岩洞窟 1 樓');
+  await tapObj('up', '回沙漠的出口');
+  if ((await save()).mapId !== 'z') throw new Error('沒有走回火山沙漠');
+  await tapObj('stone', '砂岩（ㄕ）'); await tapObj('chest_stone', '砂岩後的寶箱');
+  await tapObj('quicksand', '流沙（ㄖ）'); await tapObj('chest_sun', '流沙下的寶箱');
+  f = await flags();
+  if (!f['g:z:stone'] || !f['c:z:chest_stone'] || !f['g:z:quicksand'] || !f['c:z:chest_sun']) throw new Error('砂岩／流沙機關失敗 ' + JSON.stringify(f));
+  await snap('desert-gimmicks');
+  log('✓ ㄕ震碎砂岩、ㄖ曬乾流沙，各取得寶箱');
+  await tapObj('gate_back', '沙漠大門（回綠洲鎮）');
+  if ((await save()).mapId !== 'zh') throw new Error('沒有從沙漠回到綠洲鎮');
+  await tapObj('road_home', '綠洲鎮的沙漠小路（回起始村）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有從沙漠小路走回起始村');
+  log('✓ 第五關走完：綠洲鎮、火山沙漠、熔岩洞窟、沙漠小路回起始村');
 }
 if (SECTION === 'lv2' || SECTION === 'lv3') {
   await doTap(23, 10, '主島東邊的碼頭（回起始村）');

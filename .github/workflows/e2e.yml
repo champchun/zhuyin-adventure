@@ -1,6 +1,6 @@
 name: E2E
 # 端對端測試：在 GitHub 的機器上開瀏覽器，用機器人玩遊戲。
-# 平常 push：分成三段（村子～草原／舌尖中音島／蛙鳴灣～回音森林）同時跑，前面的進度直接寫進存檔，所以快。
+# 平常 push：分成五段（村子～草原／舌尖中音島／蛙鳴灣～回音森林／雪花鎮～企鵝冰原／綠洲鎮～火山沙漠）同時跑，前面的進度直接寫進存檔，所以快。
 # 每天一次、或手動選 all：從頭玩到尾（慢，大版本前的最後確認）。
 # 與「部署到 GitHub Pages」分開，失敗只會通知，不會擋住網站更新。
 on:
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       section:
-        description: '要測哪一段（lv0 / lv2 / lv3 / lv4 / all）'
+        description: '要測哪一段（lv0 / lv2 / lv3 / lv4 / lv5 / all）'
         default: all
   schedule:
     - cron: '0 20 * * *'  # 每天台灣時間早上 4 點，從頭玩到尾
@@ -25,12 +25,12 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ matrix.section == 'all' && 70 || 30 }}
+    timeout-minutes: ${{ matrix.section == 'all' && 90 || 30 }}
     strategy:
       fail-fast: false
       matrix:
-        # push：四段並行；手動或每天排程：只跑指定的那一個（排程預設 all）
-        section: ${{ (github.event_name == 'push') && fromJSON('["lv0","lv2","lv3","lv4"]') || fromJSON(format('["{0}"]', github.event.inputs.section || 'all')) }}
+        # push：五段並行；手動或每天排程：只跑指定的那一個（排程預設 all）
+        section: ${{ (github.event_name == 'push') && fromJSON('["lv0","lv2","lv3","lv4","lv5"]') || fromJSON(format('["{0}"]', github.event.inputs.section || 'all')) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
