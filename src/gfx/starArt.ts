@@ -3,7 +3,7 @@ import type { Make, Px } from './snowArt';
 
 /** 圖樣 key 與尺寸（測試檢查用） */
 export const STAR_TEXTURES = {
-  granny: [16, 16], granny2: [16, 16], glow: [24, 24],
+  granny: [16, 16], granny2: [16, 16], giver: [16, 16], giver2: [16, 16], glow: [24, 24],
   acc_bow: [12, 8], acc_crown: [12, 8],
   star_door: [16, 16], star_door_open: [16, 16], star_statue: [16, 16],
 } as const;
@@ -31,6 +31,29 @@ const GPAL: Record<string, string> = {
   k: '#2b2140', u: '#7a4ad0', y: '#ffd84a', w: '#ffffff', s: '#ffd2a8', b: '#4a78c8', B: '#2f4f94',
 };
 
+// 金幣爺爺身體（錢袋在 drawStarTextures 另外疊上去）
+const GIVER: string[] = [
+  '.....kkkk.......',
+  '....kggggk......',
+  '...kggyggggk....',
+  '..kGGGGGGGGGk...',
+  '...kwwwwwwk.....',
+  '...kwsssswk.....',
+  '...kwskskwk.....',
+  '...kwwsswwk.....',
+  '..kwwwwwwwwk....',
+  '..krwwwwwwrk....',
+  '.krrrwwwwrrrk...',
+  '.krrrrwwrrrrk...',
+  '.krrRrrrrRrrk...',
+  '.krrRRRRRRrrk...',
+  '..kRRRRRRRRk....',
+  '..kkkkkkkkkk....',
+];
+const GVPAL: Record<string, string> = {
+  k: '#2b2140', g: '#ffd84a', y: '#fff6b0', G: '#b8860b', w: '#ffffff', s: '#ffd2a8', r: '#4a9a5a', R: '#2f6a3c',
+};
+
 export function drawStarTextures(make: Make, px: Px) {
   const granny = (key: string, alt: boolean) => make(key, 16, 16, (c) => {
     GRANNY.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] !== '.') px(c, GPAL[row[x]], x, y); });
@@ -47,6 +70,21 @@ export function drawStarTextures(make: Make, px: Px) {
   });
   granny('granny', false);
   granny('granny2', true);
+
+  // 金幣爺爺：金色帽子、白鬍子、綠袍，右手拎著鼓鼓的錢袋；第二格錢袋與帽頂閃光
+  const giver = (key: string, alt: boolean) => make(key, 16, 16, (c) => {
+    GIVER.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] !== '.') px(c, GVPAL[row[x]], x, y); });
+    // 錢袋：袋口繩結、鼓鼓的袋身、中間一枚金幣
+    px(c, '#2b2140', 13, 8, 2, 1); px(c, '#2b2140', 12, 9, 1, 5); px(c, '#2b2140', 15, 9, 1, 5); px(c, '#2b2140', 13, 14, 2, 1);
+    px(c, '#e0a840', 13, 9, 2, 5); px(c, '#fff6b0', 13, 11, 2, 1); px(c, '#b8860b', 14, 12, 1, 2);
+    px(c, '#ffd2a8', 12, 11); // 抓著袋子的手
+    if (alt) {
+      px(c, '#ffffff', 14, 7); px(c, '#fff6b0', 13, 10); px(c, '#ffffff', 15, 12); // 錢袋閃光
+      px(c, '#ffffff', 5, 2); px(c, '#fff6b0', 5, 1); // 帽子閃光
+    }
+  });
+  giver('giver', false);
+  giver('giver2', true);
 
   // 光暈：中心較亮、往外漸淡的圓形，金黃偏白，半透明
   make('glow', 24, 24, (c) => {

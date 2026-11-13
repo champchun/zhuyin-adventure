@@ -31,6 +31,13 @@ describe('星星婆婆圖樣', () => {
     expect(diff).toBeGreaterThan(0);
     expect(diff).toBeLessThan(40);
   });
+  it('金幣爺爺兩格動畫幀不同、且大部分相同（只有閃光）', () => {
+    const a = tex.giver.px, b = tex.giver2.px;
+    const diff = a.filter((p, i) => p !== b[i]).length;
+    expect(diff).toBeGreaterThan(0);
+    expect(diff).toBeLessThan(40);
+    expect(tex.giver.px).not.toEqual(tex.granny.px);
+  });
   it('星光門關著與打開不同；光暈是半透明', () => {
     expect(tex.star_door.px).not.toEqual(tex.star_door_open.px);
     expect(tex.glow.px.filter((p) => p).every((p) => p.startsWith('rgba('))).toBe(true);
