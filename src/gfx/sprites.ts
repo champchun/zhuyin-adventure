@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { MONSTER_ART, monsterRows } from './monsterArt';
 import { drawSnowTextures } from './snowArt';
 import { drawDesertTextures } from './desertArt';
+import { drawMagicCircleTextures } from './magicArt';
 import { drawSkyTextures } from './skyArt';
 import { drawStarTextures } from './starArt';
 
@@ -419,6 +420,8 @@ export function generateTextures(scene: Phaser.Scene) {
   drawSnowTextures(make as unknown as Parameters<typeof drawSnowTextures>[0], px as unknown as Parameters<typeof drawSnowTextures>[1]);
   // 第五關（綠洲鎮、火山沙漠）
   drawDesertTextures(make as unknown as Parameters<typeof drawDesertTextures>[0], px as unknown as Parameters<typeof drawDesertTextures>[1]);
+  // 回家魔法陣（頭目後）
+  drawMagicCircleTextures(make as unknown as Parameters<typeof drawMagicCircleTextures>[0], px as unknown as Parameters<typeof drawMagicCircleTextures>[1]);
   // 第六關（天空島）
   drawSkyTextures(make as unknown as Parameters<typeof drawSkyTextures>[0], px as unknown as Parameters<typeof drawSkyTextures>[1]);
   // 星星婆婆、飾品、星光門

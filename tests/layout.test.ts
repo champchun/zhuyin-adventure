@@ -18,6 +18,7 @@ const ANCHORS: Record<string, string[]> = {
     'bubble: 6,5', 'chest_bubble: 6,4',
     'm2: 11,4', 'm2.patrol: 11,5 11,6', 'chest_2: 12,2', 'm3: 19,10',
     'dam: 18,15', 'chest_dam: 18,16', 'chest_3: 24,12', 'boss: 22,4', 'chest_boss: 24,3',
+    'circle: 21,4', // 回家魔法陣（頭目打倒後出現，通往鼓聲港旅館門外）
     'arrive_from_dc1: 3,4',
   ],
   g: [

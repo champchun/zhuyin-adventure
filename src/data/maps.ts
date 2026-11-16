@@ -278,6 +278,7 @@ MAPS.b = {
     { id: 'chest_rock', kind: 'chest', x: 3, y: 9 },
     { id: 'boss', kind: 'monster', x: 22, y: 4, battle: 'boss_b', hideIf: 'boss_b' },
     { id: 'chest_boss', kind: 'chest', x: 24, y: 3, showIf: 'boss_b' },
+    { id: 'circle', kind: 'stairs', x: 21, y: 4, sprite: 'magic_circle', to: { map: 'village', x: 5, y: 4 }, label: '魔法陣', showIf: 'boss_b' }, // 回家魔法陣：頭目左邊一格
   ],
 };
 
@@ -311,6 +312,7 @@ MAPS.p = {
     { id: 'chest_leaf', kind: 'chest', x: 5, y: 4 },
     { id: 'woodgate', kind: 'woodgate', x: 22, y: 14, hideIf: 'windmillOn' },
     { id: 'chest_wind', kind: 'chest', x: 23, y: 17, item: 'potion' },
+    { id: 'circle', kind: 'stairs', x: 21, y: 4, sprite: 'magic_circle', to: { map: 'village', x: 5, y: 4 }, label: '魔法陣', showIf: 'boss_p' }, // 回家魔法陣：頭目左邊一格
   ],
 };
 
@@ -352,6 +354,7 @@ MAPS.d = {
     { id: 'chest_3', kind: 'chest', x: 24, y: 12, item: 'potion' },
     { id: 'boss', kind: 'monster', x: 22, y: 4, battle: 'boss_d', hideIf: 'boss_d' },
     { id: 'chest_boss', kind: 'chest', x: 24, y: 3, showIf: 'boss_d' },
+    { id: 'circle', kind: 'stairs', x: 21, y: 4, sprite: 'magic_circle', to: { map: 'dh', x: 6, y: 4 }, label: '魔法陣', showIf: 'boss_d' }, // 回家魔法陣：頭目左邊一格
   ],
 };
 

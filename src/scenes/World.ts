@@ -47,6 +47,8 @@ export class WorldScene extends Phaser.Scene {
   private granny?: Obj;
   /** 這張地圖上的金幣爺爺（有的話每一幀換兩格動畫） */
   private giver?: Obj;
+  /** 這張地圖上的回家魔法陣（有的話每一幀更新光環呼吸、光柱脈動與飄升的光點） */
+  private circle?: Obj;
   private trail: { x: number; y: number }[] = [];
   private tx = 0;
   private ty = 0;
@@ -202,6 +204,7 @@ export class WorldScene extends Phaser.Scene {
     this.objs.clear();
     this.granny = undefined;
     this.giver = undefined;
+    this.circle = undefined;
     this.labels = [];
     const m = this.map;
     for (const def of m.objects) {
@@ -239,7 +242,22 @@ export class WorldScene extends Phaser.Scene {
         case 'stardoor': spr = this.add.image(px, py, starDoorOpen(G.save) ? 'star_door_open' : 'star_door').setOrigin(0).setDepth(depth); break;
         case 'statue': spr = this.add.image(px, py, 'star_statue').setOrigin(0).setDepth(depth); break;
         case 'dock': spr = this.add.image(px, py, def.sprite ?? 'dock').setOrigin(0).setDepth(depth); break;
-        case 'stairs': spr = this.add.image(px, py, def.sprite ?? 'stairs').setOrigin(0).setDepth(depth); break;
+        case 'stairs':
+          if (def.sprite === 'magic_circle') {
+            // 回家魔法陣：地板上的光環（24×16，置於格子中央）＋往上約兩格的光柱＋飄升的光點；全放在地面之上、角色之下，
+            // 都是 extra（隨 refreshObjects 銷毀）、位置與動畫在 animCircle 每幀更新（不用 tween，不會洩漏）。走路判定仍只有這一格
+            spr = this.add.image(px + 8, py + 8, 'magic_circle').setOrigin(0.5).setDepth(2);
+            const beam = this.add.graphics().setDepth(2.2).setBlendMode(Phaser.BlendModes.ADD);
+            for (let i = 0; i < 32; i++) {
+              const a = 0.5 * Math.pow(1 - i / 32, 1.4);
+              beam.fillStyle(0x7fd0ff, a).fillRect(px + 4, py + 8 - 1 - i, 8, 1);
+              beam.fillStyle(0xffffff, a * 0.8).fillRect(px + 6, py + 8 - 1 - i, 4, 1);
+            }
+            extra.push(beam);
+            if (!G.settings.reduceMotion) for (let i = 0; i < 6; i++) extra.push(this.add.rectangle(px + 8, py + 8, 1, 3, 0xe8f8ff).setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
+            break;
+          }
+          spr = this.add.image(px, py, def.sprite ?? 'stairs').setOrigin(0).setDepth(depth); break;
         case 'lockdoor': spr = this.add.image(px, py, 'lockdoor').setOrigin(0).setDepth(depth); break;
         case 'barrier': spr = this.add.image(px, py, 'barrier').setOrigin(0).setDepth(depth); break;
         case 'woodgate': spr = this.add.image(px, py, 'woodgate').setOrigin(0).setDepth(depth); break;
@@ -282,6 +300,7 @@ export class WorldScene extends Phaser.Scene {
       this.objs.set(def.id, obj);
       if (def.kind === 'granny') this.granny = obj;
       if (def.kind === 'giver') this.giver = obj;
+      if (def.sprite === 'magic_circle') this.circle = obj;
     }
   }
 
@@ -392,6 +411,7 @@ export class WorldScene extends Phaser.Scene {
       if (f.acc && f.off) f.acc.setPosition(f.spr.x + (f.off.x - 16) * 0.5, f.spr.y + (f.off.y - 32) * 0.5).setDepth(f.spr.depth + 0.2);
     });
     if (this.granny) this.animGranny(this.granny);
+    if (this.circle) this.animCircle(this.circle);
     if (this.giver) {
       const frame = !G.settings.reduceMotion && Math.floor(this.time.now / 500) % 2 ? 'giver2' : 'giver';
       if (this.giver.spr.texture.key !== frame) this.giver.spr.setTexture(frame);
@@ -412,6 +432,24 @@ export class WorldScene extends Phaser.Scene {
     else { const o = this.objAt(nx, ny); if (o) { this.pending = o; this.run(); } }
   }
   private tyPx() { return this.player.y; }
+
+  /**
+   * 回家魔法陣的動畫：光環兩格輪流（呼吸）、光柱 alpha 輕輕脈動、六條細光點由光環往上飄並漸淡（各自錯開相位）。
+   * 設定「減少動態」時：光環固定、光柱靜止、沒有光點（refreshObjects 沒有產生它們）。
+   */
+  private animCircle(o: Obj) {
+    const calm = G.settings.reduceMotion;
+    const t = this.time.now;
+    const [beam, ...motes] = o.extra as [Phaser.GameObjects.Graphics, ...Phaser.GameObjects.Rectangle[]];
+    const frame = !calm && Math.floor(t / 600) % 2 ? 'magic_circle2' : 'magic_circle';
+    if (o.spr.texture.key !== frame) o.spr.setTexture(frame);
+    beam.setAlpha(calm ? 0.85 : 0.8 + 0.2 * Math.sin(t / 500));
+    const cx = o.x * T + 8, cy = o.y * T + 8;
+    motes.forEach((m, i) => {
+      const ph = (t / 2200 + i / motes.length) % 1;
+      m.setPosition(cx + [-4, 2, -1, 4, -3, 1][i % 6] + Math.sin(ph * 6 + i) * 1.2, cy - 2 - ph * 28).setAlpha(0.9 * (1 - ph));
+    });
+  }
 
   /**
    * 星星婆婆的動畫：杖尖兩格閃爍、光暈呼吸、小星星繞圈；主角走近（約 5 格內）光暈更亮。
