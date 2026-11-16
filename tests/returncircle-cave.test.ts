@@ -9,7 +9,7 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.
 // 到頭目前取得的能力（不含頭目獎勵）
 const CASES = [
   { f1: 'gc1', f2: 'gc2', flag: 'boss_g', at: [6, 16], to: { map: 'gh', x: 6, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'croak', 'knock'] },
-  { f1: 'xc1', f2: 'xc2', flag: 'boss_x', at: [20, 7], to: { map: 'xh', x: 6, y: 7 }, inn: 'door_inn', abilities: ['blast', 'gust', 'snow', 'slide', 'freeze'] },
+  { f1: 'xc1', f2: 'xc2', flag: 'boss_x', at: [19, 8], to: { map: 'xh', x: 6, y: 7 }, inn: 'door_inn', abilities: ['blast', 'gust', 'snow', 'slide', 'freeze'] },
   { f1: 'zc1', f2: 'zc2', flag: 'boss_z', at: [2, 19], to: { map: 'zh', x: 5, y: 5 }, inn: 'door_inn', abilities: ['blast', 'gust', 'web', 'gulp'] },
   { f1: 'sc1', f2: 'sc2', flag: 'boss_s', at: [20, 16], to: { map: 'sh', x: 7, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle'] },
 ] as const;
@@ -74,6 +74,31 @@ describe('回家魔法陣：產生洞窟二樓（gc2／xc2／zc2／sc2）', () =
       const inn = dest.objects.find((o) => o.id === c.inn)!;
       expect(inn).toBeDefined();
       expect(c.to).toMatchObject({ x: inn.x, y: inn.y + 1 });
+    });
+  }
+});
+
+// 打倒頭目後的可達：孩子開打時站在頭目的某個鄰格，打贏後不能被魔法陣關在口袋裡
+describe('回家魔法陣：不封路（b、p、d、gc2、xc2、zc2、sc2）', () => {
+  const ABIL: Record<string, string[]> = {
+    b: ['blast', 'gust'], p: ['blast', 'gust', 'hum', 'fog'], d: ['blast', 'gust', 'hum', 'fog', 'drum', 'splash'],
+    gc2: [...CASES[0].abilities], xc2: [...CASES[1].abilities], zc2: [...CASES[2].abilities], sc2: [...CASES[3].abilities],
+  };
+  const FLAG: Record<string, string> = { b: 'boss_b', p: 'boss_p', d: 'boss_d', gc2: 'boss_g', xc2: 'boss_x', zc2: 'boss_z', sc2: 'boss_s' };
+  for (const id of Object.keys(ABIL)) {
+    const m = MAPS[id];
+    const flags: Record<string, boolean> = { [FLAG[id]]: true, [`g:${id}:switch1`]: true };
+    const without = { ...m, objects: m.objects.filter((o) => o.id !== 'circle') };
+    const boss = m.objects.find((o) => o.id === 'boss')!;
+    const starts = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: boss.x + dx, y: boss.y + dy })).filter((p) => walk(m, p.x, p.y));
+    const circle = m.objects.find((o) => o.id === 'circle')!;
+    it(`${id}：從頭目格與每個可走鄰格出發，打倒頭目後都走得到起點，且與沒有魔法陣時相比只少魔法陣那一格`, () => {
+      for (const p of starts) {
+        const a = walkMap(m, flags, ABIL[id], p), b = walkMap(without, flags, ABIL[id], p);
+        if (!(p.x === circle.x && p.y === circle.y)) expect(a.reached.has(`${m.start.x},${m.start.y}`), `${id} 從 ${p.x},${p.y} 走不到起點`).toBe(true);
+        const lost = [...b.reached].filter((k) => !a.reached.has(k) && k !== `${circle.x},${circle.y}`);
+        expect(lost, `${id} 從 ${p.x},${p.y}：魔法陣封住了`).toEqual([]);
+      }
     });
   }
 });

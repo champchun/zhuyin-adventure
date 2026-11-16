@@ -26,5 +26,5 @@
 - 不得把未驗證的 TTS 當標準注音單音；沒有音檔時 tier 2/3 要降級成看符號配對。
 - 星星婆婆（id `granny`，鼓聲港 `dh`、蛙鳴灣 `gh`、雪花鎮 `xh`、綠洲鎮 `zh`、雲上小鎮 `sh` 各一位（金幣爺爺同樣在這五座主島輪流出現）；第一次對話先播登場台詞，旗標 `grannyMet`）：星星可以換獎勵（稱號、蝴蝶結／王冠飾品、藥水）。存檔新欄位 `starsSpent`（已花星星）、`titles`、`accessories`、`equipped`、`title`（舊存檔要補預設值）。雪花鎮的星光門（`star_door`，kind `stardoor`）通往星光小屋 `xh_star`（寶箱 `chest_star`、星星雕像 `statue`）。
 - 金幣爺爺（id `giver`，kind `giver`，鼓聲港 `dh`、蛙鳴灣 `gh`、雪花鎮 `xh`、綠洲鎮 `zh`、雲上小鎮 `sh` 各有一個位置，同時只出現在其中一座）：金幣少於 `POOR_COINS`（25）才出現；答對一題（`openLessonPick`，點對才結束）給 `GIVER_REWARD`（100）金幣；對話結束（含「先不要」）後換到另一座到過的主島。存檔欄位 `giverAt`、旗標 `giverMet`；純邏輯在 `src/core/giver.ts`，台詞在 `STORY.giver*`。第 0 關與 `dc1`/`dc2` 不放。
-- 頭目後的回家魔法陣：每關最後一個頭目被打倒後，頭目旁邊出現 `circle`（`stairs`，貼圖 `magic_circle`，單向通該關主島旅館門外一格；第 0 關回起始村家門口 (5,4)；第 1 關在 `d`，第 2～5 關在產生洞窟二樓，由 `mazeObjects` 依頭目位置自動產生，目的地見 maps.ts 的 `CIRCLE_HOME`）；它是單向出口，不是通用傳送點。
+- 頭目後的回家魔法陣：打倒頭目後，頭目旁邊出現 `circle`（`stairs`，貼圖 `magic_circle`，單向通該關主島旅館門外一格）。七個頭目各有一個：起始村附近的 `b`、`p` 兩張圖（回起始村家門口 (5,4)）、舌尖中音島 `d`、回音洞窟／冰晶洞窟／熔岩洞窟／星塔的二樓；洞窟二樓由 `mazeObjects` 依頭目位置自動產生（頭目四鄰第一格可走、沒有物件、且不會把旁邊的格子封成口袋；目的地見 maps.ts 的 `CIRCLE_HOME`）。它是單向出口，不是通用傳送點。
 - 任何 `say()` / modal 都會增減 `ui.blocking`；新增流程務必保證成對（曾因 `say([])` 例外造成地圖輸入鎖死）。

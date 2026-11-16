@@ -986,8 +986,21 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
   // 打倒頭目後出現的回家魔法陣：頭目四鄰（左、右、上、下）第一格可走且沒有其他物件
   const bossObj = f.objects.find((o) => o.role === 'boss');
   if (bossObj) {
-    const spot = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => ({ x: bossObj.x + dx, y: bossObj.y + dy }))
-      .find((p) => !BLOCKED_TILES.has(f.rows[p.y]?.[p.x] ?? '#') && !f.objects.some((o) => o.x === p.x && o.y === p.y));
+    // 不能把格子封成口袋：魔法陣所在格若是「割點」（可走鄰格放了它之後彼此不連通）就跳過
+    const solid = new Set(f.objects.filter((o) => !['up', 'down', 'boss', 'monster'].includes(o.role)).map((o) => `${o.x},${o.y}`));
+    const free = (x: number, y: number, skip: string) => !BLOCKED_TILES.has(f.rows[y]?.[x] ?? '#') && !solid.has(`${x},${y}`) && `${x},${y}` !== skip;
+    const N4 = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const seals = (c: { x: number; y: number }) => {
+      const skip = `${c.x},${c.y}`;
+      const ns = N4.map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter((n) => free(n.x, n.y, skip));
+      if (ns.length < 2) return false;
+      const seen = new Set([`${ns[0].x},${ns[0].y}`]);
+      const q = [ns[0]];
+      while (q.length) { const a = q.shift()!; for (const [dx, dy] of N4) { const x = a.x + dx, y = a.y + dy, k = `${x},${y}`; if (!seen.has(k) && free(x, y, skip)) { seen.add(k); q.push({ x, y }); } } }
+      return ns.some((n) => !seen.has(`${n.x},${n.y}`));
+    };
+    const spot = N4.map(([dx, dy]) => ({ x: bossObj.x + dx, y: bossObj.y + dy }))
+      .find((p) => !BLOCKED_TILES.has(f.rows[p.y]?.[p.x] ?? '#') && !f.objects.some((o) => o.x === p.x && o.y === p.y) && !seals(p));
     if (!spot) throw new Error(`${mapId}：頭目旁邊找不到放魔法陣的空格`);
     objs.push({ id: 'circle', kind: 'stairs', ...spot, sprite: 'magic_circle', label: '魔法陣', showIf: boss, to: CIRCLE_HOME[mapId.slice(0, 2)] });
   }
