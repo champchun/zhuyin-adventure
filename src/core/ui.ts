@@ -1,6 +1,7 @@
 // DOM 介面：標題、對話、HUD、夥伴、家長設定、成果。
 import { audio } from './audio';
 import { G, PARTY_MAX, addItem, buyItem, canUseItem, useItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, peekSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
+import type { MonsterInst } from './save';
 import { ITEMS, SPECIES } from '../data/monsters';
 import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
@@ -392,6 +393,7 @@ export function openBackpack(onChange?: () => void): Promise<void> {
   return new Promise((resolve) => {
     let picking: string | null = null;
     let note = '';
+    const vitals = (m: MonsterInst) => (ensureVitals(m), `HP ${m.hp}/${maxHp(m)}<div class="bar"><i style="width:${(m.hp! / maxHp(m)) * 100}%"></i></div>魔力 ${m.mp}/${maxMp(m)}<div class="bar mp"><i style="width:${(m.mp! / maxMp(m)) * 100}%"></i></div>`);
     const render = () => {
       const ids = Object.keys(ITEMS).filter((id) => itemCount(id) > 0);
       const usable = (id: string) => !!(ITEMS[id].hp || ITEMS[id].mp);
@@ -401,10 +403,13 @@ export function openBackpack(onChange?: () => void): Promise<void> {
             const ok = canUseItem(picking!, m);
             return `<div class="mon" ${ok ? `data-a="use" data-i="${i}" role="button"` : 'style="opacity:.45"'}>
               <span class="th" data-key="${spriteOf(m)}"></span>
-              <div class="info"><b>${SPECIES[m.species].name}</b>　Lv.${m.level}<br>HP ${m.hp}/${maxHp(m)}　魔力 ${m.mp}/${maxMp(m)}${ok ? '' : '<br><span class="note">已經是滿的了</span>'}</div></div>`;
+              <div class="info"><b>${SPECIES[m.species].name}</b>　Lv.${m.level}<br>${vitals(m)}${ok ? '' : '<span class="note">已經是滿的了</span>'}</div></div>`;
           }).join('')}
           <div class="foot"><button class="btn" data-a="back">回到背包</button></div>`
-        : `<div class="foot" style="flex-direction:column;gap:10px;align-items:stretch">${ids.map((id) => {
+        : `${G.save.party.map((m) => `<div class="mon">
+              <span class="th" data-key="${spriteOf(m)}"></span>
+              <div class="info"><b>${SPECIES[m.species].name}</b>　Lv.${m.level}<br>${vitals(m)}</div></div>`).join('')}
+          <div class="foot" style="flex-direction:column;gap:10px;align-items:stretch">${ids.map((id) => {
             const it = ITEMS[id];
             return usable(id)
               ? `<button class="btn primary" data-a="pick" data-id="${id}">${it.icon} ${it.name} ×${itemCount(id)}<small>${it.desc}</small></button>`
