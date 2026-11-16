@@ -421,16 +421,22 @@ export function openBackpack(onChange?: () => void): Promise<void> {
       m.querySelectorAll<HTMLElement>('.th').forEach((s) => s.replaceWith(thumb(s.dataset.key!)));
       delegate(m, (a, el) => {
         if (a === 'close') { closeModal(); resolve(); return; }
-        if (a === 'pick') { picking = el.dataset.id!; note = ''; audio.sfx('tap'); }
-        else if (a === 'back') { picking = null; audio.sfx('tap'); }
-        else if (a === 'use' && picking) {
-          const mon = G.save.party[+el.dataset.i!];
-          const it = ITEMS[picking];
-          if (mon && useItem(picking, mon)) {
+        const apply = (id: string, mon: MonsterInst | undefined) => {
+          const it = ITEMS[id];
+          if (mon && useItem(id, mon)) {
             audio.sfx('correct'); saveGame(); onChange?.();
             note = `${SPECIES[mon.species].name}用了 ${it.icon} ${it.name}！`;
-            if (itemCount(picking) <= 0) picking = null;
-          } else { audio.sfx('wrong'); note = '現在用不到喔！'; }
+          } else { audio.sfx('wrong'); note = '已經是滿的了，現在用不到喔！'; }
+        };
+        if (a === 'pick') {
+          note = '';
+          if (G.save.party.length === 1) apply(el.dataset.id!, G.save.party[0]); // 只有一位夥伴：直接使用，不用再選
+          else { picking = el.dataset.id!; audio.sfx('tap'); }
+        }
+        else if (a === 'back') { picking = null; audio.sfx('tap'); }
+        else if (a === 'use' && picking) {
+          apply(picking, G.save.party[+el.dataset.i!]);
+          if (itemCount(picking) <= 0) picking = null;
         } else return;
         closeModal();
         render();
