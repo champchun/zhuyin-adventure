@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BLOCKED_TILES, MAPS } from '../src/data/maps';
-import { reachReport } from '../src/core/dungeon';
+import { visibleWith, walkMap } from './helpers/flood';
 import { MAGIC_CIRCLE_TEXTURES, drawMagicCircleTextures } from '../src/gfx/magicArt';
 import type { Ctx2 } from '../src/gfx/snowArt';
 
@@ -41,12 +41,14 @@ describe('回家魔法陣：手寫地圖 b／p／d', () => {
       expect(m.objects.filter((o) => o.id !== 'circle').map((o) => `${o.id}:${o.x},${o.y}`)).toEqual(OBJECTS[c.map]);
       expect(m.objects).toHaveLength(OBJECTS[c.map].length + 1);
     });
-    it(`${c.map}：打倒頭目後從入口走得到魔法陣與頭目寶箱`, () => {
-      const r = reachReport([m], { map: c.map, ...m.start }, [...c.abilities]);
-      expect(r.reached.has(`${c.map}:${circle.x},${circle.y}`)).toBe(true);
-      const chest = m.objects.find((o) => o.id === 'chest_boss');
-      if (chest) expect(r.unreachableObjects).not.toContain(`${c.map}/chest_boss`);
-      expect(r.unreachableObjects).not.toContain(`${c.map}/circle`);
+    it(`${c.map}：打倒頭目後（有頭目旗標）從起點走得到魔法陣那一格（有頭目寶箱的圖也走得到寶箱旁）`, () => {
+      const r = walkMap(m, { [c.flag]: true }, [...c.abilities]);
+      expect(r.reached.has(`${circle.x},${circle.y}`)).toBe(true);
+      if (m.objects.some((o) => o.id === 'chest_boss')) expect(r.touched.has('chest_boss')).toBe(true); // p 沒有頭目寶箱
+    });
+    it(`${c.map}：魔法陣只有在頭目旗標 ${c.flag} 為真時才看得到`, () => {
+      expect(visibleWith({})(circle)).toBe(false);
+      expect(visibleWith({ [c.flag]: true })(circle)).toBe(true);
     });
     it(`${c.map}：目的地地圖存在、抵達格可走且不壓物件`, () => {
       const dest = MAPS[c.to.map];

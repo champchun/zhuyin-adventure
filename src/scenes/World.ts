@@ -254,7 +254,7 @@ export class WorldScene extends Phaser.Scene {
               beam.fillStyle(0xffffff, a * 0.8).fillRect(px + 6, py + 8 - 1 - i, 4, 1);
             }
             extra.push(beam);
-            if (!G.settings.reduceMotion) for (let i = 0; i < 6; i++) extra.push(this.add.rectangle(px + 8, py + 8, 1, 3, 0xe8f8ff).setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
+            for (let i = 0; i < 6; i++) extra.push(this.add.rectangle(px + 8, py + 8, 1, 3, 0xe8f8ff).setDepth(2.3).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
             break;
           }
           spr = this.add.image(px, py, def.sprite ?? 'stairs').setOrigin(0).setDepth(depth); break;
@@ -435,7 +435,7 @@ export class WorldScene extends Phaser.Scene {
 
   /**
    * 回家魔法陣的動畫：光環兩格輪流（呼吸）、光柱 alpha 輕輕脈動、六條細光點由光環往上飄並漸淡（各自錯開相位）。
-   * 設定「減少動態」時：光環固定、光柱靜止、沒有光點（refreshObjects 沒有產生它們）。
+   * 設定「減少動態」時（可即時切換）：光環固定、光柱靜止、光點隱藏。
    */
   private animCircle(o: Obj) {
     const calm = G.settings.reduceMotion;
@@ -446,6 +446,8 @@ export class WorldScene extends Phaser.Scene {
     beam.setAlpha(calm ? 0.85 : 0.8 + 0.2 * Math.sin(t / 500));
     const cx = o.x * T + 8, cy = o.y * T + 8;
     motes.forEach((m, i) => {
+      if (calm) { m.setVisible(false); return; } // 精簡動畫：光點一律建立，但不顯示、不更新
+      m.setVisible(true);
       const ph = (t / 2200 + i / motes.length) % 1;
       m.setPosition(cx + [-4, 2, -1, 4, -3, 1][i % 6] + Math.sin(ph * 6 + i) * 1.2, cy - 2 - ph * 28).setAlpha(0.9 * (1 - ph));
     });
