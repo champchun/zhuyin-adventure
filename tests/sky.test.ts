@@ -86,9 +86,9 @@ describe('第六關（舌尖前音、天空島）的資料', () => {
       for (const l of BATTLES[id].reward.story) expect(l.length, id).toBeGreaterThan(0);
     }
   });
-  it('ㄗㄘㄙ 的筆順存在（2、2、1 畫）', () => {
+  it('ㄗㄘㄙ 的筆順存在（2、2、2 畫）', () => {
     expect(STROKES['ㄗ']).toHaveLength(2);
     expect(STROKES['ㄘ']).toHaveLength(2);
-    expect(STROKES['ㄙ']).toHaveLength(1);
+    expect(STROKES['ㄙ']).toHaveLength(2);
   });
 });
