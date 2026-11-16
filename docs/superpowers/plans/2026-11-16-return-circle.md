@@ -32,8 +32,9 @@
 
 **Files:** `src/gfx/`（新貼圖與註冊，比照 `desertArt.ts` 的 `desert_road` 拱門做法與其測試）、`src/scenes/World.ts`（閃爍，遵守 `reduceMotion`）、`src/data/maps.ts`（`b`、`p`、`d`）、`tests/returncircle.test.ts`（新）、`tests/layout.test.ts`／`tests/game.test.ts`（如凍結物件需同步，說明原因）。
 
-- 貼圖 `magic_circle`（16×16，背景透明，淡紫／金色的魔法陣）；圖樣測試涵蓋；縮圖輸出放 scratchpad、不提交，實際看過確認可辨認。
-- World：魔法陣輕輕閃爍（alpha 脈動，`reduceMotion` 開時靜止；tween 隨 `refreshObjects` 一併銷毀，不洩漏），比照現有發光物件的處理方式。
+- **外觀參考**：藍白色同心光環＋往上升的光柱＋往上飄的光點（設計文件「外觀」一節，逐字照做）。
+- 貼圖 `magic_circle`、`magic_circle2`（兩格呼吸閃爍；地板上的橢圓同心光環，寬約 24 像素、高 16 像素，背景透明，藍白色，環上一圈小符文點）；圖樣測試涵蓋（尺寸、非空、含透明像素）；縮圖輸出放 scratchpad、不提交，**實際看過**確認光環好看、可辨認（可在 scratchpad 的 `magic_circle_draft2.png` 看到使用者認可的草圖方向，放大版）。
+- World：魔法陣物件除了貼圖，再疊上光柱（約 2 格高、越往上越淡的藍白色漸層，加法混合，alpha 脈動）與幾條往上飄的細光點（循環 tween）；`reduceMotion` 開時光柱靜止、不產生飄動光點；所有圖形與 tween 隨 `refreshObjects` 銷毀，不洩漏；深度低於玩家與夥伴、高於地面；比照現有發光物件（星星婆婆光暈、`granny`）的處理方式。光柱與光環不影響走路判定。
 - `maps.ts`：`b`、`p`、`d` 各加 `circle`（`stairs`、`sprite: 'magic_circle'`、`label: '魔法陣'`、`showIf` 頭目旗標、`to` 照表）。座標依位置規則選，並在測試鎖住。
 - 測試（先寫看它失敗）：`tests/returncircle.test.ts`：物件存在、showIf 正確、與頭目相鄰、可走且不壓其他物件、目的地地圖存在且抵達格可走、不壓物件；`b`／`p`／`d` 既有物件座標不變（鎖住）；打倒頭目後（用既有 BFS／flood helper）從入口走得到魔法陣、頭目寶箱也走得到。
 - [ ] 完成並全部測試通過；commit。
