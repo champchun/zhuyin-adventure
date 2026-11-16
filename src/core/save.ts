@@ -203,13 +203,15 @@ export function buyItem(id: string): 'ok' | 'poor' | 'locked' | 'none' {
 }
 export const addItem = (id: string, n = 1) => { if (ITEMS[id]) G.save.items[id] = itemCount(id) + n; };
 /** 對夥伴使用道具；沒有效果（已經滿了）或沒有庫存時回傳 false，不消耗 */
-export function useItem(id: string, m: MonsterInst): boolean {
+export function canUseItem(id: string, m: MonsterInst): boolean {
   const it = ITEMS[id];
   if (!it || itemCount(id) <= 0) return false;
   ensureVitals(m);
-  const needHp = !!it.hp && m.hp! < maxHp(m);
-  const needMp = !!it.mp && m.mp! < maxMp(m);
-  if (!needHp && !needMp) return false;
+  return (!!it.hp && m.hp! < maxHp(m)) || (!!it.mp && m.mp! < maxMp(m));
+}
+export function useItem(id: string, m: MonsterInst): boolean {
+  const it = ITEMS[id];
+  if (!canUseItem(id, m)) return false;
   if (it.hp) m.hp = Math.min(maxHp(m), m.hp! + it.hp);
   if (it.mp) m.mp = Math.min(maxMp(m), m.mp! + it.mp);
   G.save.items[id]--;

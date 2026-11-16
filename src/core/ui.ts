@@ -1,6 +1,6 @@
 // DOM 介面：標題、對話、HUD、夥伴、家長設定、成果。
 import { audio } from './audio';
-import { G, PARTY_MAX, addItem, buyItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, peekSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
+import { G, PARTY_MAX, addItem, buyItem, canUseItem, useItem, ensureVitals, expNeeded, flag, hasAbility, hasSave, peekSave, itemCount, maxHp, maxMp, saveGame, saveSettings, spriteOf, startNewGame } from './save';
 import { ITEMS, SPECIES } from '../data/monsters';
 import { ALL_SYMBOLS, HUDU, ZHUYIN_TEST } from '../data/symbols';
 import { statOf } from './learning';
@@ -387,6 +387,54 @@ export function openParty(onChange?: () => void): Promise<void> {
   });
 }
 
+// ───── 背包：地圖上對夥伴使用藥水／魔力果 ─────
+export function openBackpack(onChange?: () => void): Promise<void> {
+  return new Promise((resolve) => {
+    let picking: string | null = null;
+    let note = '';
+    const render = () => {
+      const ids = Object.keys(ITEMS).filter((id) => itemCount(id) > 0);
+      const usable = (id: string) => !!(ITEMS[id].hp || ITEMS[id].mp);
+      const body = picking
+        ? `<div class="note" style="font-size:18px;font-weight:800">${ITEMS[picking].icon} ${ITEMS[picking].name}：要給哪一位夥伴？</div>
+          ${G.save.party.map((m, i) => {
+            const ok = canUseItem(picking!, m);
+            return `<div class="mon" ${ok ? `data-a="use" data-i="${i}" role="button"` : 'style="opacity:.45"'}>
+              <span class="th" data-key="${spriteOf(m)}"></span>
+              <div class="info"><b>${SPECIES[m.species].name}</b>　Lv.${m.level}<br>HP ${m.hp}/${maxHp(m)}　魔力 ${m.mp}/${maxMp(m)}${ok ? '' : '<br><span class="note">已經是滿的了</span>'}</div></div>`;
+          }).join('')}
+          <div class="foot"><button class="btn" data-a="back">回到背包</button></div>`
+        : `<div class="foot" style="flex-direction:column;gap:10px;align-items:stretch">${ids.map((id) => {
+            const it = ITEMS[id];
+            return usable(id)
+              ? `<button class="btn primary" data-a="pick" data-id="${id}">${it.icon} ${it.name} ×${itemCount(id)}<small>${it.desc}</small></button>`
+              : `<button class="btn" disabled style="opacity:.6">${it.icon} ${it.name} ×${itemCount(id)}<small>${it.key ? '開洞窟的鎖門時會自動用掉。' : it.desc}</small></button>`;
+          }).join('') || '<p>背包空空的，去商店買一些吧！</p>'}</div>
+          <div class="foot"><button class="btn primary" data-a="close">關閉</button></div>`;
+      const m = openModal(`<h2>🎒 我的背包</h2><div class="note" style="font-size:18px;font-weight:800">🪙 金幣 ${G.save.coins ?? 0}</div>
+        ${body}<div class="note" style="min-height:1.6em">${note}</div>`);
+      m.querySelectorAll<HTMLElement>('.th').forEach((s) => s.replaceWith(thumb(s.dataset.key!)));
+      delegate(m, (a, el) => {
+        if (a === 'close') { closeModal(); resolve(); return; }
+        if (a === 'pick') { picking = el.dataset.id!; note = ''; audio.sfx('tap'); }
+        else if (a === 'back') { picking = null; audio.sfx('tap'); }
+        else if (a === 'use' && picking) {
+          const mon = G.save.party[+el.dataset.i!];
+          const it = ITEMS[picking];
+          if (mon && useItem(picking, mon)) {
+            audio.sfx('correct'); saveGame(); onChange?.();
+            note = `${SPECIES[mon.species].name}用了 ${it.icon} ${it.name}！`;
+            if (itemCount(picking) <= 0) picking = null;
+          } else { audio.sfx('wrong'); note = '現在用不到喔！'; }
+        } else return;
+        closeModal();
+        render();
+      });
+    };
+    render();
+  });
+}
+
 // ───── 家長設定 ─────
 function parentGate(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -570,11 +618,12 @@ export function showTitle(): Promise<'new' | 'continue'> {
 }
 
 export function showHud(show: boolean) { $('hud').hidden = !show; }
-export function setupHud(handlers: { party: () => void; settings: () => void; title: () => void }) {
+export function setupHud(handlers: { party: () => void; backpack: () => void; settings: () => void; title: () => void }) {
   const h = $('hud');
   h.innerHTML = `<div class="tl" id="hudname"></div>
     <div class="tr"><button class="btn round" data-a="replay" aria-label="重聽語音">🔊</button>
     <button class="btn round" data-a="party" aria-label="夥伴">🐾</button>
+    <button class="btn round" data-a="backpack" aria-label="背包">🎒</button>
     <button class="btn round" data-a="settings" aria-label="家長設定">⚙</button>
     <button class="btn round" data-a="title" aria-label="回到標題">🏠</button></div>`;
   h.onclick = (e) => {
@@ -583,6 +632,7 @@ export function setupHud(handlers: { party: () => void; settings: () => void; ti
     audio.sfx('tap');
     if (a === 'replay') audio.replay();
     if (a === 'party') handlers.party();
+    if (a === 'backpack') handlers.backpack();
     if (a === 'settings') handlers.settings();
     if (a === 'title') handlers.title();
   };

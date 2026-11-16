@@ -72,6 +72,7 @@ const world = () => game.scene.getScene('World') as WorldScene;
 
 setupHud({
   party: () => world().openParty(),
+  backpack: () => world().openBackpack(),
   settings: () => openSettings(async () => { await world().begin(true); }),
   title: () => { backToTitle?.(); },
 });

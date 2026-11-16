@@ -3,7 +3,7 @@ import { BLOCKED_TILES, MAPS } from '../src/data/maps';
 import { BATTLES, LEVELS } from '../src/data/levels';
 import { ALL_SYMBOLS, LEARN_STEPS, symbolDef } from '../src/data/symbols';
 import { QuestionRun, makeQuestion } from '../src/core/learning';
-import { G, activeSymbols, addCoins, addItem, buyItem, emptyStat, ensureVitals, giveMonster, healAll, itemCount, maxHp, maxMp, newSave, useItem } from '../src/core/save';
+import { G, activeSymbols, canUseItem, addCoins, addItem, buyItem, emptyStat, ensureVitals, giveMonster, healAll, itemCount, maxHp, maxMp, newSave, useItem } from '../src/core/save';
 import { ENEMIES, ITEMS, SPECIES, moveFor } from '../src/data/monsters';
 import { MONSTER_ART, monsterRows, monsterSize } from '../src/gfx/monsterArt';
 
@@ -158,6 +158,19 @@ describe('HP／魔力／道具', () => {
     m.mp = 0;
     expect(useItem('berry', m)).toBe(true);
     expect(m.mp).toBe(Math.min(maxMp(m), ITEMS.berry.mp!));
+  });
+  it('canUseItem：沒庫存、已滿、鑰匙都不能用；缺 HP／魔力才能用，且不消耗', () => {
+    const m = fresh();
+    expect(canUseItem('potion', m)).toBe(false); // 沒庫存
+    addItem('potion'); addItem('berry'); addItem('key');
+    expect(canUseItem('potion', m)).toBe(false); // HP 已滿
+    expect(canUseItem('berry', m)).toBe(false); // 魔力已滿
+    expect(canUseItem('key', m)).toBe(false);
+    m.hp = 1; m.mp = 0;
+    expect(canUseItem('potion', m)).toBe(true);
+    expect(canUseItem('berry', m)).toBe(true);
+    expect(itemCount('potion')).toBe(1);
+    expect(canUseItem('nope', m)).toBe(false);
   });
 });
 

@@ -11,7 +11,7 @@ import {
 } from '../core/save';
 import { audio } from '../core/audio';
 import { lessonSteps, lessonSymbols, makeLessonRound } from '../core/lesson';
-import { choose, openLessonPick, openParty, openResults, openSettings, openShop, openStarShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
+import { choose, openBackpack, openLessonPick, openParty, openResults, openSettings, openShop, openStarShop, openWriteSymbol, say, setHudInfo, toast, ui } from '../core/ui';
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { starDoorOpen } from '../core/stars';
@@ -1147,6 +1147,7 @@ export class WorldScene extends Phaser.Scene {
 
   // ───── 給 main 使用 ─────
   openParty() { openParty(() => this.buildFollowers()); }
+  openBackpack() { openBackpack(); }
   openSettings() { openSettings(() => { /* reset handled by main */ }); }
   pauseInput(b: boolean) { this.busy = b; }
 }
