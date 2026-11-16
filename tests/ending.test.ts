@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { REWARDS, SHOP_REWARDS, rewardById } from '../src/data/rewards';
 import { canRedeem, redeem, titleName } from '../src/core/stars';
-import { grantEnding } from '../src/core/ending';
+import { grantEnding, needsEnding } from '../src/core/ending';
 import { newSave } from '../src/core/save';
 import { BATTLES, ENDING_LINES } from '../src/data/levels';
 import { ALL_SYMBOLS } from '../src/data/symbols';
@@ -55,6 +55,24 @@ describe('grantEnding', () => {
     s.flags.boss_s = true;
     expect(grantEnding(s).granted).toBe(true);
     expect(s.titles).toEqual(['title_hero']);
+  });
+});
+
+describe('載入時補發（獎勵對話開著時關掉遊戲）', () => {
+  it('有 boss_s、沒有 endingSeen → 需要補發，補發得到 title_hero 與 endingSeen', () => {
+    const s = newSave();
+    s.flags.boss_s = true;
+    expect(needsEnding(s)).toBe(true);
+    expect(grantEnding(s).granted).toBe(true);
+    expect(s.titles).toContain('title_hero');
+    expect(s.flags.endingSeen).toBe(true);
+    expect(needsEnding(s)).toBe(false);
+  });
+  it('已有 endingSeen 或沒打倒頭目 → 不補發', () => {
+    const a = newSave(); a.flags.boss_s = true; a.flags.endingSeen = true;
+    expect(needsEnding(a)).toBe(false);
+    expect(grantEnding(a).granted).toBe(false);
+    expect(needsEnding(newSave())).toBe(false);
   });
 });
 

@@ -15,7 +15,7 @@ import { choose, openLessonPick, openParty, openResults, openSettings, openShop,
 import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/travel';
 import { stayOutcome } from '../core/inn';
 import { starDoorOpen } from '../core/stars';
-import { grantEnding } from '../core/ending';
+import { grantEnding, needsEnding } from '../core/ending';
 import { STAR_DOOR_NEED } from '../data/rewards';
 import { accOffset, accTexture } from '../gfx/accessory';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
@@ -88,6 +88,11 @@ export class WorldScene extends Phaser.Scene {
       this.busy = true;
       await say(STORY.intro.map((t) => ({ who: '旁白', text: t })));
       this.busy = false;
+    }
+    // 補發：獎勵對話開著時關掉遊戲，存檔有 boss_s 卻沒有 endingSeen
+    if (needsEnding(G.save)) {
+      this.busy = true;
+      try { await this.playEnding(); } finally { this.busy = false; }
     }
   }
 
@@ -1027,10 +1032,14 @@ export class WorldScene extends Phaser.Scene {
     if (res === 'run') { const st = this.mons.get(o.def.id); if (st) stunMon(st); return; } // 撤退：這隻怪暫停幾步，讓孩子來得及走開
     await this.applyReward(def, o);
     // 結算與獎勵說完後才播結尾（只播一次：grantEnding 以 endingSeen 判斷）
-    if (def.id === 'boss_s' && grantEnding(G.save).granted) {
-      saveGame();
-      await say(ENDING_LINES);
-    }
+    if (def.id === 'boss_s') await this.playEnding();
+  }
+
+  /** 發免費稱號、立刻存檔、播結尾；只有 grantEnding 回傳 granted 才播，所以只會播一次。 */
+  private async playEnding() {
+    if (!grantEnding(G.save).granted) return;
+    saveGame();
+    await say(ENDING_LINES);
   }
 
   /** 第一次認識符號的小課程：每個新符號依序「選符號 → 聽符號 → 寫符號」，不能跳過、沒有處罰；上完記進 introduced。 */
