@@ -923,6 +923,10 @@ MAPS.s = {
 
 // ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc、星塔 sc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
 type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2';
+/** 頭目後的回家魔法陣：洞窟 id 前綴 → 通往該關主島旅館門外一格（單向出口） */
+const CIRCLE_HOME: Record<string, NonNullable<MapObj['to']>> = {
+  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 },
+};
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
@@ -978,6 +982,14 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
         break;
       }
     }
+  }
+  // 打倒頭目後出現的回家魔法陣：頭目四鄰（左、右、上、下）第一格可走且沒有其他物件
+  const bossObj = f.objects.find((o) => o.role === 'boss');
+  if (bossObj) {
+    const spot = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => ({ x: bossObj.x + dx, y: bossObj.y + dy }))
+      .find((p) => !BLOCKED_TILES.has(f.rows[p.y]?.[p.x] ?? '#') && !f.objects.some((o) => o.x === p.x && o.y === p.y));
+    if (!spot) throw new Error(`${mapId}：頭目旁邊找不到放魔法陣的空格`);
+    objs.push({ id: 'circle', kind: 'stairs', ...spot, sprite: 'magic_circle', label: '魔法陣', showIf: boss, to: CIRCLE_HOME[mapId.slice(0, 2)] });
   }
   return objs;
 }
