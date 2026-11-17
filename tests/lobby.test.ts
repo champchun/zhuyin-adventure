@@ -77,4 +77,12 @@ describe('結局伏筆', () => {
     expect(lines.length).toBeGreaterThan(0);
     for (const l of lines) expect(l).not.toMatch(/所有的注音|全部的注音/);
   });
+  it('所有地圖上的物件台詞（text、talk）都沒有說「所有的注音」都學會了（第二階段還有韻母）', () => {
+    for (const m of Object.values(MAPS)) {
+      for (const o of m.objects) {
+        const lines = [...(o.text ?? []), ...(o.talk ?? []).flatMap((t) => t.lines)];
+        for (const l of lines) expect(l, `${m.id}/${o.id}`).not.toMatch(/所有的注音|全部的注音/);
+      }
+    }
+  });
 });
