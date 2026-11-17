@@ -7,6 +7,7 @@ import { drawDesertTextures } from './desertArt';
 import { drawLobbyTextures } from './lobbyArt';
 import { drawMagicCircleTextures } from './magicArt';
 import { drawSkyTextures } from './skyArt';
+import { drawSeaTextures } from './seaArt';
 import { drawStarTextures } from './starArt';
 
 export const TILE = 16;
@@ -426,6 +427,7 @@ export function generateTextures(scene: Phaser.Scene) {
   drawMagicCircleTextures(make as unknown as Parameters<typeof drawMagicCircleTextures>[0], px as unknown as Parameters<typeof drawMagicCircleTextures>[1]);
   // 第六關（天空島）
   drawSkyTextures(make as unknown as Parameters<typeof drawSkyTextures>[0], px as unknown as Parameters<typeof drawSkyTextures>[1]);
+  drawSeaTextures(make as unknown as Parameters<typeof drawSeaTextures>[0], px as unknown as Parameters<typeof drawSeaTextures>[1]);
   // 星星婆婆、飾品、星光門
   drawStarTextures(make as unknown as Parameters<typeof drawStarTextures>[0], px as unknown as Parameters<typeof drawStarTextures>[1]);
 }

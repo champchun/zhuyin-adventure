@@ -1127,3 +1127,12 @@ export const SKINS: Record<string, Skin> = { [DEFAULT_SKIN]: { key: TILE_KEY, bl
 export const skinOf = (m: { skin?: string }): Skin => SKINS[m.skin ?? DEFAULT_SKIN] ?? SKINS[DEFAULT_SKIN];
 export const tileKeyOf = (m: { skin?: string }, ch: string): string => skinOf(m).key[ch] ?? 't_grass';
 export const isBlockedTile = (m: { skin?: string }, ch: string): boolean => skinOf(m).blocked.has(ch);
+
+// 第七關（海底）的外觀表：字元 → 貼圖 key；擋路的字元
+SKINS.sea = {
+  key: {
+    '.': 't_sea_sand', ',': 't_sea_kelp', '=': 't_sea_path', f: 't_wreck_deck', '#': 't_sea_coral', R: 't_sea_rock', '~': 't_sea_deep', O: 't_sea_pool',
+    h: 't_roof_shell', H: 't_wall_shell', i: 't_roof_inn_shell', I: 't_wall_inn_shell', k: 't_roof_shop_shell', K: 't_wall_shop_shell', D: 't_door', W: 't_wreck_wall',
+  },
+  blocked: new Set('#RO~hHiIkKDW'),
+};
