@@ -92,7 +92,8 @@ describe('珊瑚港 uh（主島）', () => {
       expect(last.if === undefined && last.not === undefined, n.id).toBe(true);
       for (const t of n.talk!) for (const l of t.lines) expect(/ㄩ/.test(l), `${n.id}：${l}`).toBe(false);
     }
-    for (const o of [...uh.objects, ...u.objects]) for (const l of o.text ?? []) if (o.id !== 'sign1') expect(/ㄩ/.test(l), `${o.id}：${l}`).toBe(false);
+    // 告示牌（text）與機關還沒啟動時的提示（lockText）都在學會 ㄩ 之前就看得到；hitText／doneText 要等招式學會、啟動之後才出現，不在此限
+    for (const o of [...uh.objects, ...u.objects]) for (const l of [...(o.text ?? []), ...(o.lockText ?? [])]) expect(/ㄩ/.test(l), `${o.id}：${l}`).toBe(false);
   });
   it('金幣爺爺與星星婆婆：id 正確、站可走格、彼此與出入口至少 2 格、四周有空格；GIVER_HUBS 含 uh', () => {
     expect(GIVER_HUBS).toContain('uh');

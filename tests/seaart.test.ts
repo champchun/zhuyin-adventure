@@ -29,8 +29,13 @@ describe('海底圖樣', () => {
   it('地形圖塊（t_ 開頭）畫滿 16×16，沒有透明縫', () => {
     for (const k of SEA_TEXTURES.filter((t) => t.startsWith('t_'))) expect(tex[k].px.every((p) => p), `${k} 有透明格`).toBe(true);
   });
-  it('物件圖樣背景透明（疊在海沙上）', () => {
-    for (const k of SEA_TEXTURES.filter((t) => !t.startsWith('t_'))) expect(tex[k].px.some((p) => !p), k).toBe(true);
+  // 深水溝缺口與泡泡橋是「畫在深水溝那一格上」的物件，要畫滿整格才和旁邊的深水溝接得起來；其餘物件背景透明（疊在海沙上）
+  const FULL_TILE_OBJECTS = ['bubble_gap', 'bubble_bridge'];
+  it('物件圖樣背景透明（疊在海沙上），深水溝缺口與泡泡橋除外', () => {
+    for (const k of SEA_TEXTURES.filter((t) => !t.startsWith('t_') && !FULL_TILE_OBJECTS.includes(t))) expect(tex[k].px.some((p) => !p), k).toBe(true);
+  });
+  it('深水溝缺口與泡泡橋畫滿 16×16（沒有透明角落）', () => {
+    for (const k of FULL_TILE_OBJECTS) expect(tex[k].px.every((p) => p), `${k} 有透明格`).toBe(true);
   });
   it('明暗成對的物件畫得不一樣', () => {
     for (const [a, b] of [['lantern_jelly', 'lantern_jelly_on'], ['giant_clam', 'giant_clam_open'], ['bubble_gap', 'bubble_bridge']]) expect(tex[a].px.join('|'), `${a} vs ${b}`).not.toBe(tex[b].px.join('|'));

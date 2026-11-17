@@ -79,9 +79,9 @@ export const MOVES: Record<string, MoveDef> = {
   zip: { id: 'zip', magicName: '拉鍊魔法', symbol: 'ㄗ', name: '拉鍊', power: 8, fx: 'zip', needAbility: 'zip', desc: '「ㄗ」舌尖輕輕抵住上下牙齒的後面，再放開，像把拉鍊「刷」地拉開，能拉開雲裡的封印。舌尖在牙齒附近，不是翹起來，和翹舌音的「ㄓ」不一樣喔！' },
   spike: { id: 'spike', magicName: '刺球魔法', symbol: 'ㄘ', name: '刺球', power: 8, fx: 'spike', needAbility: 'spike', desc: '「ㄘ」舌尖抵住上下牙齒附近，用力吐出一口氣，像射出一顆刺球，能把擋路的雲球戳破。舌尖在牙齒附近，不用翹起來，和翹舌音的「ㄔ」不一樣喔！' },
   whistle: { id: 'whistle', magicName: '口哨風魔法', symbol: 'ㄙ', name: '口哨風', power: 9, fx: 'whistle', needAbility: 'whistle', desc: '「ㄙ」舌尖靠在上下牙齒中間，氣從牙齒的縫裡「絲～」地漏出來，像吹口哨，能吹動星塔的風。舌尖在牙齒附近，舌頭不翹起來，和翹舌音的「ㄕ」不一樣喔！' },
-  glow: { id: 'glow', magicName: '亮光魔法', symbol: 'ㄧ', name: '亮光閃', power: 10, fx: 'glow', needAbility: 'glow', desc: '「ㄧ」嘴角往兩邊拉開，像在微笑，發出細細亮亮的聲音，能點亮海底暗暗的燈。' },
-  jet: { id: 'jet', magicName: '水柱魔法', symbol: 'ㄨ', name: '噗噗水柱', power: 10, fx: 'jet', needAbility: 'jet', desc: '「ㄨ」嘴唇圓圓地噘起來，像魚兒噗噗吐水，噴出一道水柱，能把海底的大貝殼沖開。' },
-  pop: { id: 'pop', magicName: '吐泡魔法', symbol: 'ㄩ', name: '吐泡泡', power: 11, fx: 'pop', needAbility: 'pop', desc: '「ㄩ」嘴唇噘得小小圓圓的，舌頭卻和「ㄧ」一樣在前面，吐出一串泡泡，能托起沉在海底的東西。' },
+  glow: { id: 'glow', magicName: '亮光魔法', symbol: 'ㄧ', name: '亮光閃', power: 10, fx: 'glow', needAbility: 'glow', desc: '「ㄧ」嘴角往兩邊拉開，像笑咪咪的樣子，細細地發出聲音，嘴巴前面亮起一道小光，能點亮暗掉的燈籠水母。' },
+  jet: { id: 'jet', magicName: '水柱魔法', symbol: 'ㄨ', name: '噗噗水柱', power: 10, fx: 'jet', needAbility: 'jet', desc: '「ㄨ」嘴巴嘟成一個小圓圈，用力往前吹，像噴出一道水柱「噗」，能把緊閉的大貝殼沖開。' },
+  pop: { id: 'pop', magicName: '吐泡魔法', symbol: 'ㄩ', name: '吐泡泡', power: 11, fx: 'pop', needAbility: 'pop', desc: '「ㄩ」嘴巴噘得圓圓的，舌頭和「ㄧ」一樣在前面，像小魚吐泡泡，吹出一串泡泡，能在深水溝上架起泡泡橋。' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
