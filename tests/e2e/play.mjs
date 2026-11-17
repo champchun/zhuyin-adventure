@@ -3,10 +3,10 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、lv5（綠洲鎮～火山沙漠～熔岩洞窟～沙漠小路回起始村）、lv6（熱氣球～雲上小鎮～星空島～星塔～星空龍王～結尾，回起始村）、lv7（世界地圖大廳～珊瑚港～海藻森林～沉船～大章魚～泡泡橋，回起始村；不併入 all）、all（預設，從頭玩到尾，不含 lv7）。
+// 分段執行：SECTION=lv0（村子～小關B～草原）、lv2（舌尖中音島）、lv3（蛙鳴灣～回音森林）、lv4（雪花鎮～企鵝冰原～雪地小路回起始村）、lv5（綠洲鎮～火山沙漠～熔岩洞窟～沙漠小路回起始村）、lv6（熱氣球～雲上小鎮～星空島～星塔～星空龍王～結尾，回起始村）、lv7（世界地圖大廳～珊瑚港～海藻森林～沉船～大章魚～泡泡橋，回起始村；不併入 all）、lv8（大廳的遊樂園門～歡樂廣場～小火車～歡樂島～鏡子迷宮～小丑魔術師～摩天輪橋與煙火筒，回起始村；不併入 all）、all（預設，從頭玩到尾，不含 lv7、lv8）。
 // 分段時前面的進度用「直接寫存檔」補上，不重打前面的戰鬥，所以只測被動到的那一段、跑得快很多。
 const SECTION = process.env.SECTION ?? 'all';
-const run = (...n) => SECTION === 'all' || n.includes(SECTION); // lv7 不併入 all（all 已接近 CI 的時間上限），所以 lv7 段直接用 SECTION === 'lv7' 判斷
+const run = (...n) => SECTION === 'all' || n.includes(SECTION); // lv7、lv8 不併入 all（all 已接近 CI 的時間上限），所以這兩段直接用 SECTION === 'lv7'／'lv8' 判斷
 const URL = process.argv[2] ?? 'http://127.0.0.1:5173/';
 const OUT = process.argv[3] ?? './e2e-shots';
 fs.mkdirSync(OUT, { recursive: true });
@@ -77,7 +77,7 @@ async function pump(cond, label, maxMs = 900000) {
     else if (st.note) { await sleep(300); await page.click('#battleui [data-a=ok]').catch(() => {}); }
     else if (st.itemPick) { await page.click(`#battleui [data-a=it][data-id=${st.heal ?? 'potion'}]`).catch(() => {}); usedPotions++; }
     else if (st.low) { await page.click('#battleui .grid4 [data-a=item]').catch(() => {}); }
-    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶|蠍|仙人掌|木乃伊|熔岩|星星|彗星|守衛|龍王|水母|海膽|章魚/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
+    else if (st.top.length) { if (!battleRefilled) { battleRefilled = true; await refillVitals(); } if (!seenTop) { seenTop = true; await snap('battle-menu'); } const wantMode = process.env.MODE ?? ((shieldUp || /蝙蝠|企鵝|冰晶|蠍|仙人掌|木乃伊|熔岩|星星|彗星|守衛|龍王|水母|海膽|章魚|氣球怪|玩具兵|彈簧盒|小丑魔術師/.test(st.enemy)) && st.top.includes('listen') ? 'listen' : st.top[0]); await page.click(`#battleui .grid4 [data-a=pick][data-m=${wantMode}]:not([disabled])`).catch(() => page.click(`#battleui .grid4 [data-a=pick][data-m=${st.top[0]}]`).catch(() => {})); }
     else if (st.move) { if (!seenMove) { seenMove = true; await snap('battle-moves'); } await page.click('#battleui [data-a=move] >> nth=' + (process.env.MV ?? '-1') + '').catch(() => {}); }
     else if (st.opts.length) {
       if (st.msg + st.big !== lastBattle) { lastBattle = st.msg + st.big; if (shot < 40 && st.opts.length) await snap('question-' + st.big); }
@@ -358,41 +358,48 @@ if (!run('lv0')) {
     S.cleared.push('b', 'p');
     S.coins = 150; S.items.potion = 4; S.items.berry = 2;
     m.stage = 1; m.level = 4; m.hp = 99; m.mp = 99;
-    if (sec === 'lv3' || sec === 'lv4' || sec === 'lv5' || sec === 'lv6' || sec === 'lv7') {
+    if (sec === 'lv3' || sec === 'lv4' || sec === 'lv5' || sec === 'lv6' || sec === 'lv7' || sec === 'lv8') {
       add('dEntered', 'dPractice', 'boss_d', 'visited:dh', 'visited:d');
       ab('drum', 'splash', 'nasal', 'stream');
       intro('ㄉ', 'ㄊ', 'ㄋ', 'ㄌ');
       S.cleared.push('d');
       m.level = 6; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv4' || sec === 'lv5' || sec === 'lv6' || sec === 'lv7') {
+    if (sec === 'lv4' || sec === 'lv5' || sec === 'lv6' || sec === 'lv7' || sec === 'lv8') {
       add('gEntered', 'gPractice', 'boss_g', 'visited:gh', 'visited:g');
       ab('croak', 'knock', 'breath');
       intro('ㄍ', 'ㄎ', 'ㄏ');
       S.cleared.push('g');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv5' || sec === 'lv6' || sec === 'lv7') { // 第五關從起始村的沙漠小路出發（要打倒冰晶女王才出現），所以前四關都補齊
+    if (sec === 'lv5' || sec === 'lv6' || sec === 'lv7' || sec === 'lv8') { // 第五關從起始村的沙漠小路出發（要打倒冰晶女王才出現），所以前四關都補齊
       add('xEntered', 'xPractice', 'boss_x', 'visited:xh', 'visited:x');
       ab('snow', 'slide', 'freeze');
       intro('ㄒ', 'ㄑ', 'ㄐ');
       S.cleared.push('x');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv6' || sec === 'lv7') { // 第六關從起始村的熱氣球出發（要打倒熔岩獸才出現），所以再補上第五關
+    if (sec === 'lv6' || sec === 'lv7' || sec === 'lv8') { // 第六關從起始村的熱氣球出發（要打倒熔岩獸才出現），所以再補上第五關
       add('zEntered', 'zPractice', 'boss_z', 'visited:zh', 'visited:z');
       ab('web', 'gulp', 'roar', 'sun');
       intro('ㄓ', 'ㄔ', 'ㄕ', 'ㄖ');
       S.cleared.push('z');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
-    if (sec === 'lv7') { // 第七關從起始村的世界地圖出發（看過結尾 endingSeen 才出現），所以再補上第六關與結尾（稱號「注音大英雄」）
+    if (sec === 'lv7' || sec === 'lv8') { // 第七關從起始村的世界地圖出發（看過結尾 endingSeen 才出現），所以再補上第六關與結尾（稱號「注音大英雄」）
       add('g:village:balloon_empty', 'sEntered', 'spracticeDone', 'sPractice', 'boss_s1', 'boss_s', 'endingSeen', 'visited:sh', 'visited:s');
       ab('zip', 'spike', 'whistle');
       intro('ㄗ', 'ㄘ', 'ㄙ');
       S.cleared.push('s1', 's');
       const titles = (S.titles ??= []); if (!titles.includes('title_hero')) titles.push('title_hero');
       S.title = 'title_hero';
+      m.level = 8; m.hp = 99; m.mp = 99;
+    }
+    if (sec === 'lv8') { // 第八關從大廳的遊樂園門出發（要打倒大章魚 boss_u 才從擋路的 barrier 換成通道），所以再補上第七關
+      add('uEntered', 'uPractice', 'boss_u', 'visited:uh', 'visited:u');
+      ab('glow', 'jet', 'pop');
+      intro('ㄧ', 'ㄨ', 'ㄩ');
+      S.cleared.push('u');
       m.level = 8; m.hp = 99; m.mp = 99;
     }
     window.__game.world().loadMap(sec === 'lv4' ? 'gh' : sec === 'lv3' ? 'dh' : 'village', sec === 'lv3' || sec === 'lv4' ? 14 : 20, sec === 'lv3' || sec === 'lv4' ? 17 : 11);
@@ -987,6 +994,110 @@ if (SECTION === 'lv7') { // 不併入 all：只在 SECTION=lv7 時跑
   await tapObj('back_village', '大廳的樓梯（回起始村）');
   if ((await save()).mapId !== 'village') throw new Error('沒有從大廳回到起始村');
   log('✓ 第七關走完：世界地圖大廳、珊瑚港、海藻森林、沉船、大章魚、泡泡橋，從大廳回起始村');
+}
+if (SECTION === 'lv8') { // 不併入 all：只在 SECTION=lv8 時跑
+  // ───── 世界地圖大廳的遊樂園門、歡樂廣場與歡樂島（ㄚㄛㄜㄝ）、鏡子迷宮、小丑魔術師 ─────
+  await tapObj('world_map', '起始村的世界地圖（看過結尾後出現）');
+  if ((await save()).mapId !== 'lobby') throw new Error('沒有從世界地圖走到大廳');
+  if (await hasObj('gate8') || !(await hasObj('gate8_open'))) throw new Error('打倒大章魚後，大廳的遊樂園門應該從擋路的門換成通道');
+  await snap('lobby-gate8');
+  await tapObj('gate8_open', '大廳的遊樂園門（第八關遊樂園，打倒大章魚後打開）');
+  if ((await save()).mapId !== 'ah') throw new Error('沒有從遊樂園門走到歡樂廣場');
+  f = await flags();
+  if (!f['visited:ah']) throw new Error('到歡樂廣場後應該記下去過 ' + JSON.stringify(f));
+  await snap('hub-a');
+  log('✓ 世界地圖大廳的遊樂園門通到歡樂廣場');
+  // 旅館：金幣不夠不能住（不扣錢）；夠了才住（回滿 HP、扣 25 金幣）
+  await ev(() => { const g = window.__game.G.save; g.coins = 10; g.party[0].hp = 1; });
+  await tapObj('door_inn', '歡樂廣場旅館的門');
+  if ((await save()).mapId !== 'ah_inn') throw new Error('沒有進入歡樂廣場旅館');
+  await tapObj('keeper', '旅館老闆（金幣不夠）');
+  inn = await save();
+  if (inn.coins !== 10 || inn.party[0].hp !== 1) throw new Error('歡樂廣場：金幣不夠時不該扣錢或回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  await ev(() => { window.__game.G.save.coins = 100; });
+  await tapObj('keeper', '旅館老闆（住一晚）');
+  inn = await save();
+  if (inn.coins !== 75 || !(inn.party[0].hp > 1)) throw new Error('歡樂廣場：住一晚後應該扣 25 金幣並回血 ' + JSON.stringify({ coins: inn.coins, hp: inn.party[0].hp }));
+  log('✓ 歡樂廣場旅館：金幣不夠不能住，夠了住一晚回滿並扣 25 金幣');
+  await tapObj('door', '離開歡樂廣場旅館');
+  if ((await save()).mapId !== 'ah') throw new Error('沒有走出歡樂廣場旅館');
+  await tapObj('train', '歡樂廣場的小火車（去歡樂島；出發選擇由 pump 自動選第一個）');
+  if ((await save()).mapId !== 'a') throw new Error('沒有搭小火車到歡樂島');
+  f = await flags();
+  if (!f.aEntered) throw new Error('進歡樂島後應該開始教 ㄚㄛ ' + JSON.stringify(f));
+  await snap('funisle');
+  await tapObj('dummy', '歡樂島練習彩球人偶');
+  s = await save();
+  if (!s.flags.aPractice || !s.abilities.includes('shout') || !s.abilities.includes('inflate')) throw new Error('練習戰後沒有學到大聲喊／吹氣球 ' + JSON.stringify(s.abilities));
+  const intro12 = s.introduced; if (!intro12 || !intro12.includes('ㄚ') || !intro12.includes('ㄛ')) throw new Error('練習戰之後 ㄚㄛ 應該已經上過課 ' + JSON.stringify(intro12));
+  log('✓ 歡樂島練習戰完成，學會 shout（ㄚ）與 inflate（ㄛ）');
+  await tapObj('chest_1', '歡樂島寶箱');
+  await tapObj('carousel', '旋轉木馬（ㄚ）'); await tapObj('chest_carousel', '旋轉木馬旁的寶箱');
+  await tapObj('balloon', '洩氣的大氣球（ㄛ）'); await tapObj('chest_balloon', '大氣球旁的寶箱');
+  f = await flags();
+  if (!f['g:a:carousel'] || !f['c:a:chest_carousel'] || !f['g:a:balloon'] || !f['c:a:chest_balloon']) throw new Error('旋轉木馬／大氣球機關失敗 ' + JSON.stringify(f));
+  await snap('funisle-gimmicks');
+  log('✓ ㄚ叫醒旋轉木馬、ㄛ吹大氣球，各取得寶箱（水溝的摩天輪橋與煙火筒要等學會 ㄜㄝ）');
+  for (const m of ['m1', 'm2', 'm3']) if (await hasObj(m)) await tapObj(m, '歡樂島小怪 ' + m); // 有的小怪可能已經被前面的步驟順手打掉
+
+  // ───── 鏡子迷宮（小丑魔術師有護盾，要用魔法才打得到）─────
+  await tapObj('cave', '鏡子迷宮入口（練習戰後出現）');
+  if ((await save()).mapId !== 'ac1') throw new Error('沒有進入鏡子迷宮 1 樓');
+  await snap('mirror-1f');
+  // 順序：鑰匙 → 鎖門 → 裂石（產生的迷宮裡裂石可能在鎖門後面）
+  await tapObj('chest_key', '鑰匙寶箱');
+  if (((await save()).items.key ?? 0) !== 1) throw new Error('鏡子迷宮沒有拿到小鑰匙');
+  await tapObj('door', '鎖住的門');
+  f = await flags();
+  if (!f['k:ac1:door'] || ((await save()).items.key ?? 0) !== 0) throw new Error('鏡子迷宮的鎖門沒有打開、或鑰匙沒有用掉 ' + JSON.stringify(f));
+  await tapObj('rock_h', '裂石'); await tapObj('chest_h', '隱藏房間的寶箱');
+  f = await flags();
+  if (!f['r:ac1:rock_h'] || !f['c:ac1:chest_h']) throw new Error('鏡子迷宮的裂石／隱藏寶箱失敗 ' + JSON.stringify(f));
+  log('✓ 鏡子迷宮 1 樓：打碎裂石、拿到小鑰匙、用鑰匙開了鎖門');
+  await tapObj('down', '往 2 樓的樓梯');
+  if ((await save()).mapId !== 'ac2') throw new Error('沒有走到鏡子迷宮 2 樓');
+  await snap('mirror-2f');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力：玩具兵、彈簧盒小丑是回音怪，要用魔法攻擊才有傷害
+  await tapObj('switch1', '大鑼開關（ㄚ大聲喊，練習戰就學到）');
+  f = await flags();
+  if (!f['g:ac2:switch1']) throw new Error('鏡子迷宮 2 樓的大鑼開關沒有啟動 ' + JSON.stringify(f));
+  log('✓ 鏡子迷宮 2 樓：大聲喊震響大鑼、鏡牆消失');
+  await ev(() => { const m = window.__game.G.save.party[0]; m.mp = 5; }); // 補魔力讓它破得了小丑魔術師的護盾（一擊必殺開著也一樣：被護盾擋下的那一擊是 0 傷害）
+  await tapObj('boss', '小丑魔術師');
+  s = await save();
+  if (!s.flags.boss_a || !s.abilities.includes('honk') || !s.abilities.includes('cheer')) throw new Error('小丑魔術師沒有打贏，或沒有學到 honk／cheer（ㄜㄝ） ' + JSON.stringify({ flags: s.flags.boss_a, abilities: s.abilities }));
+  const intro13 = s.introduced; if (!intro13 || !intro13.includes('ㄜ') || !intro13.includes('ㄝ')) throw new Error('小丑魔術師之後 ㄜㄝ 應該已經上過課 ' + JSON.stringify(intro13));
+  await snap('after-boss-a');
+  log('✓ 小丑魔術師打贏了（護盾被魔法打破），學會 honk（ㄜ）與 cheer（ㄝ）');
+  await tapObj('chest_boss', '頭目寶箱');
+  if (!(await flags())['c:ac2:chest_boss']) throw new Error('小丑魔術師的寶箱沒拿到');
+  await tapObj('circle', '回家魔法陣（打倒小丑魔術師後出現）');
+  s = await save();
+  if (s.mapId !== 'ah' || s.x !== 8 || s.y !== 4) throw new Error('魔法陣應該送回歡樂廣場旅館門外 (8,4) ' + JSON.stringify({ mapId: s.mapId, x: s.x, y: s.y }));
+  log('✓ 回家魔法陣：從鏡子迷宮 2 樓回到歡樂廣場旅館門外');
+
+  // ───── 摩天輪橋（ㄜ）與煙火筒（ㄝ），打倒小丑魔術師之後才解得開 ─────
+  await tapObj('train', '歡樂廣場的小火車（再去歡樂島）');
+  if ((await save()).mapId !== 'a') throw new Error('沒有搭小火車回到歡樂島');
+  await tapObj('ferris', '水溝的缺口（ㄜ）');
+  if (!(await flags())['g:a:ferris']) throw new Error('摩天輪橋沒有架起來');
+  await tapObj('chest_f1', '對岸寶箱 1'); await tapObj('chest_f2', '對岸寶箱 2');
+  f = await flags();
+  if (!f['c:a:chest_f1'] || !f['c:a:chest_f2']) throw new Error('摩天輪橋對岸的寶箱沒拿到 ' + JSON.stringify(f));
+  await snap('funisle-ferris');
+  log('✓ ㄜ叫出摩天輪橋，走過水溝取得對岸的寶箱');
+  await tapObj('fireworks', '煙火筒（ㄝ）'); await tapObj('chest_fireworks', '煙火筒旁的寶箱');
+  f = await flags();
+  if (!f['g:a:fireworks'] || !f['c:a:chest_fireworks']) throw new Error('煙火筒機關失敗 ' + JSON.stringify(f));
+  await snap('funisle-fireworks');
+  log('✓ ㄝ歡呼點燃煙火筒，取得寶箱');
+  await tapObj('train_back', '歡樂島的小火車（回歡樂廣場）');
+  if ((await save()).mapId !== 'ah') throw new Error('沒有從歡樂島搭小火車回到歡樂廣場');
+  await tapObj('park_gate_back', '歡樂廣場的遊樂園大門（回世界地圖）');
+  if ((await save()).mapId !== 'lobby') throw new Error('沒有從遊樂園大門回到大廳');
+  await tapObj('back_village', '大廳的樓梯（回起始村）');
+  if ((await save()).mapId !== 'village') throw new Error('沒有從大廳回到起始村');
+  log('✓ 第八關走完：世界地圖大廳、歡樂廣場、歡樂島、鏡子迷宮、小丑魔術師、摩天輪橋與煙火筒，從大廳回起始村');
 }
 if (SECTION === 'lv2' || SECTION === 'lv3') {
   await doTap(23, 10, '主島東邊的碼頭（回起始村）');
