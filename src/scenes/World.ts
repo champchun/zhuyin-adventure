@@ -777,9 +777,9 @@ export class WorldScene extends Phaser.Scene {
   /** 店員：打招呼後開商店 */
   private async talkClerk(d: MapObj) {
     const who = d.label;
-    await say(STORY.shopHello.map((text) => ({ who, text })));
+    await say((d.text?.length ? d.text : STORY.shopHello).map((text) => ({ who, text }))); // 每間商店有自己的招呼與道別（沒設才用通用的）
     await openShop();
-    await say(STORY.shopBye.map((text) => ({ who, text })));
+    await say((d.doneText?.length ? d.doneText : STORY.shopBye).map((text) => ({ who, text })));
   }
 
   /** 在房間睡覺：夥伴的 HP／魔力全部回滿 */

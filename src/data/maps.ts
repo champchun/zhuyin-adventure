@@ -202,7 +202,11 @@ export const MAPS: Record<string, MapDef> = {
     id: 'shop', name: '小福道具店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
     start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
     objects: [
-      { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+      {
+        id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+        text: ['歡迎光臨小福道具店！', '打贏怪獸得到的金幣，可以在這裡買藥水和魔力果。'],
+        doneText: ['謝謝惠顧！下次再來喔～'],
+      },
       { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'village', x: 19, y: 15 } },
     ],
   },
@@ -513,7 +517,11 @@ MAPS.dh_shop = {
   id: 'dh_shop', name: '鼓聲港商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨鼓聲港道具店！', '咚咚咚，鼓聲最響的地方，藥水和魔力果也賣得最快喔。'],
+      doneText: ['咚咚！謝謝惠顧，下次再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'dh', x: 21, y: 4 } },
   ],
 };
@@ -585,7 +593,11 @@ MAPS.gh_shop = {
   id: 'gh_shop', name: '蛙鳴灣商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨蛙鳴灣道具店！', '呱呱，青蛙們最愛來買魔力果了，你也帶幾顆回去吧。'],
+      doneText: ['呱！謝謝惠顧，下次再來喔～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'gh', x: 21, y: 4 } },
   ],
 };
@@ -698,7 +710,11 @@ MAPS.xh_shop = {
   id: 'xh_shop', name: '雪花鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨雪花鎮道具店！', '外面好冷，藥水放在暖爐旁邊，喝起來暖暖的。'],
+      doneText: ['謝謝惠顧！路上很滑，小心喔～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 21, y: 14 } },
   ],
 };
@@ -817,7 +833,11 @@ MAPS.zh_shop = {
   id: 'zh_shop', name: '綠洲鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨綠洲鎮道具店！', '沙漠裡走很久，帶幾瓶藥水和魔力果才不會累倒。'],
+      doneText: ['謝謝惠顧！記得多喝水，下次再來喔～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'zh', x: 22, y: 14 } },
   ],
 };
@@ -929,7 +949,11 @@ MAPS.sh_shop = {
   id: 'sh_shop', name: '雲上小鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨雲上小鎮道具店！', '這裡的藥水裝在雲朵瓶子裡，喝起來軟綿綿的。'],
+      doneText: ['謝謝惠顧！飄呀飄，下次再來喔～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'sh', x: 19, y: 4 } },
   ],
 };
@@ -1040,7 +1064,11 @@ MAPS.uh_shop = {
   id: 'uh_shop', name: '珊瑚港商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨珊瑚港道具店！', '海底的藥水冒著小泡泡，喝一口，咕嚕咕嚕好有精神。'],
+      doneText: ['咕嚕咕嚕～謝謝惠顧，下次再來！'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'uh', x: 7, y: 4 } },
   ],
 };
@@ -1148,7 +1176,11 @@ MAPS.ah_shop = {
   id: 'ah_shop', name: '歡樂廣場商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨歡樂廣場糖果道具店！', '藥水是汽水口味的，魔力果像棉花糖一樣甜。'],
+      doneText: ['叮叮噹噹～謝謝惠顧，下次再來玩！'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'ah', x: 20, y: 4 } },
   ],
 };
