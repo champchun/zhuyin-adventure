@@ -1,6 +1,6 @@
 // 迷宮驗證（純函式，不依賴 Phaser）：模擬「走路、拿鑰匙、開鎖、用招式、踩樓梯」，
 // 找出走不到的地板與物件，確保迷宮不會卡死。
-import { BLOCKED_TILES, abilityOf } from '../data/maps';
+import { abilityOf, isBlockedTile } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
 
 export interface Cell { map: string; x: number; y: number }
@@ -43,7 +43,7 @@ export function reachReport(floors: MapDef[], entry: Cell, abilities: string[]):
     return true;
   };
   const solidAt = (f: MapDef, x: number, y: number) => f.objects.some((o) => o.x === x && o.y === y && isSolid(f, o));
-  const walkable = (f: MapDef, x: number, y: number) => y >= 0 && x >= 0 && y < f.h && x < f.w && !BLOCKED_TILES.has(f.tiles[y][x]);
+  const walkable = (f: MapDef, x: number, y: number) => y >= 0 && x >= 0 && y < f.h && x < f.w && !isBlockedTile(f, f.tiles[y][x]);
 
   const add = (c: Cell) => { const k = key(c.map, c.x, c.y); if (!reached.has(k)) { reached.add(k); queue.push(c); } };
   const flood = () => {

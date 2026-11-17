@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
-import { BLOCKED_TILES, MAPS, TILE_KEY, abilityOf, objectDepth } from '../data/maps';
+import { MAPS, abilityOf, isBlockedTile, objectDepth, tileKeyOf } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
 import { BATTLES, ENDING_LINES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
@@ -82,7 +82,7 @@ export class WorldScene extends Phaser.Scene {
   async begin(isNew: boolean) {
     this.queue = []; this.pending = undefined; this.moving = false; this.busy = false;
     const saved = MAPS[G.save.mapId];
-    const blocked = !saved || BLOCKED_TILES.has(saved.tiles[G.save.y]?.[G.save.x] ?? 'S');
+    const blocked = !saved || isBlockedTile(saved, saved.tiles[G.save.y]?.[G.save.x] ?? 'S');
     const spot = blocked && saved ? saved.start : { x: G.save.x, y: G.save.y };
     this.loadMap(G.save.mapId, spot.x, spot.y);
     this.ready = true;
@@ -124,7 +124,7 @@ export class WorldScene extends Phaser.Scene {
     G.save.mapId = id; G.save.x = x; G.save.y = y;
     const m = this.map;
     this.tilesRT = this.add.renderTexture(0, 0, m.w * T, m.h * T).setOrigin(0).setDepth(-100);
-    for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) this.tilesRT.draw(TILE_KEY[m.tiles[j][i]] ?? 't_grass', i * T, j * T);
+    for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) this.tilesRT.draw(tileKeyOf(m, m.tiles[j][i]), i * T, j * T);
     this.marker = this.add.image(0, 0, 'spark').setVisible(false).setDepth(5000);
     this.pShadow = this.add.image(0, 0, 'shadow').setDepth(1);
     this.player = this.add.image(x * T + 8, y * T + 16, 'player_down').setOrigin(0.5, 1);
@@ -316,7 +316,7 @@ export class WorldScene extends Phaser.Scene {
   private walkable(x: number, y: number): boolean {
     const m = this.map;
     if (x < 0 || y < 0 || x >= m.w || y >= m.h) return false;
-    if (BLOCKED_TILES.has(m.tiles[y][x])) return false;
+    if (isBlockedTile(m, m.tiles[y][x])) return false;
     return !this.objAt(x, y);
   }
 
@@ -324,7 +324,7 @@ export class WorldScene extends Phaser.Scene {
   private blockedForMonsters(x: number, y: number): boolean {
     const m = this.map;
     if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
-    if (BLOCKED_TILES.has(m.tiles[y][x])) return true;
+    if (isBlockedTile(m, m.tiles[y][x])) return true;
     for (const o of this.objs.values()) if (!this.mons.has(o.def.id) && o.x === x && o.y === y) return true;
     return false;
   }

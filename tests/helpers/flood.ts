@@ -1,4 +1,4 @@
-import { BLOCKED_TILES, abilityOf } from '../../src/data/maps';
+import { abilityOf, isBlockedTile } from '../../src/data/maps';
 import type { MapDef, MapObj } from '../../src/data/maps';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -23,7 +23,7 @@ export function walkMap(map: MapDef, flags: Record<string, boolean>, abilities: 
   const removed = new Set<string>();
   const solidAt = new Map<string, MapObj>();
   const rebuild = () => { solidAt.clear(); for (const o of objs) if (!removed.has(o.id)) solidAt.set(`${o.x},${o.y}`, o); };
-  const ok = (x: number, y: number) => y >= 0 && x >= 0 && y < map.h && x < map.w && !BLOCKED_TILES.has(map.tiles[y][x]);
+  const ok = (x: number, y: number) => y >= 0 && x >= 0 && y < map.h && x < map.w && !isBlockedTile(map, map.tiles[y][x]);
   const reached = new Set<string>();
   const touched = new Set<string>();
   for (;;) {

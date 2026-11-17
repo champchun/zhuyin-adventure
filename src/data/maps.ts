@@ -69,6 +69,8 @@ export interface MapDef {
   hub?: { dock: { x: number; y: number }; defeat?: { map: string; x: number; y: number }; };
   /** 迷宮：同一個洞窟的各樓層設成同一個 group；樓層之間走動，野生怪不會重生（從外面進來才重生） */
   group?: string;
+  /** 地形外觀表 id（SKINS 的 key）：決定地形字元用哪個貼圖、能不能走。沒設就是 default（前六關的 TILE_KEY／BLOCKED_TILES） */
+  skin?: string;
 }
 
 /** 阻擋通行的地形字元 */
@@ -1091,3 +1093,12 @@ export const TILE_KEY: Record<string, string> = {
   A: 't_cloud', F: 't_mist', N: 't_starpool', '*': 't_starstar', Z: 't_cloudwall',
   Q: 't_roof_cloud', R: 't_wall_cloud', J: 't_roof_inn_cloud', U: 't_wall_inn_cloud', y: 't_roof_shop_cloud', t: 't_wall_shop_cloud',
 };
+
+// ───────── 地形外觀表（skin）─────────
+// 英文字母已被前六關用完，第二階段各主題用自己的 skin：同一個字元在不同 skin 可以是不同的東西。
+export interface Skin { key: Record<string, string>; blocked: ReadonlySet<string> }
+export const DEFAULT_SKIN = 'default';
+export const SKINS: Record<string, Skin> = { [DEFAULT_SKIN]: { key: TILE_KEY, blocked: BLOCKED_TILES } };
+export const skinOf = (m: { skin?: string }): Skin => SKINS[m.skin ?? DEFAULT_SKIN] ?? SKINS[DEFAULT_SKIN];
+export const tileKeyOf = (m: { skin?: string }, ch: string): string => skinOf(m).key[ch] ?? 't_grass';
+export const isBlockedTile = (m: { skin?: string }, ch: string): boolean => skinOf(m).blocked.has(ch);
