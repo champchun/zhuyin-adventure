@@ -1264,3 +1264,12 @@ SKINS.sea = {
   },
   blocked: new Set('#RO~hHiIkKDW'),
 };
+
+// 第八關（遊樂園）的外觀表：字元 → 貼圖 key；擋路的字元
+SKINS.park = {
+  key: {
+    '.': 't_park_brick', ',': 't_park_grass', '=': 't_park_path', f: 't_mirror_floor', '#': 't_park_flower', R: 't_park_fence', '~': 't_park_canal', O: 't_park_fountain',
+    h: 't_roof_tent', H: 't_wall_tent', i: 't_roof_inn_tent', I: 't_wall_inn_tent', k: 't_roof_shop_tent', K: 't_wall_shop_tent', D: 't_door', W: 't_mirror_wall',
+  },
+  blocked: new Set('#RO~hHiIkKDW'),
+};
