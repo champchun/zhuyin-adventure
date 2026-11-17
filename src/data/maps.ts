@@ -48,7 +48,7 @@ export interface MapObj {
   /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
   dockTo?: { map: string; x: number; y: number };
   /** dock：交通工具的種類。有設就不是船（熱氣球、雲朵小船），碼頭旁不必有水；沒設就是一般的船碼頭 */
-  vehicle?: 'balloon' | 'cloudboat' | 'seahorse';
+  vehicle?: 'balloon' | 'cloudboat' | 'seahorse' | 'train';
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
   /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
@@ -274,7 +274,9 @@ export const MAPS: Record<string, MapDef> = {
       { id: 'back_village', kind: 'stairs', x: 9, y: 12, to: { map: 'village', x: 16, y: 16 }, label: '回起始村' },
       // 第二階段四扇門：目前都還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
       { id: 'gate7', kind: 'stairs', x: 4, y: 2, sprite: 'bubble_gate', to: { map: 'uh', x: 4, y: 16 }, label: '海底' },
-      { id: 'gate8', kind: 'barrier', x: 7, y: 2, lockText: ['第八關「遊樂園」的門。', '門後面還在準備中，敬請期待！'] },
+      // gate8 與 gate8_open 同一格、互斥（比照起始村的 balloon_empty／balloon）：打倒大章魚（boss_u）後才換成通道
+      { id: 'gate8', kind: 'barrier', x: 7, y: 2, hideIf: 'boss_u', lockText: ['第八關「遊樂園」的門。', '要先打倒第七關的大章魚，這扇門才會打開！'] },
+      { id: 'gate8_open', kind: 'stairs', x: 7, y: 2, sprite: 'park_gate', to: { map: 'ah', x: 23, y: 16 }, label: '遊樂園', showIf: 'boss_u' },
       { id: 'gate9', kind: 'barrier', x: 12, y: 2, lockText: ['第九關「古堡」的門。', '門後面還在準備中，敬請期待！'] },
       { id: 'gate10', kind: 'barrier', x: 15, y: 2, lockText: ['第十關「時鐘塔」的門。', '門後面還在準備中，敬請期待！'] },
       { id: 'sign_lobby', kind: 'sign', x: 8, y: 6, text: ['世界地圖：第二階段的入口。', '每一扇門通往一個新的世界，要一關一關通過喔。', '想回起始村，就走下面的樓梯。'] },
@@ -1074,6 +1076,115 @@ MAPS.u = {
     { id: 'bubble_bridge', kind: 'gimmick', x: 19, y: 10, sprite: 'bubble_gap', sprite2: 'bubble_bridge', ability: 'pop', fx: 'pop', passable: true, lockText: ['深水溝上缺了一塊，過不去。', '要是有一串泡泡，搭成橋就好了……'], hitText: ['夥伴嘴巴一噘「ㄩ」，吹出一串大泡泡！', '泡泡搭成了一座橋，可以走到對岸了！'] },
     { id: 'chest_b1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
     { id: 'chest_b2', kind: 'chest', x: 24, y: 5, item: 'berry' },
+  ],
+};
+
+// ───────── 歡樂廣場：第八關（遊樂園）的主島 ─────────
+// 從大廳的遊樂園大門進來，落在東南角；西邊的小火車站（train）通往歡樂島。旅館在北邊偏左、商店在北邊偏右，中間是噴水池。
+const ahGrid = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('i', 6, 2, 4, 1).rect('I', 6, 3, 4, 1).set(8, 3, 'D'); // 旅館：門在 (8,3)
+  g.rect('k', 18, 2, 4, 1).rect('K', 18, 3, 4, 1).set(20, 3, 'D'); // 商店：門在 (20,3)
+  g.rect('h', 3, 8, 4, 1).rect('H', 3, 9, 4, 1).rect('h', 3, 15, 4, 1).rect('H', 3, 16, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('O', 11, 8, 5, 4).many('R', [[10, 7], [16, 7], [10, 12], [16, 12]]); // 噴水池與四段彩旗柵欄
+  g.rect('=', 8, 4, 1, 10).rect('=', 20, 4, 1, 10).rect('=', 8, 13, 13, 1); // 彩色小徑（避開噴水池）
+  g.many(',', [[9, 14], [10, 15], [21, 6], [23, 5], [5, 12], [24, 12], [14, 16], [22, 11]]); // 草地
+  return g;
+})();
+MAPS.ah = {
+  id: 'ah', name: '歡樂廣場', w: 28, h: 20, tiles: ahGrid.rows(), theme: 'island', skin: 'park',
+  start: { x: 23, y: 16 }, respawn: { x: 23, y: 15 },
+  hub: { dock: { x: 23, y: 16 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 8, y: 3, to: { map: 'ah_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 20, y: 3, to: { map: 'ah_shop', x: 4, y: 6 } },
+    // 東南角：遊樂園大門回大廳（gate8 正下方的小路）
+    { id: 'park_gate_back', kind: 'stairs', x: 24, y: 16, sprite: 'park_gate', to: { map: 'lobby', x: 7, y: 3 }, label: '回世界地圖' },
+    { id: 'gate_sign', kind: 'sign', x: 23, y: 17, text: ['遊樂園大門：回世界地圖。', '想去別的世界，就從這裡回去。'] },
+    // 西邊：小火車通往歡樂島，歡樂島的 train_back 開回這裡 (3,10)
+    { id: 'train', kind: 'dock', vehicle: 'train', x: 2, y: 10, sprite: 'train', dockTo: { map: 'a', x: 24, y: 17 } },
+    { id: 'train_sign', kind: 'sign', x: 3, y: 11, text: ['小火車：通往歡樂島。', '小火車是雙向的，歡樂島那邊也有一列可以開回來。'] },
+    { id: 'granny', kind: 'granny', x: 11, y: 14, label: '星星婆婆' }, // 噴水池西南邊
+    { id: 'giver', kind: 'giver', x: 17, y: 5, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'tickkid', kind: 'npc', x: 9, y: 12, sprite: 'npc_kid', label: '剪票小弟',
+      talk: [
+        { not: 'aEntered', lines: ['歡迎來到歡樂廣場！', '這裡是遊樂園，到處都是音樂和笑聲。', '西邊有一列小火車，坐上去就是歡樂島。島上有彩球人偶，先去練習看看吧！'] },
+        { not: 'aPractice', lines: ['彩球人偶可以讓夥伴練習新招式。', '練習完，路上的旋轉木馬和大氣球，就有辦法對付了。'] },
+        { not: 'boss_a', lines: ['歡樂島上有一座鏡子迷宮，聽說最深處住著小丑魔術師。', '記得先在旅館睡一覺，再去找他。'] },
+        { lines: ['小丑魔術師認輸了！太棒了！', '鏡子迷宮裡的寶藏，你全都看過了嗎？'] },
+      ],
+    },
+    {
+      id: 'balloonman', kind: 'npc', x: 22, y: 8, sprite: 'npc_elder', label: '賣氣球的叔叔',
+      talk: [
+        { not: 'aPractice', lines: ['島上有一顆洩了氣的大氣球，還有一座睡著的旋轉木馬。', '它們旁邊好像藏著寶箱。'] },
+        { not: 'boss_a', lines: ['歡樂島中間有一條水溝，水溝上缺了一塊，好像在等一座摩天輪來補。', '還有一個煙火筒，一直點不著。', '等你打倒小丑魔術師、學會新招式，再回來看看。'] },
+        { lines: ['摩天輪的橋，搭起來了嗎？', '煙火筒點著了嗎？一定很漂亮！'] },
+      ],
+    },
+    {
+      id: 'candygirl', kind: 'npc', x: 16, y: 15, sprite: 'npc_girl', label: '糖果妹妹',
+      talk: [
+        { not: 'boss_a', lines: ['旅館住一晚 25 金幣，累了就來睡一覺。', '夥伴的體力和魔力，睡醒就都回來了。'] },
+        { lines: ['打倒小丑魔術師的人，就是你！', '歡樂廣場永遠歡迎你。'] },
+      ],
+    },
+  ],
+};
+MAPS.ah_inn = {
+  id: 'ah_inn', name: '歡樂廣場旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨歡樂廣場帳篷旅館！', '這裡的床是旋轉木馬形狀的，睡著了還會輕輕搖晃喔。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得好嗎？夥伴們都精神飽滿了！', '叮叮噹噹～歡迎再來玩！'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'ah', x: 8, y: 4 } },
+  ],
+};
+MAPS.ah_shop = {
+  id: 'ah_shop', name: '歡樂廣場商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'ah', x: 20, y: 4 } },
+  ],
+};
+
+// ───────── ㄚㄛㄜㄝ：歡樂島 ─────────
+// 一條南北向的水溝（x=8）把島切成兩半：東岸是入口與機關，西岸要先在水溝中間唯一的缺口架起摩天輪橋才過得去（ㄜ，打倒小丑魔術師後才學到）。
+// 鏡子迷宮入口 cave 由後面的任務加入。
+const funIsle = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('~', 8, 1, 1, 18).set(8, 10, '.'); // 水溝與缺口那一格（摩天輪橋）
+  g.many('R', [[23, 12], [13, 15], [10, 7]]); // 零星彩旗柵欄（裝飾，不貼著任何物件）
+  g.many('#', [[24, 3], [12, 3], [5, 2], [2, 14], [5, 16]]).many(',', [[13, 12], [19, 13], [6, 7], [3, 10]]);
+  return g;
+})();
+MAPS.a = {
+  id: 'a', name: '歡樂島（ㄚㄛㄜㄝ）', w: 28, h: 20, tiles: funIsle.rows(), theme: 'meadow', skin: 'park',
+  start: { x: 24, y: 17 }, respawn: { x: 24, y: 17 },
+  objects: [
+    { id: 'train_back', kind: 'dock', vehicle: 'train', x: 25, y: 17, sprite: 'train', dockTo: { map: 'ah', x: 3, y: 10 } }, // 回歡樂廣場的小火車
+    { id: 'sign1', kind: 'sign', x: 24, y: 15, text: ['歡樂島。', '這座島的注音，嘴巴都要擺出特別的形狀：ㄚ 張得大大的，ㄛ 圓圓的，還有兩個要等你自己發現。', '島上有旋轉木馬、大氣球和一條水溝，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 22, y: 17, battle: 'apractice', hideIf: 'aPractice' },
+    { id: 'chest_1', kind: 'chest', x: 19, y: 17, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 18, y: 14, battle: 'a1', ai: 'patrol', patrol: [{ x: 17, y: 14 }, { x: 16, y: 14 }] },
+    { id: 'm2', kind: 'monster', x: 13, y: 9, battle: 'a2', ai: 'patrol', patrol: [{ x: 12, y: 9 }, { x: 11, y: 9 }] },
+    { id: 'm3', kind: 'monster', x: 22, y: 8, battle: 'a3', showIf: 'aPractice', ai: 'patrol', patrol: [{ x: 21, y: 8 }, { x: 20, y: 8 }] },
+    { id: 'carousel', kind: 'gimmick', x: 21, y: 12, sprite: 'carousel_asleep', sprite2: 'carousel_on', ability: 'shout', fx: 'shout', lockText: ['一座睡著的旋轉木馬，木馬們都低著頭打瞌睡。', '張大嘴巴大喊一聲，也許能把它叫醒……'], hitText: ['夥伴張大嘴巴「ㄚ」地大喊一聲，旋轉木馬醒過來，轉起來了！', '音樂響起，旁邊冒出了一個寶箱！'], doneText: ['旋轉木馬轉得好開心。'] },
+    { id: 'chest_carousel', kind: 'chest', x: 21, y: 11, item: 'berry', showIf: 'g:a:carousel' },
+    { id: 'balloon', kind: 'gimmick', x: 15, y: 16, sprite: 'balloon_flat', sprite2: 'balloon_big', ability: 'inflate', fx: 'inflate', lockText: ['一顆洩了氣的大氣球，軟軟地趴在地上。', '嘴巴圓圓地吹一口氣，也許能把它吹大……'], hitText: ['夥伴嘴巴一圓「ㄛ」，呼～地把氣球吹得鼓鼓的！', '大氣球飄了起來，旁邊冒出了一個寶箱！'], doneText: ['大氣球鼓鼓的，輕輕晃著。'] },
+    { id: 'chest_balloon', kind: 'chest', x: 15, y: 17, item: 'potion', showIf: 'g:a:balloon' },
+    { id: 'fireworks', kind: 'gimmick', x: 14, y: 5, sprite: 'fireworks_cannon', sprite2: 'fireworks_lit', ability: 'cheer', fx: 'cheer', lockText: ['一個煙火筒，筒口黑黑的，怎麼點都點不著。', '要是有人大聲歡呼一聲，也許就能把它點燃……'], hitText: ['夥伴嘴角一拉「ㄝ」，大聲喊了一聲「耶！」', '煙火衝上天空，旁邊冒出了一個寶箱！'], doneText: ['煙火的光，還留在天空中。'] },
+    { id: 'chest_fireworks', kind: 'chest', x: 14, y: 6, item: 'bigpotion', showIf: 'g:a:fireworks' },
+    { id: 'sign2', kind: 'sign', x: 19, y: 8, text: ['前面是鏡子迷宮的方向。', '迷宮裡全是鏡子，很容易迷路，要先練習完再進去喔。'] },
+    // 摩天輪橋：缺口那一格（水溝中間）。ㄜ 要打倒小丑魔術師才學到，所以對岸的寶箱是小丑魔術師之後才拿得到
+    { id: 'ferris', kind: 'gimmick', x: 8, y: 10, sprite: 'ferris_gap', sprite2: 'ferris_bridge', ability: 'honk', fx: 'honk', passable: true, lockText: ['水溝上缺了一塊，過不去。', '要是有一座摩天輪，把車廂排成橋就好了……'], hitText: ['夥伴嘴巴微微張開「ㄜ」，像鵝一樣叫了一聲！', '摩天輪轉了起來，車廂排成了一座橋，可以走到對岸了！'] },
+    { id: 'chest_f1', kind: 'chest', x: 5, y: 10, item: 'bigpotion' },
+    { id: 'chest_f2', kind: 'chest', x: 3, y: 5, item: 'berry' },
   ],
 };
 

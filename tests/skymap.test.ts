@@ -7,6 +7,7 @@ import { defeatSpot, markArrival } from '../src/core/travel';
 import { GIVER_HUBS } from '../src/core/giver';
 import { SKY_TEXTURES } from '../src/gfx/skyArt';
 import { SEA_TEXTURES } from '../src/gfx/seaArt';
+import { PARK_TEXTURES } from '../src/gfx/parkArt';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const walk = (m: (typeof MAPS)[string], x: number, y: number) => !isBlockedTile(m, m.tiles[y]?.[x] ?? '#');
@@ -40,10 +41,10 @@ const adj = (seen: Set<string>, o: { x: number; y: number }) => N4.some(([dx, dy
 describe('交通工具 vehicle：沿用碼頭', () => {
   it('熱氣球與雲朵小船都是 dock，有 vehicle 與專屬貼圖；船碼頭沒有 vehicle', () => {
     const vs = Object.values(MAPS).flatMap((m) => m.objects.filter((o) => o.vehicle).map((o) => `${m.id}/${o.id}:${o.vehicle}`)).sort();
-    expect(vs).toEqual(['s/boat_back:cloudboat', 'sh/balloon_back:balloon', 'sh/boat_s:cloudboat', 'u/seahorse_back:seahorse', 'uh/seahorse:seahorse', 'village/balloon:balloon']);
+    expect(vs).toEqual(['a/train_back:train', 'ah/train:train', 's/boat_back:cloudboat', 'sh/balloon_back:balloon', 'sh/boat_s:cloudboat', 'u/seahorse_back:seahorse', 'uh/seahorse:seahorse', 'village/balloon:balloon'].sort());
     for (const m of Object.values(MAPS)) for (const o of m.objects.filter((p) => p.vehicle)) {
       expect(o.kind, `${m.id}/${o.id}`).toBe('dock');
-      expect([...SKY_TEXTURES, ...SEA_TEXTURES] as readonly string[]).toContain(o.sprite);
+      expect([...SKY_TEXTURES, ...SEA_TEXTURES, ...PARK_TEXTURES] as readonly string[]).toContain(o.sprite);
     }
     expect(MAPS.dh.objects.filter((o) => o.kind === 'dock').every((o) => !o.vehicle)).toBe(true);
   });

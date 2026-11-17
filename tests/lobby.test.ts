@@ -25,11 +25,16 @@ describe('世界地圖大廳', () => {
     expect(walkable('village', 16, 16)).toBe(true);
     expect(freeOf('village', 16, 16)).toBe(true);
   });
-  it('gate7 是通往珊瑚港的 stairs；gate8～gate10 是擋路的 barrier，各有鎖住的說明（之後每一關的計畫會把它換成通道）', () => {
+  it('gate7 是通往珊瑚港的 stairs；gate8 是 barrier（boss_u 之後隱藏）旁有同一格的 gate8_open（stairs）；gate9～gate10 是擋路的 barrier，各有鎖住的說明', () => {
     const g7 = lobby.objects.find((o) => o.id === 'gate7')!;
     expect(g7.kind).toBe('stairs');
     expect(g7.to!.map).toBe('uh');
-    for (const id of ['gate8', 'gate9', 'gate10']) {
+    const g8 = lobby.objects.find((o) => o.id === 'gate8')!, g8o = lobby.objects.find((o) => o.id === 'gate8_open')!;
+    expect(g8).toMatchObject({ kind: 'barrier', hideIf: 'boss_u' });
+    expect(g8.lockText!.length).toBeGreaterThan(0);
+    expect(g8o).toMatchObject({ kind: 'stairs', showIf: 'boss_u' });
+    expect(g8o.to!.map).toBe('ah');
+    for (const id of ['gate9', 'gate10']) {
       const g = lobby.objects.find((o) => o.id === id)!;
       expect(g, id).toBeDefined();
       expect(g.kind).toBe('barrier');
@@ -37,8 +42,11 @@ describe('世界地圖大廳', () => {
     }
   });
   it('物件不重疊；起點、四扇門、告示牌、回起始村的樓梯從起點都走得到', () => {
-    const keys = lobby.objects.map((o) => `${o.x},${o.y}`);
+    // gate8（barrier，hideIf boss_u）與 gate8_open（stairs，showIf boss_u）同一格、互斥，所以只算一次
+    const keys = lobby.objects.filter((o) => o.id !== 'gate8_open').map((o) => `${o.x},${o.y}`);
     expect(new Set(keys).size).toBe(keys.length);
+    const g8 = lobby.objects.find((o) => o.id === 'gate8')!, g8o = lobby.objects.find((o) => o.id === 'gate8_open')!;
+    expect([g8o.x, g8o.y]).toEqual([g8.x, g8.y]);
     const r = walkMap(lobby, {}, []);
     for (const id of ['back_village', 'sign_lobby', 'gate7', 'gate8', 'gate9', 'gate10']) expect(r.touched.has(id), id).toBe(true);
   });
