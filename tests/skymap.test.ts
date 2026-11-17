@@ -60,7 +60,7 @@ describe('交通工具 vehicle：沿用碼頭', () => {
 });
 
 describe('起始村的熱氣球', () => {
-  it('只新增 balloon_empty、balloon、balloon_sign：既有物件座標不動', () => {
+  it('只新增 balloon_empty、balloon、balloon_sign（第六關）與 world_map、world_map_sign（大廳入口）：既有物件座標不動', () => {
     const before = ['dock: 21,11', 'door_home: 5,3', 'door_lab: 14,3', 'door_shop: 19,14', 'kid: 7,6', 'elder: 18,8', 'girl: 21,9',
       'chest_t: 8,10', 'dummy: 16,11', 'sign1: 10,15', 'rock_a: 23,4', 'chest_hidden: 23,3', 'bell: 21,7', 'chest_bell: 22,8',
       'fog_a: 10,4', 'chest_fog: 10,2', 'trail_xh: 20,10', 'trail_sign_v: 19,10', 'desert_road: 26,6', 'desert_sign: 25,8', 'gate_b: 4,17', 'gate_p: 7,17'];
