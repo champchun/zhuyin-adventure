@@ -695,7 +695,121 @@ function skydragon(): Pix {
   return p;
 }
 
+/** 橢圓（圓心 cx,cy、半徑 rx,ry），只畫 y 在 [ymin,ymax] 內的列 */
+function ell(p: Pix, cx: number, cy: number, rx: number, ry: number, c: string, ymin = -99, ymax = 99) {
+  for (let y = Math.ceil(cy - ry); y <= Math.floor(cy + ry); y++) {
+    if (y < ymin || y > ymax) continue;
+    for (let x = Math.ceil(cx - rx); x <= Math.floor(cx + rx); x++) {
+      const dx = (x - cx) / (rx + 0.4), dy = (y - cy) / (ry + 0.4);
+      if (dx * dx + dy * dy <= 1) p.set(x, y, c);
+    }
+  }
+}
+/** 粗細 w 的線段（從 (x1,y1) 到 (x2,y2)，往右加寬） */
+function line(p: Pix, x1: number, y1: number, x2: number, y2: number, w: number, c: string) {
+  const n = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+  for (let i = 0; i <= n; i++) {
+    const x = x1 + ((x2 - x1) * i) / n, y = y1 + ((y2 - y1) * i) / n;
+    p.r(Math.round(x), Math.round(y), w, 1, c);
+  }
+}
+
+// 小丑魚：橘色身體，三道黑邊白條紋，朝右，尾鰭在左，友善的笑臉
+const CLOWN: Pal = { O: OUT, a: '#ff8a2a', b: '#d9601a', w: '#ffffff', k: '#2a2030', d: EYE, h: '#ffc070', p: '#ff9db8' };
+function clownfish(): Pix {
+  const p = new Pix();
+  // 尾鰭（左）、背鰭、腹鰭
+  p.t(7, 16, 0, 6, 0, 26, 'b'); p.t(3, 16, 1, 9, 1, 23, 'a');
+  p.t(10, 10, 21, 10, 16, 3, 'b'); p.t(12, 10, 19, 10, 16, 5, 'a'); p.t(14, 22, 20, 22, 17, 28, 'b');
+  // 身體
+  ell(p, 16, 16, 12, 9, 'a');
+  ell(p, 16, 22, 10, 3, 'b', 22, 25);
+  for (const x of [7, 13, 18]) for (let y = 8; y <= 25; y++) {
+    const inBody = (dx: number) => p.get(x + dx, y) === 'a' || p.get(x + dx, y) === 'b';
+    for (const dx of [-1, 2]) if (inBody(dx)) p.set(x + dx, y, 'k');
+    for (const dx of [0, 1]) if (inBody(dx)) p.set(x + dx, y, 'w');
+  }
+  // 亮亮的背
+  p.r(10, 9, 3, 1, 'h'); p.r(23, 11, 2, 1, 'h');
+  // 眼睛、腮紅、笑嘴
+  p.r(22, 11, 4, 4, 'w'); p.r(24, 12, 2, 3, 'd'); p.r(22, 11, 1, 1, 'k');
+  p.r(22, 18, 2, 1, 'p'); p.r(25, 19, 3, 1, 'k'); p.r(27, 18, 1, 1, 'k');
+  p.outline('O');
+  return p;
+}
+
+// 水母：淺紫藍的半透明傘狀頭，亮亮的高光，彎彎的觸手，兩顆圓眼睛
+const JFISH: Pal = { O: OUT, a: '#b9b8ff', b: '#8f8be0', c: '#d8d6ff', h: '#f4f3ff', d: EYE, w: '#ffffff', p: '#ffb0d0', t: '#a8a4f0' };
+function jellyfish(): Pix {
+  const p = new Pix();
+  // 觸手（先畫，在傘後面）：兩條粗的、三條細的，一彎一彎
+  const arm = (x: number, w: number, c: string, ph: number) => { for (let y = 17; y <= 29; y++) p.r(x + (((y + ph) >> 1) % 2), y, w, 1, c); };
+  arm(6, 2, 't', 0); arm(12, 2, 'b', 1); arm(18, 2, 't', 2); arm(24, 2, 'b', 3);
+  for (const x of [7, 25]) p.r(x, 29, 2, 1, 'b');
+  // 傘（上半橢圓）與裙邊
+  ell(p, 16, 15, 13, 12, 'a', 3, 17);
+  p.r(4, 17, 25, 2, 'b'); for (const x of [5, 9, 13, 17, 21, 25]) p.r(x, 19, 2, 1, 'b');
+  ell(p, 16, 12, 9, 6, 'c', 5, 9);
+  // 高光
+  p.r(8, 7, 3, 1, 'h'); p.r(7, 8, 1, 2, 'h'); p.r(20, 6, 3, 1, 'h'); p.r(14, 5, 2, 1, 'h');
+  // 臉：圓圓大眼、腮紅、小嘴
+  p.r(9, 11, 4, 4, 'd'); p.r(19, 11, 4, 4, 'd'); p.r(9, 11, 2, 2, 'w'); p.r(19, 11, 2, 2, 'w');
+  p.r(6, 15, 2, 1, 'p'); p.r(25, 15, 2, 1, 'p'); p.r(15, 15, 3, 1, 'd'); p.r(16, 16, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 海膽：深紫色的圓球，一圈尖刺，大眼睛與小嘴
+const URCH: Pal = { O: OUT, a: '#5a2d8f', b: '#3d1f66', s: '#8a5cc8', h: '#c8a8f0', d: EYE, w: '#ffffff', p: '#ff9db8' };
+function urchin(): Pix {
+  const p = new Pix();
+  // 十六根尖刺（由中心往外），尖端淡色
+  for (let i = 0; i < 16; i++) {
+    const a = (i * Math.PI * 2) / 16 + Math.PI / 16, cx = 15.5, cy = 16.5;
+    const pt = (r: number) => ({ x: Math.round(cx + Math.cos(a) * r), y: Math.round(cy + Math.sin(a) * r) });
+    const b1 = pt(8), tip = { x: cx + Math.cos(a) * 14.6, y: cy + Math.sin(a) * 14.6 };
+    const nx = -Math.sin(a) * 2, ny = Math.cos(a) * 2;
+    p.t(b1.x + nx, b1.y + ny, b1.x - nx, b1.y - ny, tip.x, tip.y, 's');
+    const t = pt(14); p.set(t.x, t.y, 'h');
+  }
+  // 圓球與陰影、亮點
+  ell(p, 16, 17, 10, 10, 'a');
+  ell(p, 17, 22, 8, 4, 'b', 22, 26); p.r(11, 9, 3, 1, 's'); p.r(9, 11, 1, 2, 's');
+  // 臉：大眼睛、腮紅、小嘴
+  p.r(10, 13, 5, 5, 'w'); p.r(17, 13, 5, 5, 'w'); p.r(12, 14, 3, 4, 'd'); p.r(19, 14, 3, 4, 'd'); p.r(12, 14, 1, 1, 'w'); p.r(19, 14, 1, 1, 'w');
+  p.r(9, 19, 2, 1, 'p'); p.r(22, 19, 2, 1, 'p'); p.r(15, 20, 3, 1, 'd'); p.r(16, 21, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 大章魚（頭目）：紅紫色的大頭，八隻手臂向下散開，金色大眼睛，頭上一小撮光點
+const OCTO: Pal = { O: OUT, a: '#b03a7a', b: '#7a2558', c: '#d86aa0', g: '#ffd84a', e: '#e0a820', h: '#fff6b0', d: '#2a1030', w: '#ffffff', r: '#e8514a' };
+function octopus(): Pix {
+  const p = new Pix();
+  // 八隻手臂：由頭下緣往下、往外散開，尖端捲起來
+  const starts = [7, 10, 12, 14, 17, 19, 21, 24], ends = [2, 6, 10, 13, 18, 21, 25, 28];
+  starts.forEach((sx, i) => {
+    line(p, sx, 16, ends[i], 28, 2, 'a');
+    p.set(ends[i] + (i < 4 ? -1 : 2), 29, 'a'); p.set(ends[i] + (i < 4 ? -1 : 2), 30, 'a');
+    const t = 0.6; p.set(Math.round(sx + (ends[i] - sx) * t), Math.round(16 + 12 * t), 'c');
+  });
+  // 大頭
+  ell(p, 16, 10, 14, 9, 'a');
+  ell(p, 16, 17, 12, 3, 'b', 17, 19);
+  // 頭頂的光點與花紋
+  p.r(13, 2, 2, 2, 'h'); p.r(17, 1, 2, 2, 'h'); p.r(21, 3, 1, 1, 'h'); p.r(10, 4, 1, 1, 'h');
+  p.r(5, 9, 2, 2, 'c'); p.r(25, 9, 2, 2, 'c'); p.r(8, 14, 2, 1, 'c'); p.r(23, 14, 2, 1, 'c'); p.r(15, 5, 3, 1, 'c');
+  // 金色大眼睛（有點凶的眉毛）
+  p.r(7, 9, 7, 6, 'g'); p.r(18, 9, 7, 6, 'g'); p.r(9, 10, 3, 5, 'd'); p.r(20, 10, 3, 5, 'd'); p.r(9, 10, 1, 1, 'w'); p.r(20, 10, 1, 1, 'w');
+  p.r(7, 8, 3, 1, 'd'); p.r(9, 7, 4, 1, 'd'); p.r(22, 8, 3, 1, 'd'); p.r(19, 7, 4, 1, 'd');
+  // 嘴巴
+  p.r(13, 16, 6, 2, 'd'); p.r(14, 16, 1, 1, 'w'); p.r(17, 16, 1, 1, 'w');
+  p.outline('O');
+  return p;
+}
+
 export const MONSTER_ART: Record<string, { pix: () => Pix; pal: Pal }> = {
+  en_clownfish: { pix: clownfish, pal: CLOWN }, en_jellyfish: { pix: jellyfish, pal: JFISH }, en_urchin: { pix: urchin, pal: URCH }, en_octopus: { pix: octopus, pal: OCTO },
   en_scorpion: { pix: scorpion, pal: SCORP }, en_cactusman: { pix: cactusman, pal: CACT }, en_mummy: { pix: mummy, pal: MUMM }, en_lavabeast: { pix: lavabeast, pal: LAVA },
   en_cloudy: { pix: cloudy, pal: CLOUDY }, en_sprite: { pix: sprite, pal: SPRT }, en_comet: { pix: comet, pal: COMET }, en_starguard: { pix: starguard, pal: GUARD }, en_skydragon: { pix: skydragon, pal: SDRAG },
   en_snowball: { pix: snowball, pal: SNOWB }, en_penguin: { pix: penguin, pal: PENG }, en_icebat: { pix: icebat, pal: IBAT }, en_icequeen: { pix: icequeen, pal: IQUEEN },
