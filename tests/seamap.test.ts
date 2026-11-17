@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BATTLES } from '../src/data/levels';
+import { MAZES } from '../src/data/mazes';
 import { MAPS, isBlockedTile, objectDepth, TERRAIN_DEPTH } from '../src/data/maps';
 import type { MapObj } from '../src/data/maps';
 import { reachReport } from '../src/core/dungeon';
@@ -163,5 +164,79 @@ describe('海藻森林 u', () => {
   it('進島設旗標用的 uEntered、被打倒送回珊瑚港：海馬只通珊瑚港', () => {
     expect(u.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['uh']);
     expect(defeatSpot('uh')).toEqual({ map: 'uh', x: uh.respawn.x, y: uh.respawn.y });
+  });
+});
+
+describe('沉船（產生的迷宮）', () => {
+  const uc1 = MAPS.uc1, uc2 = MAPS.uc2;
+  // 練習戰（upractice）之後的能力；boss_u 才給 pop，所以沉船裡不能依賴它
+  const afterPractice = ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet'];
+  const beforePractice = afterPractice.filter((a) => a !== 'glow' && a !== 'jet');
+  const start = { map: 'uc1', x: 2, y: 1 };
+  it('兩層一起走：用練習戰之後的能力，沒有走不到的地板與物件（含頭目），鑰匙剛好用完；不含 pop', () => {
+    const r = reachReport([uc1, uc2], start, afterPractice);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+    expect(afterPractice).not.toContain('pop');
+  });
+  it('沒有 jet：二樓珊瑚牆後（含頭目）走不到；沒有 blast：隱藏小密室走不到', () => {
+    const noJet = reachReport([uc1, uc2], start, afterPractice.filter((a) => a !== 'jet'));
+    const bossAt = uc2.objects.find((o) => o.id === 'boss')!, chestAt = uc2.objects.find((o) => o.id === 'chest_boss')!;
+    expect(noJet.unreachableFloor).toContain(`uc2:${bossAt.x},${bossAt.y}`);
+    expect(noJet.unreachableFloor).toContain(`uc2:${chestAt.x},${chestAt.y}`);
+    expect(reachReport([uc1, uc2], start, afterPractice.filter((a) => a !== 'blast')).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('守門（避免第五關那種死結）：jet 只來自練習戰；boss_u 的獎勵 pop 不是通往 boss_u 之路所需；cave 要練習戰之後才出現', () => {
+    expect(BATTLES.upractice.reward.abilities).toContain('jet');
+    const bossAt = uc2.objects.find((o) => o.id === 'boss')!;
+    const bossCell = `uc2:${bossAt.x},${bossAt.y}`;
+    expect(reachReport([uc1, uc2], start, beforePractice).unreachableFloor).toContain(bossCell);
+    expect(reachReport([uc1, uc2], start, afterPractice).unreachableFloor).not.toContain(bossCell);
+    const cave = u.objects.find((o) => o.id === 'cave')!;
+    expect(cave).toMatchObject({ kind: 'stairs', x: 10, y: 3, label: '沉船', showIf: 'uPractice' });
+    expect(cave.to).toEqual({ map: 'uc1', x: 2, y: 1 });
+    for (const m of Object.values(MAPS)) for (const o of m.objects) if (o.to?.map === 'uc1' && m.id !== 'uc2') expect(o.showIf, `${m.id}/${o.id}`).toBe('uPractice');
+  });
+  it('出口落在 cave 下方一格（可走、沒有物件）；兩層共用 group uc；31×22；用 sea skin 與沉船地形', () => {
+    const exit = uc1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit).toEqual({ map: 'u', x: 10, y: 4 });
+    expect(walk(u, exit.x, exit.y)).toBe(true);
+    expect(u.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+    for (const m of [uc1, uc2]) {
+      expect([m.w, m.h, m.group, m.skin]).toEqual([31, 22, 'uc', 'sea']);
+      const t = m.tiles.join('');
+      expect(t).toMatch(/f/); expect(t).toMatch(/W/); expect(t).not.toMatch(/[:S]/);
+    }
+    expect(uc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('uc2');
+    expect(uc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('uc1');
+  });
+  it('二樓機關：大貝殼 jet（ㄨ）；頭目 boss_u；頭目寶箱 showIf boss_u；回家魔法陣回珊瑚港旅館門外', () => {
+    const sw = uc2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw).toMatchObject({ kind: 'gimmick', ability: 'jet', fx: 'jet', sprite: 'giant_clam', sprite2: 'giant_clam_open' });
+    expect(uc2.objects.find((o) => o.id === 'barrier1')!.hideIf).toBe('g:uc2:switch1');
+    const boss = uc2.objects.find((o) => o.id === 'boss')!;
+    expect(boss).toMatchObject({ battle: 'boss_u', hideIf: 'boss_u' });
+    expect(uc2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_u');
+    const c = uc2.objects.find((o) => o.id === 'circle')!;
+    expect(c).toMatchObject({ kind: 'stairs', sprite: 'magic_circle', showIf: 'boss_u' });
+    const inn = uh.objects.find((o) => o.id === 'door_inn')!;
+    expect(c.to).toEqual({ map: 'uh', x: inn.x, y: inn.y + 1 });
+    expect(walk(uh, c.to!.x, c.to!.y)).toBe(true);
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在且數量對得上，用海底怪', () => {
+    const names: string[] = [];
+    for (const m of [uc1, uc2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon[0-9]+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+      expect(BATTLES[o.battle!].reward.flag).toBe(`m:${m.id}:${o.id}`);
+      expect(['clownfish', 'jellyfish', 'urchin']).toContain(BATTLES[o.battle!].enemy);
+      names.push(o.battle!);
+    }
+    expect(names.sort()).toEqual(['uc1m', 'uc1m2', 'uc1m3', 'uc1m4', 'uc2m', 'uc2m2', 'uc2m3']);
+  });
+  it('既有四個洞窟的迷宮內容沒有被改動（種子與格子不變）', () => {
+    expect(MAZES.gc1.w).toBe(31); expect(MAZES.sc2.h).toBe(22);
+    for (const id of ['gc1', 'gc2', 'xc1', 'xc2', 'zc1', 'zc2', 'sc1', 'sc2'] as const) expect(MAPS[id], id).toBeDefined();
   });
 });

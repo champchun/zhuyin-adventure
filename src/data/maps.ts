@@ -1068,6 +1068,7 @@ MAPS.u = {
     { id: 'm3', kind: 'monster', x: 5, y: 8, battle: 'u3', showIf: 'uPractice', ai: 'patrol', patrol: [{ x: 6, y: 8 }, { x: 7, y: 8 }] },
     { id: 'clam', kind: 'gimmick', x: 12, y: 16, sprite: 'giant_clam', sprite2: 'giant_clam_open', ability: 'jet', fx: 'jet', lockText: ['一隻閉得緊緊的大貝殼，不知道裡面有什麼。', '嘴巴嘟成小圓圈，「ㄨ」地用力吹出一道水柱，也許能把它沖開……'], hitText: ['夥伴嘴巴一嘟「ㄨ」，水柱把大貝殼沖開了！', '貝殼旁邊冒出了一個寶箱！'], doneText: ['大貝殼張得大大的，裡面空空的。'] },
     { id: 'chest_clam', kind: 'chest', x: 12, y: 17, item: 'potion', showIf: 'g:u:clam' },
+    { id: 'cave', kind: 'stairs', x: 10, y: 3, to: { map: 'uc1', x: 2, y: 1 }, label: '沉船', showIf: 'uPractice' },
     { id: 'sign2', kind: 'sign', x: 8, y: 8, text: ['前面是沉船的方向。', '沉船裡很黑，要先練習完再進去喔。'] },
     // 泡泡橋：缺口那一格（水溝中間）。ㄩ 要打倒大章魚才學到，所以對岸的寶箱是大章魚之後才拿得到
     { id: 'bubble_bridge', kind: 'gimmick', x: 19, y: 10, sprite: 'bubble_gap', sprite2: 'bubble_bridge', ability: 'pop', fx: 'pop', passable: true, lockText: ['深水溝上缺了一塊，過不去。', '要是有一串泡泡，搭成橋就好了……'], hitText: ['夥伴嘴巴一噘「ㄩ」，吹出一串大泡泡！', '泡泡搭成了一座橋，可以走到對岸了！'] },
@@ -1077,16 +1078,16 @@ MAPS.u = {
 };
 
 // ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc、星塔 sc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
-type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2';
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2';
 /** 頭目後的回家魔法陣：洞窟 id 前綴 → 通往該關主島旅館門外一格（單向出口） */
 const CIRCLE_HOME: Record<string, NonNullable<MapObj['to']>> = {
-  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 },
+  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 }, uc: { map: 'uh', x: 19, y: 4 },
 };
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
-  const theme: 'forest' | 'ice' | 'desert' | 'sky' = mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
-  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s' }[theme];
+  const theme: 'forest' | 'ice' | 'desert' | 'sky' | 'sea' = mapId.startsWith('u') ? 'sea' : mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
+  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s', sea: 'boss_u' }[theme];
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
@@ -1101,9 +1102,16 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
         id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
         lockText: theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……']
+          : theme === 'sea' ? ['一道厚厚的珊瑚牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'sky' ? ['一道厚厚的雲牆擋住了路，牆上閃著星門的微光。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
-      case 'switch': objs.push(theme === 'sky' ? {
+      case 'switch': objs.push(theme === 'sea' ? {
+        // 開關用 jet（ㄨ，練習戰的獎勵）；沉船入口 cave 要練習戰之後才出現，所以進得了沉船的人一定已經會 jet
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'giant_clam', sprite2: 'giant_clam_open', ability: 'jet', fx: 'jet',
+        lockText: ['一隻閉得緊緊的大貝殼，殼裡好像藏著機關。', '嘴巴嘟成小圓圈，「ㄨ」地用力吹出一道水柱，也許能把它沖開……'],
+        hitText: ['夥伴嘴巴一嘟「ㄨ」，水柱把大貝殼沖開了！', '遠處傳來「轟隆」一聲，好像有一道珊瑚牆打開了！'],
+        doneText: ['大貝殼已經打開了。'],
+      } : theme === 'sky' ? {
         // 開關用 whistle（小王 boss_s1 的獎勵）；星塔入口 cave 要打倒小王才出現，所以進得了星塔的人一定已經會 whistle
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'cloud_block', ability: 'whistle', fx: 'whistle', vanish: true,
         lockText: ['一團厚厚的雲，卡在星門機關的凹槽上。', '用口哨風「ㄙ」吹一口氣，也許能把它吹走……'],
@@ -1208,6 +1216,19 @@ MAPS.sc2 = {
   id: 'sc2', name: '星塔 2F', w: MAZES.sc2.w, h: MAZES.sc2.h, tiles: skyRows(MAZES.sc2.rows), theme: 'valley', group: 'sc',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('sc2', { map: 'sc1', x: MAZES.sc1.downArrive!.x, y: MAZES.sc1.downArrive!.y }, undefined),
+};
+
+// 沉船：地板用沉船木板 f、牆用 W；出口回海藻森林沉船入口 cave (10,3) 的下方一格
+const seaRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'f').replace(/S/g, 'W'));
+MAPS.uc1 = {
+  id: 'uc1', name: '沉船 1F', w: MAZES.uc1.w, h: MAZES.uc1.h, tiles: seaRows(MAZES.uc1.rows), theme: 'valley', group: 'uc', skin: 'sea',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('uc1', { map: 'u', x: 10, y: 4 }, { map: 'uc2', x: 2, y: 1 }),
+};
+MAPS.uc2 = {
+  id: 'uc2', name: '沉船 2F', w: MAZES.uc2.w, h: MAZES.uc2.h, tiles: seaRows(MAZES.uc2.rows), theme: 'valley', group: 'uc', skin: 'sea',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('uc2', { map: 'uc1', x: MAZES.uc1.downArrive!.x, y: MAZES.uc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {
