@@ -28,5 +28,5 @@ export interface Floor {
   downArrive: { x: number; y: number } | null;
 }
 export function generateFloor(cfg: FloorConfig): Floor;
-export const FLOORS: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2', FloorConfig>;
+export const FLOORS: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2', FloorConfig>;
 export function renderMazes(): string;

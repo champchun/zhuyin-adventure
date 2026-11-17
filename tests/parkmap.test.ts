@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BATTLES, LEVELS } from '../src/data/levels';
+import { MAZES } from '../src/data/mazes';
 import { MAPS, isBlockedTile, objectDepth, TERRAIN_DEPTH } from '../src/data/maps';
 import type { MapObj } from '../src/data/maps';
 import { reachReport } from '../src/core/dungeon';
@@ -178,5 +179,78 @@ describe('歡樂島 a', () => {
   it('進島設旗標用的 aEntered、被打倒送回歡樂廣場：小火車只通歡樂廣場', () => {
     expect(a.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['ah']);
     expect(defeatSpot('ah')).toEqual({ map: 'ah', x: ah.respawn.x, y: ah.respawn.y });
+  });
+});
+
+describe('鏡子迷宮（產生的迷宮）', () => {
+  const ac1 = MAPS.ac1, ac2 = MAPS.ac2;
+  // 練習戰（apractice）之後的能力；boss_a 才給 honk、cheer，所以鏡子迷宮裡不能依賴它們
+  const afterPractice = ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet', 'pop', 'drum', 'splash', 'nasal', 'stream', 'croak', 'knock', 'breath', 'snow', 'slide', 'freeze', 'shout', 'inflate'];
+  const beforePractice = afterPractice.filter((x) => x !== 'shout' && x !== 'inflate');
+  const start = { map: 'ac1', x: 2, y: 1 };
+  it('兩層一起走：用練習戰之後的能力，沒有走不到的地板與物件（含頭目），鑰匙剛好用完；不含 honk、cheer', () => {
+    const r = reachReport([ac1, ac2], start, afterPractice);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+    expect(afterPractice).not.toContain('honk');
+    expect(afterPractice).not.toContain('cheer');
+  });
+  it('沒有 shout：二樓鏡牆後（含頭目與頭目寶箱）走不到；沒有 blast：隱藏小密室走不到', () => {
+    const noShout = reachReport([ac1, ac2], start, afterPractice.filter((x) => x !== 'shout'));
+    const bossAt = ac2.objects.find((o) => o.id === 'boss')!, chestAt = ac2.objects.find((o) => o.id === 'chest_boss')!;
+    expect(noShout.unreachableFloor).toContain(`ac2:${bossAt.x},${bossAt.y}`);
+    expect(noShout.unreachableFloor).toContain(`ac2:${chestAt.x},${chestAt.y}`);
+    expect(reachReport([ac1, ac2], start, afterPractice.filter((x) => x !== 'blast')).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('守門（避免死結）：shout 只來自練習戰；boss_a 的獎勵 honk、cheer 不是通往 boss_a 之路所需；cave 要練習戰之後才出現', () => {
+    expect(BATTLES.apractice.reward.abilities).toContain('shout');
+    const bossAt = ac2.objects.find((o) => o.id === 'boss')!;
+    const bossCell = `ac2:${bossAt.x},${bossAt.y}`;
+    expect(reachReport([ac1, ac2], start, beforePractice).unreachableFloor).toContain(bossCell);
+    expect(reachReport([ac1, ac2], start, afterPractice).unreachableFloor).not.toContain(bossCell);
+    const cave = a.objects.find((o) => o.id === 'cave')!;
+    expect(cave).toMatchObject({ kind: 'stairs', x: 17, y: 3, label: '鏡子迷宮', showIf: 'aPractice' });
+    expect(cave.to).toEqual({ map: 'ac1', x: 2, y: 1 });
+    for (const m of Object.values(MAPS)) for (const o of m.objects) if (o.to?.map === 'ac1' && m.id !== 'ac2') expect(o.showIf, `${m.id}/${o.id}`).toBe('aPractice');
+  });
+  it('出口落在 cave 下方一格（可走、沒有物件）；兩層共用 group ac；31×22；用 park skin 與遊樂園地形', () => {
+    const exit = ac1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit).toEqual({ map: 'a', x: 17, y: 4 });
+    expect(walk(a, exit.x, exit.y)).toBe(true);
+    expect(a.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+    expect(walk(a, 17, 3)).toBe(true);
+    expect(MAZES.ac1.w).toBe(31);
+    for (const m of [ac1, ac2]) {
+      expect([m.w, m.h, m.group, m.skin]).toEqual([31, 22, 'ac', 'park']);
+      const t = m.tiles.join('');
+      expect(t).toMatch(/f/); expect(t).toMatch(/W/); expect(t).not.toMatch(/[:S]/);
+    }
+    expect(ac1.objects.find((o) => o.id === 'down')!.to!.map).toBe('ac2');
+    expect(ac2.objects.find((o) => o.id === 'up')!.to!.map).toBe('ac1');
+  });
+  it('二樓機關：大鑼 shout（ㄚ）；頭目 boss_a；頭目寶箱 showIf boss_a；回家魔法陣回歡樂廣場旅館門外', () => {
+    const sw = ac2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw).toMatchObject({ kind: 'gimmick', ability: 'shout', fx: 'shout', sprite: 'gong', sprite2: 'gong_hit' });
+    expect(ac2.objects.find((o) => o.id === 'barrier1')!.hideIf).toBe('g:ac2:switch1');
+    const boss = ac2.objects.find((o) => o.id === 'boss')!;
+    expect(boss).toMatchObject({ battle: 'boss_a', hideIf: 'boss_a' });
+    expect(ac2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_a');
+    const c = ac2.objects.find((o) => o.id === 'circle')!;
+    expect(c).toMatchObject({ kind: 'stairs', sprite: 'magic_circle', showIf: 'boss_a' });
+    const inn = ah.objects.find((o) => o.id === 'door_inn')!;
+    expect(c.to).toEqual({ map: 'ah', x: inn.x, y: inn.y + 1 });
+    expect(walk(ah, c.to!.x, c.to!.y)).toBe(true);
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在且數量對得上，用遊樂園怪', () => {
+    const names: string[] = [];
+    for (const m of [ac1, ac2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon[0-9]+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+      expect(BATTLES[o.battle!].reward.flag).toBe(`m:${m.id}:${o.id}`);
+      expect(['balloony', 'toysoldier', 'jackbox']).toContain(BATTLES[o.battle!].enemy);
+      names.push(o.battle!);
+    }
+    expect(names.sort()).toEqual(['ac1m', 'ac1m2', 'ac1m3', 'ac1m4', 'ac2m', 'ac2m2', 'ac2m3']);
   });
 });

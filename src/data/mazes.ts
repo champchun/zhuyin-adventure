@@ -1,7 +1,7 @@
 // 由 tools/gen-dungeon.mjs 產生，不要手改。要換迷宮：改 tools/gen-dungeon.mjs 裡的種子，重跑 node tools/gen-dungeon.mjs
 import type { Floor } from '../../tools/gen-dungeon.mjs';
 
-export const MAZES: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2', Floor> = {
+export const MAZES: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2', Floor> = {
   "gc1": {
     "w": 31,
     "h": 22,
@@ -1243,6 +1243,256 @@ export const MAZES: Record<'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1'
         "role": "monster",
         "x": 17,
         "y": 5,
+        "ai": "chase"
+      }
+    ],
+    "arrive": {
+      "x": 2,
+      "y": 1
+    },
+    "downArrive": null
+  },
+  "ac1": {
+    "w": 31,
+    "h": 22,
+    "rows": [
+      "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+      "S:::::S::::::::S::::::::S:::::S",
+      "S:::::S::::::::S::::::::S::S::S",
+      "SSSS::S::S::S::S::SSSS::SSSS::S",
+      "S::S::S:::::S::S:::::S::::::::S",
+      "S::S::S:::::S::S:::::S::::::::S",
+      "S::S::SSSS::S::SSSSSSS::SSSS::S",
+      "S::S::S:::::S::S:::::S:::::S::S",
+      "S::S::S:::::S::S:::::S:::::S::S",
+      "S::S::S::SSSS::S::S::SSSSSSS::S",
+      "S::::::::S::S:::::S::S:::::S::S",
+      "S::::::::S::S:::::S::S:::::S::S",
+      "S::S::SSSS::SSSS::S::S::S::S::S",
+      "S:::::::::::S::::::::S::S:::::S",
+      "S:::::::::::S::::::::S::S:::::S",
+      "S::S::SSSS::S::S::SSSS::S::S::S",
+      "S::S::::::::S:::::S:::::S:::::S",
+      "S::S::::::::S:::::S::S::S:::::S",
+      "S::S::SSSSSSSSSS::S::S::SSSS::S",
+      "S::S:::::::::::::::::S::::::::S",
+      "S::S:::::::::::::::::S::::::::S",
+      "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+    ],
+    "objects": [
+      {
+        "role": "key",
+        "x": 11,
+        "y": 11
+      },
+      {
+        "role": "up",
+        "x": 1,
+        "y": 1
+      },
+      {
+        "role": "down",
+        "x": 20,
+        "y": 5
+      },
+      {
+        "role": "rock",
+        "x": 27,
+        "y": 1
+      },
+      {
+        "role": "closet",
+        "x": 26,
+        "y": 2
+      },
+      {
+        "role": "door",
+        "x": 21,
+        "y": 16
+      },
+      {
+        "role": "chest",
+        "x": 2,
+        "y": 20
+      },
+      {
+        "role": "chest",
+        "x": 26,
+        "y": 8
+      },
+      {
+        "role": "chest",
+        "x": 2,
+        "y": 5
+      },
+      {
+        "role": "monster",
+        "x": 1,
+        "y": 7,
+        "ai": "patrol",
+        "patrol": [
+          {
+            "x": 2,
+            "y": 7
+          },
+          {
+            "x": 2,
+            "y": 8
+          }
+        ]
+      },
+      {
+        "role": "monster",
+        "x": 28,
+        "y": 13,
+        "ai": "patrol",
+        "patrol": [
+          {
+            "x": 29,
+            "y": 13
+          },
+          {
+            "x": 29,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "role": "monster",
+        "x": 13,
+        "y": 13,
+        "ai": "patrol",
+        "patrol": [
+          {
+            "x": 14,
+            "y": 13
+          },
+          {
+            "x": 14,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "role": "monster",
+        "x": 4,
+        "y": 16,
+        "ai": "patrol",
+        "patrol": [
+          {
+            "x": 5,
+            "y": 16
+          },
+          {
+            "x": 5,
+            "y": 17
+          }
+        ]
+      }
+    ],
+    "arrive": {
+      "x": 2,
+      "y": 1
+    },
+    "downArrive": {
+      "x": 19,
+      "y": 5
+    }
+  },
+  "ac2": {
+    "w": 31,
+    "h": 22,
+    "rows": [
+      "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+      "S::::::::::::::::::::S::S:::::S",
+      "S::::::::::::::::::::S::S::S::S",
+      "SSSSSSSSSSSSSSSSSSS::S::SSSS::S",
+      "S::::::::S::::::::S::S::::::::S",
+      "S::::::::S::::::::S::S::::::::S",
+      "SSSS::SSSS::S::SSSS::S::SSSS::S",
+      "S:::::::::::S:::::S:::::::::::S",
+      "S:::::::::::S:::::S:::::::::::S",
+      "S::SSSS::SSSSSSS::SSSSSSS::SSSS",
+      "S::::::::S:::::S:::::S::::::::S",
+      "S::::::::S:::::S:::::S::::::::S",
+      "S::SSSSSSS:SS::S::SSSS::S::S::S",
+      "S:::::S:::::S:::::S:::::S:::::S",
+      "S:::::S:::::S:::::S:::::S:::::S",
+      "S::S::S::S::SSSSSSS::S::S::SSSS",
+      "S:::::S::S::S::::::::S::::::::S",
+      "S:::::S::S::S::::::::S::::::::S",
+      "SSSS::S::S::S::S::SSSSSSSSSS::S",
+      "S:::::S:::::::::::::::::::::::S",
+      "S:::::S:::::::::::::::::::::::S",
+      "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+    ],
+    "objects": [
+      {
+        "role": "switch",
+        "x": 23,
+        "y": 2
+      },
+      {
+        "role": "up",
+        "x": 1,
+        "y": 1
+      },
+      {
+        "role": "boss",
+        "x": 1,
+        "y": 19
+      },
+      {
+        "role": "bossChest",
+        "x": 2,
+        "y": 20
+      },
+      {
+        "role": "rock",
+        "x": 27,
+        "y": 1
+      },
+      {
+        "role": "closet",
+        "x": 26,
+        "y": 2
+      },
+      {
+        "role": "barrier",
+        "x": 10,
+        "y": 12
+      },
+      {
+        "role": "chest",
+        "x": 8,
+        "y": 5
+      },
+      {
+        "role": "chest",
+        "x": 2,
+        "y": 5
+      },
+      {
+        "role": "chest",
+        "x": 20,
+        "y": 11
+      },
+      {
+        "role": "monster",
+        "x": 17,
+        "y": 8,
+        "ai": "chase"
+      },
+      {
+        "role": "monster",
+        "x": 11,
+        "y": 20,
+        "ai": "chase"
+      },
+      {
+        "role": "monster",
+        "x": 5,
+        "y": 14,
         "ai": "chase"
       }
     ],

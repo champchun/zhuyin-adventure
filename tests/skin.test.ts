@@ -57,7 +57,7 @@ describe('地形外觀表 skin', () => {
     }
   });
   it('產生的迷宮：原始列的擋路判斷（mazeObjects 用 BLOCKED_TILES）和地圖 skin 的判斷逐格一致', () => {
-    const ids = ['gc1', 'gc2', 'xc1', 'xc2', 'zc1', 'zc2', 'sc1', 'sc2', 'uc1', 'uc2'];
+    const ids = ['gc1', 'gc2', 'xc1', 'xc2', 'zc1', 'zc2', 'sc1', 'sc2', 'uc1', 'uc2', 'ac1', 'ac2'];
     for (const id of ids) {
       const m = MAPS[id], raw = MAZES[id as keyof typeof MAZES].rows;
       expect(raw.length, id).toBe(m.h);
