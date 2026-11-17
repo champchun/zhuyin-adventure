@@ -1000,6 +1000,37 @@ export class WorldScene extends Phaser.Scene {
         const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffd6f0);
         this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
       }
+    } else if (fx === 'shout') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xff8a3a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 650, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(140, 0.003);
+    } else if (fx === 'inflate') {
+      audio.sfx('bubble');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.circle(x - 8 + i * 3, y + 4, 3 + (i % 3), 0xff9fbf, 0.85).setStrokeStyle(1, 0xffffff).setDepth(9999);
+        this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'honk') {
+      audio.sfx('hint');
+      for (let i = 0; i < 2; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xffd84a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 650, delay: i * 150, onComplete: () => c.destroy() });
+      }
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 16, y + (i - 3) * 3, 'windline').setDepth(9999).setTint(0xffd84a);
+        this.tweens.add({ targets: s, x: x + 20, alpha: 0, duration: 550, delay: i * 50, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'cheer') {
+      audio.sfx('hint');
+      const cols = [0xe8514a, 0xffd84a, 0x5fc86a, 0x4aa8f0];
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 7) * Math.PI - Math.PI; // 向上散開的半圈
+        const s = this.add.image(x, y, 'spark').setDepth(9999).setTint(cols[i % 4]);
+        this.tweens.add({ targets: s, x: x + Math.cos(a) * 24, y: y + Math.sin(a) * 24 - 6, alpha: 0, duration: 700, delay: i * 40, onComplete: () => s.destroy() });
+      }
     } else {
       audio.sfx('splash');
       for (let i = 0; i < 8; i++) {

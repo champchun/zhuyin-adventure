@@ -373,6 +373,60 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'puff', 8, 28, 380);
         break;
       }
+      case 'shout': {
+        // 三圈橘紅色的圈圈在對手身上擴散，輕輕震動
+        audio.sfx('drum');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(3, 0xff8a3a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 12, alpha: 0, duration: 450, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        if (!G.settings.reduceMotion) this.cameras.main.shake(160, 0.004);
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 8, 34, 420);
+        break;
+      }
+      case 'inflate': {
+        // 五顆粉紅氣球由小變大，飄向對手
+        audio.sfx('bubble');
+        for (let i = 0; i < 5; i++) {
+          const b = this.add.circle(from.x + 20, from.y - 6, 3, 0xff9fbf, 0.9).setStrokeStyle(2, 0xffffff).setDepth(40);
+          this.tweens.add({ targets: b, x: to.x, y: to.y - 10 + (i - 2) * 6, radius: 8, duration: 450, delay: i * 80, onComplete: () => b.destroy() });
+        }
+        await sleep(700);
+        this.burst(to.x, to.y, 'puff', 8, 28, 380);
+        break;
+      }
+      case 'honk': {
+        // 兩圈金黃色的圈圈從自己身上擴散，接著黃色音波射向對手
+        audio.sfx('hint');
+        for (let i = 0; i < 2; i++) {
+          const ring = this.add.circle(from.x + 10, from.y - 6, 6, 0xffffff, 0).setStrokeStyle(3, 0xffd84a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 16 + i * 10, alpha: 0, duration: 350, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        for (let i = 0; i < 6; i++) {
+          const l = this.add.image(from.x + 14, from.y - 12 + i * 4, 'windline').setDepth(40).setTint(0xffd84a);
+          this.tweens.add({ targets: l, x: to.x, duration: 300, delay: 220 + i * 35, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'spark', 8, 30, 420);
+        break;
+      }
+      case 'cheer': {
+        // 八顆彩色小圓向上射出再落到對手身上，像煙火
+        audio.sfx('hint');
+        const cols = [0xe8514a, 0xffd84a, 0x5fc86a, 0x4aa8f0];
+        for (let i = 0; i < 8; i++) {
+          const c = this.add.circle(from.x + 14, from.y - 6, 3, cols[i % 4], 1).setStrokeStyle(1, 0xffffff).setDepth(40);
+          const topX = (from.x + to.x) / 2 + (i - 3.5) * 6;
+          this.tweens.add({
+            targets: c, x: topX, y: from.y - 60 - (i % 3) * 8, duration: 280, delay: i * 50, ease: 'Quad.out',
+            onComplete: () => this.tweens.add({ targets: c, x: to.x + (i - 3.5) * 3, y: to.y, alpha: 0, duration: 320, ease: 'Quad.in', onComplete: () => c.destroy() }),
+          });
+        }
+        await sleep(650);
+        this.burst(to.x, to.y, 'spark', 10, 36, 450);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');

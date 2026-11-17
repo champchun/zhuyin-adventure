@@ -258,6 +258,34 @@ export const BATTLES: Record<string, BattleDef> = {
   uc2m: wild('uc2m', 'jellyfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon1'),
   uc2m2: wild('uc2m2', 'urchin', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon2'),
   uc2m3: wild('uc2m3', 'jellyfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon3'),
+  // 第二階段第二關（第八關）：遊樂園（ㄚㄛㄜㄝ）。進入歡樂島先練習 ㄚㄛ，ㄜㄝ 要等練習戰完成後才開始出現，ㄜㄝ 的招式要打倒小丑魔術師才學到
+  apractice: {
+    id: 'apractice', enemy: 'ballpuppet', phases: 2, tier: 1, focus: ['ㄚ', 'ㄛ'], review: [], guided: true,
+    intro: ['彩球人偶搖搖晃晃的，用來練習！', '這一次要認的是「ㄚ」和「ㄛ」。ㄚ 嘴巴張得大大的，ㄛ 嘴巴圓圓的！'],
+    reward: {
+      flag: 'aPractice', exp: 10, coins: 18, abilities: ['shout', 'inflate'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄚ」嘴巴張得大大的，夥伴學會了大聲喊！', '「ㄛ」嘴巴圓圓的，夥伴學會了吹氣球！', '歡樂島上還有小怪和鏡子迷宮在等你，往前走走看吧！'],
+    },
+  },
+  a1: wild('a1', 'balloony', 1, ['ㄚ', 'ㄛ'], ['ㄧ', 'ㄨ'], 'm:a:m1'),
+  a2: { ...wild('a2', 'toysoldier', 2, ['ㄚ', 'ㄛ'], ['ㄩ', 'ㄗ'], 'm:a:m2'), intro: ['玩具兵立正站好，擋住了路！', '他會考「ㄚ」和「ㄛ」。'] },
+  a3: { ...wild('a3', 'jackbox', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:a:m3'), intro: ['彈簧盒「砰」地彈了出來！', '他會考新的注音：「ㄜ」和「ㄝ」。'] },
+  boss_a: {
+    id: 'boss_a', enemy: 'clownking', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄜ', 'ㄝ', 'ㄚ', 'ㄛ'], review: ['ㄧ', 'ㄨ', 'ㄩ', 'ㄗ', 'ㄘ', 'ㄙ'],
+    intro: ['叮叮噹噹～小丑魔術師擋在鏡子迷宮的最深處！', '他的魔術帽擋住了攻擊，要用「🪄 魔法攻擊」才打得破護盾！一共三個小回合。'],
+    reward: {
+      flag: 'boss_a', exp: 44, coins: 190, abilities: ['honk', 'cheer'], items: { potion: 2, berry: 2 },
+      story: ['小丑魔術師脫下帽子，大笑著認輸了。', '「ㄜ」嘴巴微微張開，像鵝一樣叫，夥伴學會了鵝鵝叫！', '「ㄝ」嘴角拉開，像大聲喊「耶！」，夥伴學會了歡呼！', '摩天輪和煙火筒在歡樂島等你，用新招式試試看吧！'],
+    },
+  },
+  // 鏡子迷宮（遊樂園的小迷宮）：怪物旗標獨立，不與島上的 a1～a3 共用
+  ac1m: wild('ac1m', 'balloony', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac1:mon1'),
+  ac1m2: wild('ac1m2', 'balloony', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac1:mon2'),
+  ac1m3: wild('ac1m3', 'balloony', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac1:mon3'),
+  ac1m4: wild('ac1m4', 'balloony', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac1:mon4'),
+  ac2m: wild('ac2m', 'toysoldier', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac2:mon1'),
+  ac2m2: wild('ac2m2', 'jackbox', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac2:mon2'),
+  ac2m3: wild('ac2m3', 'toysoldier', 3, ['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ'], ['ㄧ', 'ㄨ', 'ㄩ'], 'm:ac2:mon3'),
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),

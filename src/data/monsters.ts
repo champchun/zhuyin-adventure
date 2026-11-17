@@ -4,7 +4,7 @@ export interface MoveDef {
   /** 魔法攻擊（聽聲音）時顯示的名字 */
   magicName: string;
   power: number;
-  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle' | 'glow' | 'jet' | 'pop';
+  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle' | 'glow' | 'jet' | 'pop' | 'shout' | 'inflate' | 'honk' | 'cheer';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
   /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
@@ -82,22 +82,26 @@ export const MOVES: Record<string, MoveDef> = {
   glow: { id: 'glow', magicName: '亮光魔法', symbol: 'ㄧ', name: '亮光閃', power: 10, fx: 'glow', needAbility: 'glow', desc: '「ㄧ」嘴角往兩邊拉開，像笑咪咪的樣子，細細地發出聲音，嘴巴前面亮起一道小光，能點亮暗掉的燈籠水母。' },
   jet: { id: 'jet', magicName: '水柱魔法', symbol: 'ㄨ', name: '噗噗水柱', power: 10, fx: 'jet', needAbility: 'jet', desc: '「ㄨ」嘴巴嘟成一個小圓圈，用力往前吹，像噴出一道水柱「噗」，能把緊閉的大貝殼沖開。' },
   pop: { id: 'pop', magicName: '吐泡魔法', symbol: 'ㄩ', name: '吐泡泡', power: 11, fx: 'pop', needAbility: 'pop', desc: '「ㄩ」嘴巴噘得圓圓的，舌頭和「ㄧ」一樣在前面，像小魚吐泡泡，吹出一串泡泡，能在深水溝上架起泡泡橋。' },
+  shout: { id: 'shout', magicName: '呼喊魔法', symbol: 'ㄚ', name: '大聲喊', power: 11, fx: 'shout', needAbility: 'shout', desc: '「ㄚ」嘴巴張得大大的，像在醫生面前說「啊～」，用力喊出來，聲音大得能叫醒睡著的旋轉木馬，也能震響大鑼。' },
+  inflate: { id: 'inflate', magicName: '氣球魔法', symbol: 'ㄛ', name: '吹氣球', power: 11, fx: 'inflate', needAbility: 'inflate', desc: '「ㄛ」嘴巴圓圓的、不用張很大，像吹氣球一樣「呼～」地吹氣，能把洩氣的大氣球吹得鼓鼓的。' },
+  honk: { id: 'honk', magicName: '鵝叫魔法', symbol: 'ㄜ', name: '鵝鵝叫', power: 12, fx: 'honk', needAbility: 'honk', desc: '「ㄜ」嘴巴微微張開、放鬆，從喉嚨發出聲音，像鵝「ㄜ～」地叫，能叫醒摩天輪，讓車廂排成一座橋。' },
+  cheer: { id: 'cheer', magicName: '歡呼魔法', symbol: 'ㄝ', name: '歡呼', power: 12, fx: 'cheer', needAbility: 'cheer', desc: '「ㄝ」嘴角往兩邊微微拉開，像開心地喊「耶！」，聲音又亮又脆，能把煙火筒裡的煙火點燃。' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop], color: '#f59a3c',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer], color: '#f59a3c',
     desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop], color: '#4fb3a4',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer], color: '#4fb3a4',
     desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop], color: '#ff8a3a',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer], color: '#ff8a3a',
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
@@ -144,5 +148,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
   urchin: { id: 'urchin', name: '海膽怪', sprite: 'en_urchin', hp: 46, atk: 8, scale: 2.25, echo: true },
   octopus: { id: 'octopus', name: '大章魚', sprite: 'en_octopus', hp: 58, atk: 9, scale: 2.75 },
   kelpdummy: { id: 'kelpdummy', name: '海草人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
+  balloony: { id: 'balloony', name: '氣球怪', sprite: 'en_balloony', hp: 48, atk: 8, scale: 2.25 },
+  toysoldier: { id: 'toysoldier', name: '玩具兵', sprite: 'en_toysoldier', hp: 50, atk: 8, scale: 2.25, echo: true },
+  jackbox: { id: 'jackbox', name: '彈簧盒小丑', sprite: 'en_jackbox', hp: 52, atk: 9, scale: 2.25, echo: true },
+  clownking: { id: 'clownking', name: '小丑魔術師', sprite: 'en_clownking', hp: 66, atk: 10, scale: 2.75 },
+  ballpuppet: { id: 'ballpuppet', name: '彩球人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };
