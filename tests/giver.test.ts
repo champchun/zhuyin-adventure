@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { POOR_COINS, GIVER_REWARD, isPoor, giverMap, giverVisible, nextGiverMap } from '../src/core/giver';
 import { newSave } from '../src/core/save';
 import { ITEMS } from '../src/data/monsters';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { MAPS, isBlockedTile } from '../src/data/maps';
 import { STORY } from '../src/data/levels';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -34,14 +34,14 @@ describe('金幣爺爺', () => {
     expect(giverVisible(mk(['dh', 'gh'], 0), 'gh')).toBe(false);
   });
   it('nextGiverMap', () => {
-    const s = mk(['dh', 'gh', 'xh', 'zh', 'sh'], 0, 'dh');
+    const s = mk(['dh', 'gh', 'xh', 'zh', 'sh', 'uh'], 0, 'dh');
     expect(nextGiverMap(s, () => 0)).toBe('gh');
     expect(nextGiverMap(s, () => 0.5)).toBe('zh');
-    expect(nextGiverMap(s, () => 0.99)).toBe('sh');
+    expect(nextGiverMap(s, () => 0.99)).toBe('uh');
     expect(nextGiverMap(mk(['dh'], 0, 'dh'))).toBe('dh');
     for (const r of [0, 0.3, 0.5, 0.7, 0.99]) {
-      for (const at of ['dh', 'gh', 'xh', 'zh', 'sh']) {
-        const t = mk(['dh', 'gh', 'xh', 'zh', 'sh'], 0, at);
+      for (const at of ['dh', 'gh', 'xh', 'zh', 'sh', 'uh']) {
+        const t = mk(['dh', 'gh', 'xh', 'zh', 'sh', 'uh'], 0, at);
         expect(nextGiverMap(t, () => r)).not.toBe(at);
       }
     }
@@ -55,13 +55,13 @@ describe('金幣爺爺', () => {
 });
 
 describe('金幣爺爺：地圖', () => {
-  for (const id of ['dh', 'gh', 'xh', 'zh', 'sh']) {
+  for (const id of ['dh', 'gh', 'xh', 'zh', 'sh', 'uh']) {
     it(`${id}：有一位 id 為 giver 的爺爺，站在可走的地形上，不與其他物件重疊，四周有可走的空格`, () => {
       const m = MAPS[id];
       const gs = m.objects.filter((o) => o.kind === 'giver');
       expect(gs.map((o) => o.id)).toEqual(['giver']);
       const g = gs[0];
-      expect(BLOCKED_TILES.has(m.tiles[g.y][g.x])).toBe(false);
+      expect(isBlockedTile(m, m.tiles[g.y][g.x])).toBe(false);
       const others = new Set(m.objects.filter((o) => o !== g).map((o) => `${o.x},${o.y}`));
       expect(others.has(`${g.x},${g.y}`)).toBe(false);
       // 不站在任何地方的碼頭抵達格或這座島的碼頭格上
@@ -72,7 +72,7 @@ describe('金幣爺爺：地圖', () => {
       }
       const open = N4.filter(([dx, dy]) => {
         const x = g.x + dx, y = g.y + dy;
-        return !BLOCKED_TILES.has(m.tiles[y]?.[x] ?? '~') && !others.has(`${x},${y}`);
+        return !isBlockedTile(m, m.tiles[y]?.[x] ?? '~') && !others.has(`${x},${y}`);
       });
       expect(open.length).toBeGreaterThanOrEqual(1);
     });

@@ -64,7 +64,7 @@ describe('maps', () => {
       if (m.group) return; // 迷宮樓層有鎖門、機關、裂石，由 tests/dungeon.test.ts 用模擬來驗證
       const solid = new Set(m.objects.map((o) => `${o.x},${o.y}`));
       const seen = reach(m.id, m.start, solid);
-      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice', 'chest_slide', 'chest_bridge1', 'chest_bridge2', 'chest_cactus', 'chest_stone', 'chest_web1', 'chest_web2', 'chest_zip', 'chest_spike', 'chest_r1', 'chest_r2']);
+      const sealed = new Set(['chest_rock', 'chest_hidden', 'chest_leaf', 'chest_wind', 'chest_fog', 'chest_ice', 'chest_slide', 'chest_bridge1', 'chest_bridge2', 'chest_cactus', 'chest_stone', 'chest_web1', 'chest_web2', 'chest_zip', 'chest_spike', 'chest_r1', 'chest_r2', 'chest_b1', 'chest_b2']);
       for (const o of m.objects) {
         if (['rock', 'woodgate', 'leaves', 'fog'].includes(o.kind) || sealed.has(o.id)) continue;
         if (m.id === 's' && o.id === 'cave') continue; // 星塔入口在小王後面（小王擋路，打倒才出現），由 tests/skymap.test.ts 驗證
@@ -227,8 +227,6 @@ describe('怪物重生', () => {
 describe('levels', () => {
   it('已開放關卡有地圖，其餘保留為尚未開放', () => {
     for (const L of Object.values(LEVELS)) {
-      // 暫時：第七關（u）的珊瑚港地圖由後續任務加入，加入後移除這行
-      if (L.id === 'u' && !MAPS[L.mapId!]) continue;
       if (L.open) expect(MAPS[L.mapId!]).toBeDefined(); else expect(L.mapId).toBeUndefined();
     }
     expect(Object.keys(LEVELS)).toEqual(['b', 'p', 'd', 'g', 'x', 'z', 's', 'u']);

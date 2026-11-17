@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { BLOCKED_TILES, MAPS, isBlockedTile } from '../src/data/maps';
 import { ITEMS, SPECIES } from '../src/data/monsters';
 import { ACC_OFFSET, accOffset } from '../src/gfx/accessory';
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 describe('星星婆婆', () => {
-  for (const id of ['dh', 'gh', 'xh', 'zh', 'sh']) {
+  for (const id of ['dh', 'gh', 'xh', 'zh', 'sh', 'uh']) {
     it(`${id}：有一位 id 為 granny 的婆婆，站在可走的地形上，旁邊有可走的空格`, () => {
       const m = MAPS[id];
       const gs = m.objects.filter((o) => o.kind === 'granny');
       expect(gs.map((o) => o.id)).toEqual(['granny']);
       const g = gs[0];
-      expect(BLOCKED_TILES.has(m.tiles[g.y][g.x])).toBe(false);
+      expect(isBlockedTile(m, m.tiles[g.y][g.x])).toBe(false);
       const others = new Set(m.objects.filter((o) => o !== g).map((o) => `${o.x},${o.y}`));
       const open = N4.filter(([dx, dy]) => {
         const x = g.x + dx, y = g.y + dy;
-        return !BLOCKED_TILES.has(m.tiles[y]?.[x] ?? '~') && !others.has(`${x},${y}`);
+        return !isBlockedTile(m, m.tiles[y]?.[x] ?? '~') && !others.has(`${x},${y}`);
       });
       expect(open.length).toBeGreaterThanOrEqual(2);
     });

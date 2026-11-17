@@ -25,8 +25,11 @@ describe('世界地圖大廳', () => {
     expect(walkable('village', 16, 16)).toBe(true);
     expect(freeOf('village', 16, 16)).toBe(true);
   });
-  it('四扇門 gate7～gate10 是擋路的 barrier，各有鎖住的說明（之後每一關的計畫會把它換成通道）', () => {
-    for (const id of ['gate7', 'gate8', 'gate9', 'gate10']) {
+  it('gate7 是通往珊瑚港的 stairs；gate8～gate10 是擋路的 barrier，各有鎖住的說明（之後每一關的計畫會把它換成通道）', () => {
+    const g7 = lobby.objects.find((o) => o.id === 'gate7')!;
+    expect(g7.kind).toBe('stairs');
+    expect(g7.to!.map).toBe('uh');
+    for (const id of ['gate8', 'gate9', 'gate10']) {
       const g = lobby.objects.find((o) => o.id === id)!;
       expect(g, id).toBeDefined();
       expect(g.kind).toBe('barrier');

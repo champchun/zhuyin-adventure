@@ -48,7 +48,7 @@ export interface MapObj {
   /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
   dockTo?: { map: string; x: number; y: number };
   /** dock：交通工具的種類。有設就不是船（熱氣球、雲朵小船），碼頭旁不必有水；沒設就是一般的船碼頭 */
-  vehicle?: 'balloon' | 'cloudboat';
+  vehicle?: 'balloon' | 'cloudboat' | 'seahorse';
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
   /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
@@ -273,7 +273,7 @@ export const MAPS: Record<string, MapDef> = {
     objects: [
       { id: 'back_village', kind: 'stairs', x: 9, y: 12, to: { map: 'village', x: 16, y: 16 }, label: '回起始村' },
       // 第二階段四扇門：目前都還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
-      { id: 'gate7', kind: 'barrier', x: 4, y: 2, lockText: ['第七關「海底」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate7', kind: 'stairs', x: 4, y: 2, sprite: 'bubble_gate', to: { map: 'uh', x: 4, y: 16 }, label: '海底' },
       { id: 'gate8', kind: 'barrier', x: 7, y: 2, lockText: ['第八關「遊樂園」的門。', '門後面還在準備中，敬請期待！'] },
       { id: 'gate9', kind: 'barrier', x: 12, y: 2, lockText: ['第九關「古堡」的門。', '門後面還在準備中，敬請期待！'] },
       { id: 'gate10', kind: 'barrier', x: 15, y: 2, lockText: ['第十關「時鐘塔」的門。', '門後面還在準備中，敬請期待！'] },
@@ -966,6 +966,113 @@ MAPS.s = {
     { id: 'rainbow', kind: 'gimmick', x: 19, y: 10, sprite: 'rainbow_gap', sprite2: 'rainbow_bridge', ability: 'whistle', fx: 'whistle', passable: true, lockText: ['星光河上缺了一塊，過不去。', '要是有一陣風，把彩虹吹出來架成橋就好了……'], hitText: ['夥伴舌尖一吹「ㄙ」，口哨風把彩虹吹了出來！', '彩虹架成了一座橋，可以走到對岸了！'] },
     { id: 'chest_r1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
     { id: 'chest_r2', kind: 'chest', x: 24, y: 5, item: 'berry' },
+  ],
+};
+
+// ───────── 珊瑚港：第七關（海底）的主島 ─────────
+// 沒有海面碼頭：從大廳的泡泡門下來，落在西南角；東邊的海馬（seahorse）通往海藻森林。商店在北邊偏左、旅館在北邊偏右，中間是泡泡池。
+const uhGrid = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('k', 6, 2, 4, 1).rect('K', 6, 3, 4, 1).set(7, 3, 'D'); // 商店：門在 (7,3)
+  g.rect('i', 18, 2, 4, 1).rect('I', 18, 3, 4, 1).set(19, 3, 'D'); // 旅館：門在 (19,3)
+  g.rect('h', 3, 8, 4, 1).rect('H', 3, 9, 4, 1).rect('h', 21, 15, 4, 1).rect('H', 21, 16, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('O', 12, 8, 4, 4).many('R', [[11, 7], [16, 7], [11, 12], [16, 12]]); // 泡泡池與四塊礁岩
+  g.rect('=', 7, 4, 1, 10).rect('=', 19, 4, 1, 10).rect('=', 7, 13, 13, 1); // 貝殼小路（避開泡泡池）
+  g.many(',', [[9, 14], [10, 15], [20, 6], [22, 5], [5, 12], [24, 12], [14, 16]]); // 淺藻
+  return g;
+})();
+MAPS.uh = {
+  id: 'uh', name: '珊瑚港', w: 28, h: 20, tiles: uhGrid.rows(), theme: 'island', skin: 'sea',
+  start: { x: 4, y: 16 }, respawn: { x: 4, y: 15 },
+  hub: { dock: { x: 4, y: 16 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 19, y: 3, to: { map: 'uh_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 7, y: 3, to: { map: 'uh_shop', x: 4, y: 6 } },
+    // 西南角：泡泡門回大廳（gate7 正下方的小路）
+    { id: 'bubble_gate_back', kind: 'stairs', x: 3, y: 16, sprite: 'bubble_gate', to: { map: 'lobby', x: 4, y: 3 }, label: '回世界地圖' },
+    { id: 'gate_sign', kind: 'sign', x: 4, y: 17, text: ['泡泡門：回世界地圖。', '想去別的世界，就從這裡回去。'] },
+    // 東邊：海馬通往海藻森林，海藻森林的 seahorse_back 騎回這裡 (24,10)
+    { id: 'seahorse', kind: 'dock', vehicle: 'seahorse', x: 25, y: 10, sprite: 'seahorse', dockTo: { map: 'u', x: 3, y: 17 } },
+    { id: 'seahorse_sign', kind: 'sign', x: 24, y: 11, text: ['海馬：通往海藻森林。', '海馬是雙向的，海藻森林那邊也有一隻可以騎回來。'] },
+    { id: 'granny', kind: 'granny', x: 11, y: 14, label: '星星婆婆' }, // 泡泡池西南邊
+    { id: 'giver', kind: 'giver', x: 17, y: 5, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'crabkid', kind: 'npc', x: 8, y: 12, sprite: 'npc_kid', label: '小螃蟹',
+      talk: [
+        { not: 'uEntered', lines: ['歡迎來到珊瑚港！', '這裡在海底，吸氣吐氣都會冒出泡泡。', '東邊有一隻海馬，騎上去就是海藻森林。森林裡有海草人偶，先去練習看看吧！'] },
+        { not: 'uPractice', lines: ['海草人偶可以讓夥伴練習新招式。', '練習完，路上的燈籠水母和大貝殼，就有辦法對付了。'] },
+        { not: 'boss_u', lines: ['森林裡有一艘沉船，聽說最深處住著一隻大章魚。', '記得先在旅館睡一覺，再去找牠。'] },
+        { lines: ['大章魚讓你過去了！太棒了！', '沉船裡的寶藏，你全都看過了嗎？'] },
+      ],
+    },
+    {
+      id: 'shellgrandpa', kind: 'npc', x: 22, y: 8, sprite: 'npc_elder', label: '貝殼爺爺',
+      talk: [
+        { not: 'uPractice', lines: ['海藻森林裡有一盞熄掉的燈籠水母，還有一隻閉得緊緊的大貝殼。', '它們後面好像藏著寶箱。'] },
+        { not: 'boss_u', lines: ['島中間有一條很深的水溝，水溝上缺了一塊，好像在等一串泡泡來補。', '等你打倒大章魚、學會新招式，再回來看看。'] },
+        { lines: ['深水溝上的泡泡橋，搭起來了嗎？', '對岸的寶箱，一定很棒！'] },
+      ],
+    },
+    {
+      id: 'fishgirl', kind: 'npc', x: 16, y: 15, sprite: 'npc_girl', label: '小魚妹妹',
+      talk: [
+        { not: 'boss_u', lines: ['旅館住一晚 25 金幣，累了就來睡一覺。', '夥伴的體力和魔力，睡醒就都回來了。'] },
+        { lines: ['打倒大章魚的人，就是你！', '珊瑚港永遠歡迎你。'] },
+      ],
+    },
+  ],
+};
+MAPS.uh_inn = {
+  id: 'uh_inn', name: '珊瑚港旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨珊瑚港旅館！', '海底的夜晚，有小魚在窗外游來游去，像在唱搖籃曲。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得好嗎？夥伴們都精神飽滿了！', '咕嚕咕嚕～歡迎再來！'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'uh', x: 19, y: 4 } },
+  ],
+};
+MAPS.uh_shop = {
+  id: 'uh_shop', name: '珊瑚港商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    { id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福' },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'uh', x: 7, y: 4 } },
+  ],
+};
+
+// ───────── ㄧㄨㄩ：海藻森林 ─────────
+// 一條南北向的深水溝（x=19）把島切成兩半：西岸是入口與機關，東岸要先在水溝中間唯一的缺口搭起泡泡橋才過得去（ㄩ，打倒大章魚後才學到）。
+// 沉船入口 cave 由後面的任務加入。
+const kelpIsle = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('~', 19, 1, 1, 18).set(19, 10, '.'); // 深水溝與缺口那一格（泡泡橋）
+  g.many('R', [[4, 12], [14, 15], [17, 7]]); // 零星礁岩（裝飾，不貼著任何物件）
+  g.many('#', [[3, 3], [15, 3], [22, 2], [25, 14], [22, 16]]).many(',', [[14, 12], [8, 13], [21, 7], [24, 10]]);
+  return g;
+})();
+MAPS.u = {
+  id: 'u', name: '海藻森林（ㄧㄨㄩ）', w: 28, h: 20, tiles: kelpIsle.rows(), theme: 'meadow', skin: 'sea',
+  start: { x: 3, y: 17 }, respawn: { x: 3, y: 17 },
+  objects: [
+    { id: 'seahorse_back', kind: 'dock', vehicle: 'seahorse', x: 2, y: 17, sprite: 'seahorse', dockTo: { map: 'uh', x: 24, y: 10 } }, // 回珊瑚港的海馬
+    { id: 'sign1', kind: 'sign', x: 3, y: 15, text: ['海藻森林。', '這座島的注音，嘴巴都要擺出特別的形狀：ㄧ 嘴角拉開，ㄨ 嘴巴嘟圓，還有一個要等你自己發現。', '島上有燈籠水母、大貝殼和一條深水溝，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 5, y: 17, battle: 'upractice', hideIf: 'uPractice' },
+    { id: 'chest_1', kind: 'chest', x: 8, y: 17, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 9, y: 14, battle: 'u1', ai: 'patrol', patrol: [{ x: 10, y: 14 }, { x: 11, y: 14 }] },
+    { id: 'lantern', kind: 'gimmick', x: 6, y: 12, sprite: 'lantern_jelly', sprite2: 'lantern_jelly_on', ability: 'glow', fx: 'glow', lockText: ['一盞熄滅的燈籠水母，軟軟地垂在那裡，四周黑漆漆的。', '嘴角往兩邊拉開，「ㄧ」地亮出一道小光，也許能把它點亮……'], hitText: ['夥伴嘴角一拉「ㄧ」，亮光閃了一下，燈籠水母亮起來了！', '燈光照出了旁邊的一個寶箱！'], doneText: ['燈籠水母亮亮的，好漂亮。'] },
+    { id: 'chest_lantern', kind: 'chest', x: 6, y: 11, item: 'berry', showIf: 'g:u:lantern' },
+    { id: 'm2', kind: 'monster', x: 14, y: 9, battle: 'u2', ai: 'patrol', patrol: [{ x: 15, y: 9 }, { x: 16, y: 9 }] },
+    { id: 'm3', kind: 'monster', x: 5, y: 8, battle: 'u3', showIf: 'uPractice', ai: 'patrol', patrol: [{ x: 6, y: 8 }, { x: 7, y: 8 }] },
+    { id: 'clam', kind: 'gimmick', x: 12, y: 16, sprite: 'giant_clam', sprite2: 'giant_clam_open', ability: 'jet', fx: 'jet', lockText: ['一隻閉得緊緊的大貝殼，不知道裡面有什麼。', '嘴巴嘟成小圓圈，「ㄨ」地用力吹出一道水柱，也許能把它沖開……'], hitText: ['夥伴嘴巴一嘟「ㄨ」，水柱把大貝殼沖開了！', '貝殼旁邊冒出了一個寶箱！'], doneText: ['大貝殼張得大大的，裡面空空的。'] },
+    { id: 'chest_clam', kind: 'chest', x: 12, y: 17, item: 'potion', showIf: 'g:u:clam' },
+    { id: 'sign2', kind: 'sign', x: 8, y: 8, text: ['前面是沉船的方向。', '沉船裡很黑，要先練習完再進去喔。'] },
+    // 泡泡橋：缺口那一格（水溝中間）。ㄩ 要打倒大章魚才學到，所以對岸的寶箱是大章魚之後才拿得到
+    { id: 'bubble_bridge', kind: 'gimmick', x: 19, y: 10, sprite: 'bubble_gap', sprite2: 'bubble_bridge', ability: 'pop', fx: 'pop', passable: true, lockText: ['深水溝上缺了一塊，過不去。', '要是有一串泡泡，搭成橋就好了……'], hitText: ['夥伴嘴巴一噘「ㄩ」，吹出一串大泡泡！', '泡泡搭成了一座橋，可以走到對岸了！'] },
+    { id: 'chest_b1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
+    { id: 'chest_b2', kind: 'chest', x: 24, y: 5, item: 'berry' },
   ],
 };
 
