@@ -272,7 +272,7 @@ export const MAPS: Record<string, MapDef> = {
     start: { x: 9, y: 11 }, respawn: { x: 9, y: 11 },
     objects: [
       { id: 'back_village', kind: 'stairs', x: 9, y: 12, to: { map: 'village', x: 16, y: 16 }, label: '回起始村' },
-      // 第二階段四扇門：目前都還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
+      // 第二階段四扇門：第七關（gate7）已是通道、第八關（gate8）打倒大章魚後才開；gate9、gate10 還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
       { id: 'gate7', kind: 'stairs', x: 4, y: 2, sprite: 'bubble_gate', to: { map: 'uh', x: 4, y: 16 }, label: '海底' },
       // gate8 與 gate8_open 同一格、互斥（比照起始村的 balloon_empty／balloon）：打倒大章魚（boss_u）後才換成通道
       { id: 'gate8', kind: 'barrier', x: 7, y: 2, hideIf: 'boss_u', lockText: ['第八關「遊樂園」的門。', '要先打倒第七關的大章魚，這扇門才會打開！'] },
@@ -1155,7 +1155,6 @@ MAPS.ah_shop = {
 
 // ───────── ㄚㄛㄜㄝ：歡樂島 ─────────
 // 一條南北向的水溝（x=8）把島切成兩半：東岸是入口與機關，西岸要先在水溝中間唯一的缺口架起摩天輪橋才過得去（ㄜ，打倒小丑魔術師後才學到）。
-// 鏡子迷宮入口 cave 由後面的任務加入。
 const funIsle = (() => {
   const g = new Grid(28, 20, '.').border('#');
   g.rect('~', 8, 1, 1, 18).set(8, 10, '.'); // 水溝與缺口那一格（摩天輪橋）

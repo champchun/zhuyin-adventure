@@ -193,7 +193,7 @@ export function drawParkTextures(make: Make, px: Px) {
     canal(c);
     for (const x of [0, 13]) {
       px(c, OUT, x, 2, 3, 12); px(c, '#ff5a5a', x + 1, 3, 1, 10); px(c, '#ffd23f', x + 1, 5, 1, 1); px(c, '#ffd23f', x + 1, 9, 1, 1);
-      px(c, OUT, x - 0, 1, 3, 1);
+      px(c, OUT, x, 1, 3, 1);
     }
     // 兩端伸出的短短車廂臂
     px(c, OUT, 3, 5, 2, 1); px(c, OUT, 11, 5, 2, 1); px(c, '#ffd23f', 3, 6, 1, 1); px(c, '#ffd23f', 12, 6, 1, 1);
