@@ -471,7 +471,12 @@ MAPS.dh_inn = {
   id: 'dh_inn', name: '鼓聲港旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    // 旅館老闆的招呼（text）與道別（doneText）依各主島的特色而不同
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨鼓聲港旅館！', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得好嗎？夥伴們都精神飽滿了！', '歡迎再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'dh', x: 6, y: 4 } },
   ],
 };
@@ -539,7 +544,11 @@ MAPS.gh_inn = {
   id: 'gh_inn', name: '蛙鳴灣旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨蛙鳴灣旅館！', '晚上有青蛙「呱呱」唱搖籃曲，保證你睡得香香甜甜。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['呱！睡得好嗎？夥伴們都精神飽滿了！', '歡迎再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'gh', x: 6, y: 4 } },
   ],
 };
@@ -648,7 +657,11 @@ MAPS.xh_inn = {
   id: 'xh_inn', name: '雪花鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨雪花鎮旅館！', '外面好冷吧？快進來，被窩裡暖呼呼的。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得暖暖的吧？夥伴們都精神飽滿了！', '外面天氣冷，路上小心喔，歡迎再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'xh', x: 6, y: 7 } },
   ],
 };
@@ -763,7 +776,11 @@ MAPS.zh_inn = {
   id: 'zh_inn', name: '綠洲鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨綠洲鎮旅館！', '沙漠白天好熱，先進來喝杯涼涼的茶歇一歇。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡飽了嗎？夥伴們都精神飽滿了！', '出門記得多喝水，歡迎再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'zh', x: 5, y: 5 } },
   ],
 };
@@ -871,7 +888,11 @@ MAPS.sh_inn = {
   id: 'sh_inn', name: '雲上小鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
   start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
   objects: [
-    { id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25 },
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨雲上小鎮旅館！', '這裡的床是軟綿綿的雲朵做的，躺下去就像睡在棉花糖裡。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得像在雲上飄嗎？夥伴們都精神飽滿了！', '歡迎再來～'],
+    },
     { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'sh', x: 7, y: 4 } },
   ],
 };

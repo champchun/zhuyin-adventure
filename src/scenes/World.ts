@@ -756,7 +756,7 @@ export class WorldScene extends Phaser.Scene {
   private async useInn(d: MapObj) {
     const who = d.label ?? '旅館老闆';
     const price = d.price ?? 25;
-    await say(STORY.innHello.map((text) => ({ who, text })));
+    await say((d.text?.length ? d.text : STORY.innHello).map((text) => ({ who, text }))); // 每間旅館有自己的招呼與道別（沒設才用通用的）
     const stay = stayOutcome(G.save.coins, price);
     if (!stay.ok) {
       await say([`住一晚要 ${price} 金幣，你的金幣還不夠喔。`, '沒關係！搭船回起始村，回家睡覺是免費的。'].map((text) => ({ who, text })));
@@ -766,7 +766,7 @@ export class WorldScene extends Phaser.Scene {
     if (i !== 0) return;
     G.save.coins = stay.coinsAfter;
     await this.rest(); // 淡出、全部回滿、存檔
-    await say(STORY.innBye.map((text) => ({ who, text })));
+    await say((d.doneText?.length ? d.doneText : STORY.innBye).map((text) => ({ who, text })));
   }
 
   /** 店員：打招呼後開商店 */

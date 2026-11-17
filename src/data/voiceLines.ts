@@ -25,7 +25,7 @@ export function allVoiceLines(): string[] {
     b.reward.story.forEach(add);
     if (b.phases > 1) for (let i = 1; i <= b.phases; i++) add(`第 ${i} 個小回合！（共 ${b.phases} 個）`);
   }
-  for (const m of Object.values(MAPS)) for (const o of m.objects) o.text?.forEach(add);
+  for (const m of Object.values(MAPS)) for (const o of m.objects) { o.text?.forEach(add); if (o.kind === 'innkeeper') o.doneText?.forEach(add); }
   Object.values(PROMPT_LINES).forEach(add);
   for (const s of SYMBOLS) add(`提示，${s.tip}`);
   for (const sp of Object.values(SPECIES)) add(`${sp.name}累倒了…`);
