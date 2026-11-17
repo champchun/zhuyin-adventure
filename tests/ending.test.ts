@@ -4,7 +4,7 @@ import { canRedeem, redeem, titleName } from '../src/core/stars';
 import { grantEnding, needsEnding } from '../src/core/ending';
 import { newSave } from '../src/core/save';
 import { BATTLES, ENDING_LINES } from '../src/data/levels';
-import { ALL_SYMBOLS } from '../src/data/symbols';
+import { CONSONANTS } from '../src/data/symbols';
 
 describe('免費稱號 title_hero', () => {
   const hero = rewardById('title_hero')!;
@@ -81,9 +81,9 @@ describe('結尾劇情與畢業考', () => {
     expect(ENDING_LINES.length).toBeGreaterThan(0);
     for (const l of ENDING_LINES) { expect(l.text.trim()).not.toBe(''); expect(l.who.trim()).not.toBe(''); }
   });
-  it('boss_s focus/review 為全部 21 個聲母', () => {
-    expect(ALL_SYMBOLS).toHaveLength(21);
-    expect(BATTLES.boss_s.focus).toEqual(ALL_SYMBOLS);
-    expect(BATTLES.boss_s.review).toEqual(ALL_SYMBOLS);
+  it('boss_s focus/review 為全部 21 個聲母（不含韻母）', () => {
+    expect(CONSONANTS).toHaveLength(21);
+    expect(BATTLES.boss_s.focus).toEqual(CONSONANTS);
+    expect(BATTLES.boss_s.review).toEqual(CONSONANTS);
   });
 });

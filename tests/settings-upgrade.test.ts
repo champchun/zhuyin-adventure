@@ -18,6 +18,7 @@ const OLD8 = ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ', 'ㄋ', 'ㄌ'];
 const OLD11 = [...OLD8, 'ㄍ', 'ㄎ', 'ㄏ'];
 const OLD14 = [...OLD11, 'ㄐ', 'ㄑ', 'ㄒ'];
 const OLD18 = [...OLD14, 'ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'];
+const OLD21 = [...OLD18, 'ㄗ', 'ㄘ', 'ㄙ'];
 
 describe('loadSettings 的家長可出題符號升級', () => {
   it('沒有存過設定：預設全開', () => {
@@ -28,6 +29,16 @@ describe('loadSettings 的家長可出題符號升級', () => {
   });
   it('存了第五關結束時的 18 個符號 → 升級成含 ㄗㄘㄙ', () => {
     expect(has(load(OLD18), 'ㄗ', 'ㄘ', 'ㄙ')).toBe(true);
+  });
+  it('存了第六關結束時的 21 個聲母 → 升級成含全部韻母', () => {
+    expect(has(load(OLD21), 'ㄧ', 'ㄨ', 'ㄩ', 'ㄚ', 'ㄦ')).toBe(true);
+    expect(load(OLD21)).toHaveLength(37);
+  });
+  it('已經含韻母 → 不變；客製（少了 ㄅ）的 20 個 → 不變', () => {
+    const a = [...OLD21, 'ㄚ'];
+    expect([...load(a)].sort()).toEqual([...a].sort());
+    const b = OLD21.filter((s) => s !== 'ㄅ');
+    expect(load(b)).toEqual(b);
   });
   it('已經含新符號 → 不變', () => {
     const a = [...OLD14, 'ㄓ'];

@@ -1,4 +1,4 @@
-import { ALL_SYMBOLS, LEARN_STEPS } from '../data/symbols';
+import { ALL_SYMBOLS, LEARN_STEPS, VOWELS } from '../data/symbols';
 import { ITEMS, SPECIES, castSymbol } from '../data/monsters';
 import { MAPS } from '../data/maps';
 import { introducedFromAbilities } from './lesson';
@@ -133,6 +133,9 @@ export function loadSettings() {
   // 第六關之前的「全開」是 ㄅ～ㄖ 共 18 個：同樣要升級，ㄗㄘㄙ 才會出題（只在完整舊預設時升級；家長取消勾選過的客製清單不動）
   const OLD_ALL5 = [...OLD_ALL4, 'ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'];
   if (OLD_ALL5.every((s) => G.settings.allowed.includes(s)) && !['ㄗ', 'ㄘ', 'ㄙ'].some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
+  // 第二階段之前的「全開」是 21 個聲母：同樣要升級，韻母才會出題（只在完整舊預設時升級；家長取消勾選過的客製清單不動）
+  const OLD_ALL6 = [...OLD_ALL5, 'ㄗ', 'ㄘ', 'ㄙ'];
+  if (OLD_ALL6.every((s) => G.settings.allowed.includes(s)) && !VOWELS.some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
   if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));

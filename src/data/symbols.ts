@@ -4,7 +4,7 @@ export interface SymbolDef {
   word: string;
   tip: string;
 }
-export const SYMBOLS: SymbolDef[] = [
+const CONSONANT_DEFS: SymbolDef[] = [
   { ch: 'ㄅ', word: '爸', tip: '「爸爸」的第一個音' },
   { ch: 'ㄆ', word: '怕', tip: '「害怕」的第一個音' },
   { ch: 'ㄇ', word: '媽', tip: '「媽媽」的第一個音' },
@@ -27,6 +27,14 @@ export const SYMBOLS: SymbolDef[] = [
   { ch: 'ㄘ', word: '詞', tip: '「詞語」的第一個音' },
   { ch: 'ㄙ', word: '四', tip: '「四個」的第一個音' },
 ];
+/** 韻母（第二階段）：韻母本身就是一個音，所以提示用「這個字的聲音」，不是「第一個音」。提示語是草稿，待使用者潤飾 */
+const VOWEL_DEFS: SymbolDef[] = [
+  ['ㄧ', '衣'], ['ㄨ', '屋'], ['ㄩ', '魚'], ['ㄚ', '啊'], ['ㄛ', '喔'], ['ㄜ', '鵝'], ['ㄝ', '耶'], ['ㄞ', '愛'],
+  ['ㄟ', '欸'], ['ㄠ', '凹'], ['ㄡ', '歐'], ['ㄢ', '安'], ['ㄣ', '恩'], ['ㄤ', '昂'], ['ㄥ', '鞥'], ['ㄦ', '兒'],
+].map(([ch, word]) => ({ ch, word, tip: `「${word}」這個字的聲音` }));
+export const SYMBOLS: SymbolDef[] = [...CONSONANT_DEFS, ...VOWEL_DEFS];
+export const CONSONANTS: string[] = CONSONANT_DEFS.map((s) => s.ch);
+export const VOWELS: string[] = VOWEL_DEFS.map((s) => s.ch);
 /** 教學進度：每一步教哪些符號，以及要完成什麼旗標才會開始出現（沒有 flag 就是一開始就有） */
 export const LEARN_STEPS: { symbols: string[]; flag?: string }[] = [
   { symbols: ['ㄅ', 'ㄆ'] },
@@ -41,6 +49,15 @@ export const LEARN_STEPS: { symbols: string[]; flag?: string }[] = [
   { symbols: ['ㄕ', 'ㄖ'], flag: 'zPractice' },
   { symbols: ['ㄗ', 'ㄘ'], flag: 'sEntered' },
   { symbols: ['ㄙ'], flag: 'sPractice' },
+  // 第二階段（韻母）：七 海底、八 遊樂園、九 古堡、十 時鐘塔
+  { symbols: ['ㄧ', 'ㄨ'], flag: 'uEntered' },
+  { symbols: ['ㄩ'], flag: 'uPractice' },
+  { symbols: ['ㄚ', 'ㄛ'], flag: 'aEntered' },
+  { symbols: ['ㄜ', 'ㄝ'], flag: 'aPractice' },
+  { symbols: ['ㄞ', 'ㄟ'], flag: 'cEntered' },
+  { symbols: ['ㄠ', 'ㄡ'], flag: 'cPractice' },
+  { symbols: ['ㄢ', 'ㄣ'], flag: 'tEntered' },
+  { symbols: ['ㄤ', 'ㄥ', 'ㄦ'], flag: 'tPractice' },
 ];
 /** 全部 37 個注音與例字（僅供家長設定的「發音測試」；遊戲出題只用 SYMBOLS 與家長開放的範圍） */
 export const ZHUYIN_TEST: { group: string; list: [string, string][] }[] = [

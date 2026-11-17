@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BATTLES, LEVELS } from '../src/data/levels';
 import { ENEMIES, MOVES, SPECIES, castSymbol, moveFor } from '../src/data/monsters';
-import { ALL_SYMBOLS, LEARN_STEPS } from '../src/data/symbols';
+import { CONSONANTS, LEARN_STEPS } from '../src/data/symbols';
 import { STROKES } from '../src/data/strokes';
 
 describe('第六關（舌尖前音、天空島）的資料', () => {
@@ -57,9 +57,9 @@ describe('第六關（舌尖前音、天空島）的資料', () => {
     expect(b.phases).toBe(3);
     expect(b.reward.flag).toBe('boss_s');
     expect(b.reward.abilities).toBeUndefined();
-    expect(ALL_SYMBOLS).toHaveLength(21);
-    expect(b.focus).toEqual(ALL_SYMBOLS);
-    expect(b.review).toEqual(ALL_SYMBOLS);
+    expect(CONSONANTS).toHaveLength(21);
+    expect(b.focus).toEqual(CONSONANTS);
+    expect(b.review).toEqual(CONSONANTS);
   });
   it('島上野怪旗標是 m:s:m1～m3，會重生', () => {
     ['s1', 's2', 's3'].forEach((id, i) => {

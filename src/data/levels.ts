@@ -1,5 +1,5 @@
 // 關卡、戰鬥與劇情資料（資料驅動）。進度與學習難度分開：tier 只決定題型。
-import { ALL_SYMBOLS } from './symbols';
+import { CONSONANTS } from './symbols';
 export type Tier = 1 | 2 | 3;
 
 export interface LevelDef {
@@ -214,7 +214,7 @@ export const BATTLES: Record<string, BattleDef> = {
     },
   },
   boss_s: {
-    id: 'boss_s', enemy: 'skydragon', penalty: true, shield: true, phases: 3, tier: 3, focus: [...ALL_SYMBOLS], review: [...ALL_SYMBOLS],
+    id: 'boss_s', enemy: 'skydragon', penalty: true, shield: true, phases: 3, tier: 3, focus: [...CONSONANTS], review: [...CONSONANTS],
     intro: ['轟隆隆～星空龍王擋在星塔的最高處！', '這是畢業考，所有學過的注音都要用上！一共三個小回合。'],
     reward: {
       flag: 'boss_s', exp: 36, coins: 160, items: { potion: 2, berry: 2 },
