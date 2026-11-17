@@ -139,5 +139,10 @@ export const ENEMIES: Record<string, EnemyDef> = {
   comet: { id: 'comet', name: '彗星怪', sprite: 'en_comet', hp: 40, atk: 7, scale: 2.25, echo: true },
   starguard: { id: 'starguard', name: '星門守衛小王', sprite: 'en_starguard', hp: 46, atk: 7, scale: 2.75 },
   skydragon: { id: 'skydragon', name: '星空龍王', sprite: 'en_skydragon', hp: 52, atk: 8, scale: 2.75 },
+  clownfish: { id: 'clownfish', name: '小丑魚', sprite: 'en_clownfish', hp: 42, atk: 7, scale: 2.25 },
+  jellyfish: { id: 'jellyfish', name: '水母怪', sprite: 'en_jellyfish', hp: 44, atk: 7, scale: 2.25, echo: true },
+  urchin: { id: 'urchin', name: '海膽怪', sprite: 'en_urchin', hp: 46, atk: 8, scale: 2.25, echo: true },
+  octopus: { id: 'octopus', name: '大章魚', sprite: 'en_octopus', hp: 58, atk: 9, scale: 2.75 },
+  kelpdummy: { id: 'kelpdummy', name: '海草人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };

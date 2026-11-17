@@ -18,6 +18,7 @@ export const LEVELS: Record<string, LevelDef> = {
   x: { id: 'x', symbol: 'ㄐㄑㄒ', name: '舌面音島（企鵝冰原）', open: true, mapId: 'xh', partner: '夥伴' },
   z: { id: 'z', symbol: 'ㄓㄔㄕㄖ', name: '翹舌音島（火山沙漠）', open: true, mapId: 'zh', partner: '夥伴' },
   s: { id: 's', symbol: 'ㄗㄘㄙ', name: '舌尖前音島（天空島）', open: true, mapId: 'sh', partner: '夥伴' },
+  u: { id: 'u', symbol: 'ㄧㄨㄩ', name: '海底', open: true, mapId: 'uh', partner: '夥伴' },
 };
 
 export interface RewardDef {
@@ -229,6 +230,34 @@ export const BATTLES: Record<string, BattleDef> = {
   sc2m: wild('sc2m', 'sprite', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon1'),
   sc2m2: wild('sc2m2', 'comet', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon2'),
   sc2m3: wild('sc2m3', 'sprite', 3, ['ㄗ', 'ㄘ', 'ㄙ'], ['ㄓ', 'ㄔ', 'ㄕ', 'ㄖ'], 'm:sc2:mon3'),
+  // 第二階段第一關（第七關）：海底（ㄧㄨㄩ）。進入海藻森林先練習 ㄧㄨ，ㄩ 要等練習戰完成後才開始出現，ㄩ 的招式要打倒大章魚才學到
+  upractice: {
+    id: 'upractice', enemy: 'kelpdummy', phases: 2, tier: 1, focus: ['ㄧ', 'ㄨ'], review: [], guided: true,
+    intro: ['海草人偶搖搖晃晃的，用來練習！', '這一次要認的是「ㄧ」和「ㄨ」。ㄧ 嘴角拉開像笑咪咪，ㄨ 嘴巴嘟成小圓圈！'],
+    reward: {
+      flag: 'uPractice', exp: 9, coins: 16, abilities: ['glow', 'jet'], items: { potion: 1 },
+      story: ['練習完成！', '「ㄧ」嘴角拉開笑咪咪，夥伴學會了亮光！', '「ㄨ」嘴巴嘟成小圓圈，夥伴學會了水柱！', '海藻森林裡還有小怪和沉船在等你，往前走走看吧！'],
+    },
+  },
+  u1: wild('u1', 'clownfish', 1, ['ㄧ', 'ㄨ'], ['ㄗ', 'ㄘ'], 'm:u:m1'),
+  u2: { ...wild('u2', 'jellyfish', 2, ['ㄧ', 'ㄨ'], ['ㄙ', 'ㄓ'], 'm:u:m2'), intro: ['水母飄過來了！', '牠會考「ㄧ」和「ㄨ」。'] },
+  u3: { ...wild('u3', 'urchin', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:u:m3'), intro: ['海膽滾過來了！', '牠會考新的注音：「ㄩ」。'] },
+  boss_u: {
+    id: 'boss_u', enemy: 'octopus', penalty: true, shield: true, phases: 3, tier: 3, focus: ['ㄩ', 'ㄧ', 'ㄨ'], review: ['ㄗ', 'ㄘ', 'ㄙ', 'ㄓ', 'ㄔ'],
+    intro: ['咕嚕嚕～大章魚擋在沉船的最深處！', '牠的八隻手臂都在護著牠，要用「🪄 魔法攻擊」才打得破護盾！一共三個小回合。'],
+    reward: {
+      flag: 'boss_u', exp: 40, coins: 170, abilities: ['pop'], items: { potion: 2, berry: 2 },
+      story: ['大章魚鬆開了手臂，不好意思地搔搔頭。', '「ㄩ」嘴巴噘得圓圓的，像小魚吐泡泡，夥伴學會了吐泡！', '深水溝上的泡泡橋，用新招式試試看吧！'],
+    },
+  },
+  // 沉船（海底的小迷宮）：怪物旗標獨立，不與島上的 u1～u3 共用
+  uc1m: wild('uc1m', 'clownfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc1:mon1'),
+  uc1m2: wild('uc1m2', 'clownfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc1:mon2'),
+  uc1m3: wild('uc1m3', 'clownfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc1:mon3'),
+  uc1m4: wild('uc1m4', 'clownfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc1:mon4'),
+  uc2m: wild('uc2m', 'jellyfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon1'),
+  uc2m2: wild('uc2m2', 'urchin', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon2'),
+  uc2m3: wild('uc2m3', 'jellyfish', 3, ['ㄧ', 'ㄨ', 'ㄩ'], ['ㄗ', 'ㄘ', 'ㄙ'], 'm:uc2:mon3'),
   // 畢業區：風車草原，四個唇音全部複習
   p1: wild('p1', 'leafy', 3, ['ㄅ', 'ㄆ'], ['ㄇ', 'ㄈ'], 'm:p:m1'),
   p2: wild('p2', 'leafy', 3, ['ㄇ', 'ㄈ'], ['ㄅ', 'ㄆ'], 'm:p:m2'),
