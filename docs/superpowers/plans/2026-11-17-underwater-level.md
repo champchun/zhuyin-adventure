@@ -382,7 +382,7 @@ const uhGrid = (() => {
   g.rect('i', 18, 2, 4, 1).rect('I', 18, 3, 4, 1).set(19, 3, 'D');  // 旅館：門在 (19,3)
   g.rect('h', 3, 8, 4, 1).rect('H', 3, 9, 4, 1).rect('h', 21, 15, 4, 1).rect('H', 21, 16, 4, 1); // 兩間民宅（只是裝飾）
   g.rect('O', 12, 8, 4, 4).many('R', [[11, 7], [16, 7], [11, 12], [16, 12]]); // 泡泡池與四塊礁岩
-  g.rect('=', 7, 4, 1, 6).rect('=', 19, 4, 1, 6).rect('=', 7, 10, 13, 1); // 貝殼小路
+  g.rect('=', 7, 4, 1, 10).rect('=', 19, 4, 1, 10).rect('=', 7, 13, 13, 1); // 貝殼小路（避開泡泡池）
   g.many(',', [[9, 14], [10, 15], [20, 6], [22, 5], [5, 12], [24, 12], [14, 16]]); // 淺藻
   return g;
 })();
@@ -406,7 +406,7 @@ const uhGrid = (() => {
 const kelpIsle = (() => {
   const g = new Grid(28, 20, '.').border('#');
   g.rect('~', 19, 1, 1, 18).set(19, 10, '.');                                    // 深水溝與缺口那一格（泡泡橋）
-  g.many('R', [[5, 11], [7, 11], [6, 10], [11, 17], [13, 17], [12, 18]]);        // 圍住兩個寶箱：燈籠水母與大貝殼後面
+  g.many('R', [[4, 12], [14, 15], [17, 7]]);                                      // 零星礁岩（裝飾，不貼著任何物件）
   g.many('#', [[3, 3], [15, 3], [22, 2], [25, 14], [22, 16]]).many(',', [[14, 12], [8, 13], [21, 7], [24, 10]]);
   return g;
 })();
@@ -417,8 +417,8 @@ const kelpIsle = (() => {
 - `sign1`（`sign`）(3,15)：「海藻森林。」「這座島的注音，嘴巴都要擺出特別的形狀：ㄧ 嘴角拉開，ㄨ 嘴巴嘟圓，還有一個要等你自己發現。」「島上有燈籠水母、大貝殼和一條深水溝，學會新招式，也許就能通過它們！」
 - `dummy`（`monster`，`battle: 'upractice'`，`hideIf: 'uPractice'`）(5,17)；`chest_1`（`chest`，`item: 'potion'`）(8,17)。
 - `m1`（`monster`，`battle: 'u1'`，`ai: 'patrol'`，`patrol: [{x:10,y:14},{x:11,y:14}]`）(9,14)；`m2`（`u2`，patrol (15,9),(16,9)）(14,9)；`m3`（`u3`，`showIf: 'uPractice'`，patrol (6,8),(7,8)）(5,8)。
-- `lantern`（`gimmick`，`sprite: 'lantern_jelly'`，`sprite2: 'lantern_jelly_on'`，`ability: 'glow'`，`fx: 'glow'`）(6,12)；`lockText: ['一盞熄滅的燈籠水母，軟軟地垂在那裡，後面的寶箱黑漆漆的。', '嘴角往兩邊拉開，「ㄧ」地亮出一道小光，也許能把它點亮……']`；`hitText: ['夥伴嘴角一拉「ㄧ」，亮光閃了一下，燈籠水母亮起來了！', '燈光照出了後面的一個寶箱！']`；`doneText: ['燈籠水母亮亮的，好漂亮。']`；`chest_lantern`（`chest`，`item: 'berry'`）(6,11)。
-- `clam`（`gimmick`，`sprite: 'giant_clam'`，`sprite2: 'giant_clam_open'`，`ability: 'jet'`，`fx: 'jet'`）(12,16)；`lockText: ['一隻閉得緊緊的大貝殼，擋住了後面的寶箱。', '嘴巴嘟成小圓圈，「ㄨ」地用力吹出一道水柱，也許能把它沖開……']`；`hitText: ['夥伴嘴巴一嘟「ㄨ」，水柱把大貝殼沖開了！', '貝殼後面露出了一個寶箱！']`；`doneText: ['大貝殼張得大大的，裡面空空的。']`；`chest_clam`（`chest`，`item: 'potion'`）(12,17)。**注意：燈籠與大貝殼是 `vanish` 機關嗎？** 否——它們啟動後換成 `sprite2` 並留在原地（不設 `vanish`／`passable`），寶箱用 `showIf: 'g:u:lantern'`／`'g:u:clam'` 才出現（比照 `drum`／`chest_drum` 的做法，`chest_lantern`／`chest_clam` 加上 `showIf`）；寶箱格要和機關相鄰且在礁岩圍起來的口袋裡。
+- `lantern`（`gimmick`，`sprite: 'lantern_jelly'`，`sprite2: 'lantern_jelly_on'`，`ability: 'glow'`，`fx: 'glow'`）(6,12)；`lockText: ['一盞熄滅的燈籠水母，軟軟地垂在那裡，四周黑漆漆的。', '嘴角往兩邊拉開，「ㄧ」地亮出一道小光，也許能把它點亮……']`；`hitText: ['夥伴嘴角一拉「ㄧ」，亮光閃了一下，燈籠水母亮起來了！', '燈光照出了旁邊的一個寶箱！']`；`doneText: ['燈籠水母亮亮的，好漂亮。']`；`chest_lantern`（`chest`，`item: 'berry'`，`showIf: 'g:u:lantern'`）(6,11)。
+- `clam`（`gimmick`，`sprite: 'giant_clam'`，`sprite2: 'giant_clam_open'`，`ability: 'jet'`，`fx: 'jet'`）(12,16)；`lockText: ['一隻閉得緊緊的大貝殼，不知道裡面有什麼。', '嘴巴嘟成小圓圈，「ㄨ」地用力吹出一道水柱，也許能把它沖開……']`；`hitText: ['夥伴嘴巴一嘟「ㄨ」，水柱把大貝殼沖開了！', '貝殼旁邊冒出了一個寶箱！']`；`doneText: ['大貝殼張得大大的，裡面空空的。']`；`chest_clam`（`chest`，`item: 'potion'`，`showIf: 'g:u:clam'`）(12,17)。**燈籠與大貝殼不是 `vanish`／`passable` 機關**：啟動後換成 `sprite2` 並留在原地（仍擋路），寶箱**放在旁邊的空地、啟動後才出現**（比照 `drum`／`chest_drum`、`plant`／`chest_plant`）；寶箱不可被礁岩或機關圍成口袋，玩家要走得到它旁邊。（有 `showIf` 的物件不會被 `reachReport` 計入，所以這兩個寶箱的出現條件用結構測試驗證，不用可達性測試。）
 - `sign2`（`sign`）(8,8)：「前面是沉船的方向。」「沉船裡很黑，要先練習完再進去喔。」
 - `cave`（`stairs`，`label: '沉船'`，`showIf: 'uPractice'`）(10,3)，`to: { map: 'uc1', x: 2, y: 1 }`（Task 6 才有 `uc1`；**本 Task 先不加 `cave`**，Task 6 一併加入並補測試）。
 - `bubble_bridge`（`gimmick`，`sprite: 'bubble_gap'`，`sprite2: 'bubble_bridge'`，`ability: 'pop'`，`fx: 'pop'`，`passable: true`）(19,10)；`lockText: ['深水溝上缺了一塊，過不去。', '要是有一串泡泡，搭成橋就好了……']`；`hitText: ['夥伴嘴巴一噘「ㄩ」，吹出一串大泡泡！', '泡泡搭成了一座橋，可以走到對岸了！']`；`chest_b1`（`item: 'bigpotion'`）(22,10)；`chest_b2`（`item: 'berry'`）(24,5)。
@@ -577,19 +577,20 @@ describe('海藻森林 u', () => {
     const seen = floodFrom(u, {}, () => false);
     expect(adj(seen, u.objects.find((o) => o.id === 'dummy')!)).toBe(true);
   });
-  it('reachReport：沒有招式時兩個寶箱與對岸走不到；有 glow／jet 兩個口袋寶箱走得到；有 pop 才走得到對岸', () => {
+  it('reachReport：沒有 pop 時深水溝對岸的兩個寶箱走不到（打倒大章魚前學不到 pop）；有 pop 才全部走得到', () => {
     const start = { map: 'u', x: u.start.x, y: u.start.y };
     const un = (ab: string[]) => reachReport([u], start, ab).unreachableObjects;
-    expect(un([])).toEqual(expect.arrayContaining(['u/chest_lantern', 'u/chest_clam', 'u/chest_b1', 'u/chest_b2']));
-    expect(un(['jet', 'pop'])).toContain('u/chest_lantern');
-    expect(un(['glow', 'pop'])).toContain('u/chest_clam');
-    const mid = un(['glow', 'jet']);
-    expect(mid).toEqual(expect.arrayContaining(['u/chest_b1', 'u/chest_b2']));
-    expect(mid).not.toContain('u/chest_lantern');
-    expect(mid).not.toContain('u/chest_clam');
-    expect(un(['glow', 'jet', 'pop']), un(['glow', 'jet', 'pop']).join(' ')).toEqual([]);
+    expect(un([])).toEqual(expect.arrayContaining(['u/chest_b1', 'u/chest_b2']));
+    expect(un(['glow', 'jet'])).toEqual(expect.arrayContaining(['u/chest_b1', 'u/chest_b2']));
+    const all = un(['glow', 'jet', 'pop']);
+    expect(all, all.join(' ')).toEqual([]);
+    // 深水溝缺口是唯一的通道：兩邊都是深水溝
     expect(u.tiles[9][19]).toBe('~');
     expect(u.tiles[11][19]).toBe('~');
+  });
+  it('燈籠水母與大貝殼旁邊的寶箱不被圍住：從起點走得到寶箱旁（它們出現之後）', () => {
+    const seen = floodFrom(u, { 'g:u:lantern': true, 'g:u:clam': true }, () => false);
+    for (const id of ['chest_lantern', 'chest_clam']) expect(adj(seen, u.objects.find((o) => o.id === id)!), id).toBe(true);
   });
   it('進島設旗標用的 uEntered、被打倒送回珊瑚港：海馬只通珊瑚港', () => {
     expect(u.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['uh']);
