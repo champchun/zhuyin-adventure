@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { MAPS, isBlockedTile } from '../src/data/maps';
 import { BATTLES, LEVELS } from '../src/data/levels';
 import { ALL_SYMBOLS, LEARN_STEPS, symbolDef } from '../src/data/symbols';
 import { QuestionRun, makeQuestion } from '../src/core/learning';
@@ -17,7 +17,7 @@ function reach(mapId: string, from: { x: number; y: number }, extraBlocked: Set<
     for (const [dx, dy] of N4) {
       const x = c.x + dx, y = c.y + dy, k = `${x},${y}`;
       if (x < 0 || y < 0 || x >= m.w || y >= m.h || seen.has(k)) continue;
-      if (BLOCKED_TILES.has(m.tiles[y][x]) || extraBlocked.has(k)) continue;
+      if (isBlockedTile(m, m.tiles[y][x]) || extraBlocked.has(k)) continue;
       seen.add(k); q.push({ x, y });
     }
   }
@@ -30,8 +30,8 @@ describe('maps', () => {
     it(`${m.id}: 尺寸一致、物件在界內、起點可走、id 不重複`, () => {
       expect(m.tiles.length).toBe(m.h);
       m.tiles.forEach((r) => expect(r.length).toBe(m.w));
-      expect(BLOCKED_TILES.has(m.tiles[m.start.y][m.start.x])).toBe(false);
-      expect(BLOCKED_TILES.has(m.tiles[m.respawn.y][m.respawn.x])).toBe(false);
+      expect(isBlockedTile(m, m.tiles[m.start.y][m.start.x])).toBe(false);
+      expect(isBlockedTile(m, m.tiles[m.respawn.y][m.respawn.x])).toBe(false);
       for (const o of m.objects) {
         expect(o.x).toBeGreaterThanOrEqual(0); expect(o.x).toBeLessThan(m.w);
         expect(o.y).toBeGreaterThanOrEqual(0); expect(o.y).toBeLessThan(m.h);
@@ -44,14 +44,14 @@ describe('maps', () => {
       for (const o of m.objects) {
         if (o.kind === 'door') continue; // 門開在牆上，從前面互動
         const t = m.tiles[o.y][o.x];
-        expect(BLOCKED_TILES.has(t), `${m.id}/${o.id} 在 ${t}`).toBe(false);
+        expect(isBlockedTile(m, t), `${m.id}/${o.id} 在 ${t}`).toBe(false);
       }
     });
     it(`${m.id}: 出口／門的目的地存在且落在可走的格子`, () => {
       for (const o of m.objects.filter((x) => x.to)) {
         const dst = MAPS[o.to!.map];
         expect(dst, `${m.id}/${o.id} → ${o.to!.map}`).toBeDefined();
-        expect(BLOCKED_TILES.has(dst.tiles[o.to!.y][o.to!.x]), `${m.id}/${o.id} 落點被擋住`).toBe(false);
+        expect(isBlockedTile(dst, dst.tiles[o.to!.y][o.to!.x]), `${m.id}/${o.id} 落點被擋住`).toBe(false);
       }
     });
     it(`${m.id}: 村民對話最後一句不設條件（任何進度都有話可說）`, () => {

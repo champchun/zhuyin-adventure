@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { G, loadSettings } from '../src/core/save';
+import { G, loadSettings, saveSettings } from '../src/core/save';
 import { ALL_SYMBOLS } from '../src/data/symbols';
 
 const KEY = 'zhuyin-adventure-settings-v1';
@@ -56,6 +56,21 @@ describe('loadSettings 的家長可出題符號升級', () => {
   it('客製：取消勾選過 ㄅ 的 13 個 → 不變', () => {
     const a = OLD14.filter((s) => s !== 'ㄅ');
     expect(load(a)).toEqual(a);
+  });
+  it('已升級過（allowedRev 1）的 21 個聲母清單 → 不再升級（家長刻意只留聲母）', () => {
+    store.set(KEY, JSON.stringify({ allowed: OLD21, allowedRev: 1 }));
+    loadSettings();
+    expect(G.settings.allowed).toEqual(OLD21);
+    expect(G.settings.allowed).toHaveLength(21);
+  });
+  it('同樣的 21 個但沒有 allowedRev → 仍升級成 37 個', () => {
+    expect(load(OLD21)).toHaveLength(37);
+  });
+  it('載入舊清單後 allowedRev 變成 1，並且會存回去', () => {
+    load(OLD14);
+    expect(G.settings.allowedRev).toBe(1);
+    saveSettings();
+    expect(JSON.parse(store.get(KEY)!).allowedRev).toBe(1);
   });
   it('舊的 8 個、11 個清單仍然升級到全開', () => {
     expect(has(load(OLD8), 'ㄍ', 'ㄓ', 'ㄖ')).toBe(true);

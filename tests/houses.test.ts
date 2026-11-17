@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKED_TILES, MAPS, TILE_KEY } from '../src/data/maps';
+import { BLOCKED_TILES, MAPS, TILE_KEY, skinOf } from '../src/data/maps';
 
 const STYLES: Record<string, { roof: string; wall: string }> = {
   home: { roof: 'h', wall: 'H' },
@@ -43,6 +43,6 @@ describe('房子外觀：新的地形字元', () => {
     }
   });
   it('所有地圖上出現的地形字元都有貼圖', () => {
-    for (const m of Object.values(MAPS)) for (const c of new Set(m.tiles.join(''))) expect(TILE_KEY[c], `${m.id} 的「${c}」沒有貼圖`).toBeDefined();
+    for (const m of Object.values(MAPS)) for (const c of new Set(m.tiles.join(''))) expect(skinOf(m).key[c], `${m.id} 的「${c}」沒有貼圖`).toBeDefined();
   });
 });

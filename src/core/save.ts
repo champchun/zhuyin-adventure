@@ -22,6 +22,8 @@ export interface Settings {
   writeChallenge: boolean;
   /** 家長手動選的語音（voiceURI）；空字串＝自動 */
   voiceURI: string;
+  /** 「可出題符號」清單的升級版本：未滿 1 的舊設定會跑一次舊預設升級；之後家長刻意縮小的清單不再被改動 */
+  allowedRev?: number;
 }
 export interface SymStat {
   /** 獨立（無提示、無答錯）首次答對次數 */
@@ -94,6 +96,7 @@ export const defaultSettings = (): Settings => ({
   monstersMove: true,
   writeChallenge: true,
   voiceURI: '',
+  allowedRev: 1,
 });
 export const emptyStat = (): SymStat => ({ first: 0, wrong: 0, hints: 0, assisted: 0, conf: {} });
 
@@ -115,9 +118,17 @@ export function loadSettings() {
   const raw = safeGet(SET_KEY);
   G.settings = defaultSettings();
   if (raw) {
+    // 舊存檔沒有 allowedRev：視為 0（defaultSettings 的 1 不能蓋掉「沒有」）
+    G.settings.allowedRev = 0;
     try { Object.assign(G.settings, JSON.parse(raw)); } catch { /* ignore */ }
   }
   G.settings.allowed = G.settings.allowed.filter((s) => ALL_SYMBOLS.includes(s));
+  if ((G.settings.allowedRev ?? 0) < 1) upgradeAllowed();
+  G.settings.allowedRev = 1;
+  if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
+}
+/** 舊版「全開」清單升級（只跑一次，之後以 allowedRev 擋掉） */
+function upgradeAllowed() {
   // 哪些符號出現由教學進度（LEARN_STEPS）決定；家長設定只是「再縮小範圍」。舊版預設（只開唇音或舊的 7 個）升級成新預設全開
   const oldDefault = G.settings.allowed.length === 4 || G.settings.allowed.length === 7;
   if (oldDefault && ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ'].every((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
@@ -136,7 +147,6 @@ export function loadSettings() {
   // 第二階段之前的「全開」是 21 個聲母：同樣要升級，韻母才會出題（只在完整舊預設時升級；家長取消勾選過的客製清單不動）
   const OLD_ALL6 = [...OLD_ALL5, 'ㄗ', 'ㄘ', 'ㄙ'];
   if (OLD_ALL6.every((s) => G.settings.allowed.includes(s)) && !VOWELS.some((s) => G.settings.allowed.includes(s))) G.settings.allowed = defaultSettings().allowed;
-  if (G.settings.allowed.length < 2) G.settings.allowed = defaultSettings().allowed;
 }
 export const saveSettings = () => safeSet(SET_KEY, JSON.stringify(G.settings));
 export const hasSave = () => !!safeGet(SAVE_KEY);

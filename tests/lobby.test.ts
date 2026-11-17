@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENDING_LINES } from '../src/data/levels';
+import { BATTLES, ENDING_LINES } from '../src/data/levels';
 import { MAPS, isBlockedTile } from '../src/data/maps';
 import { LOBBY_TEXTURES } from '../src/gfx/lobbyArt';
 import { visibleWith, walkMap } from './helpers/flood';
@@ -71,5 +71,10 @@ describe('結局伏筆', () => {
     expect(all).toContain('世界地圖');
     expect(all).not.toMatch(/所有的注音|全部的注音/);
     expect(ENDING_LINES.some((l) => l.text.includes('注音大英雄'))).toBe(true);
+  });
+  it('boss_s 的獎勵劇情也沒有說「所有的注音」都學會了', () => {
+    const lines = BATTLES.boss_s.reward!.story ?? [];
+    expect(lines.length).toBeGreaterThan(0);
+    for (const l of lines) expect(l).not.toMatch(/所有的注音|全部的注音/);
   });
 });

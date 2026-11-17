@@ -82,7 +82,8 @@ export class WorldScene extends Phaser.Scene {
   async begin(isNew: boolean) {
     this.queue = []; this.pending = undefined; this.moving = false; this.busy = false;
     const saved = MAPS[G.save.mapId];
-    const blocked = !saved || isBlockedTile(saved, saved.tiles[G.save.y]?.[G.save.x] ?? 'S');
+    const ch = saved?.tiles[G.save.y]?.[G.save.x];
+    const blocked = !saved || ch === undefined || isBlockedTile(saved, ch);
     const spot = blocked && saved ? saved.start : { x: G.save.x, y: G.save.y };
     this.loadMap(G.save.mapId, spot.x, spot.y);
     this.ready = true;

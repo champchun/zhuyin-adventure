@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHASE_RANGE, STUN_TURNS, makeMon, stepMonsters, stunMon } from '../src/core/monsters';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { MAPS, isBlockedTile } from '../src/data/maps';
 
 /** 一個 w×h 的空地圖，walls 是牆；回傳 blocked(x, y) */
 const open = (w: number, h: number, walls: [number, number][] = []) => {
@@ -135,7 +135,7 @@ describe('會動的怪物資料', () => {
         expect(o.kind, `${m.id}/${o.id}`).toBe('monster');
         const route = [{ x: o.x, y: o.y }, ...(o.patrol ?? [])];
         route.forEach((p, i) => {
-          expect(BLOCKED_TILES.has(m.tiles[p.y]?.[p.x] ?? '#'), `${m.id}/${o.id} 第 ${i} 格 (${p.x},${p.y})`).toBe(false);
+          expect((() => { const ch = m.tiles[p.y]?.[p.x]; return ch === undefined || isBlockedTile(m, ch); })(), `${m.id}/${o.id} 第 ${i} 格 (${p.x},${p.y})`).toBe(false);
           if (i > 0) expect(Math.abs(p.x - route[i - 1].x) + Math.abs(p.y - route[i - 1].y), `${m.id}/${o.id} 第 ${i} 格不相鄰`).toBe(1);
           for (const other of m.objects) {
             if (other.id !== o.id) expect(other.x === p.x && other.y === p.y, `${m.id}/${o.id} 壓到 ${other.id}`).toBe(false);

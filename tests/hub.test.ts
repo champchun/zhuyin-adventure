@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKED_TILES, MAPS } from '../src/data/maps';
+import { MAPS, isBlockedTile, tileKeyOf } from '../src/data/maps';
 import type { MapDef } from '../src/data/maps';
 import { LEVELS } from '../src/data/levels';
 import { defeatSpot, markArrival } from '../src/core/travel';
@@ -47,11 +47,11 @@ describe('主島「鼓聲港」', () => {
     for (const m of Object.values(MAPS)) {
       for (const dock of m.objects.filter((o) => o.kind === 'dock')) {
         const to = dock.dockTo!, dest = MAPS[to.map];
-        expect(BLOCKED_TILES.has(dest.tiles[to.y][to.x]), `${m.id}:${dock.id} 的抵達位置不能走`).toBe(false);
+        expect(isBlockedTile(dest, dest.tiles[to.y][to.x]), `${m.id}:${dock.id} 的抵達位置不能走`).toBe(false);
         const back = dest.objects.some((o) => o.kind === 'dock' && o.dockTo!.map === m.id && Math.abs(o.x - to.x) + Math.abs(o.y - to.y) === 1);
         expect(back, `${m.id}:${dock.id} 抵達後旁邊沒有回程碼頭`).toBe(true);
         if (dock.vehicle) continue; // 熱氣球、雲朵小船不靠水
-        const wet = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => m.tiles[dock.y + dy]?.[dock.x + dx] === '~');
+        const wet = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const ch = m.tiles[dock.y + dy]?.[dock.x + dx]; return ch !== undefined && tileKeyOf(m, ch) === 't_water'; });
         expect(wet, `${m.id}:${dock.id} 旁邊沒有水`).toBe(true);
       }
     }
