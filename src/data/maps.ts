@@ -111,6 +111,15 @@ class Grid {
   rows() { return this.g.map((r) => r.join('')); }
 }
 
+// ───────── 世界地圖大廳（第二階段入口）─────────
+const lobby = (() => {
+  const g = new Grid(20, 14, '.').border('#');
+  g.rect('=', 9, 3, 2, 10); // 中間的路：x 9..10、y 3..12
+  g.rect('=', 3, 3, 14, 1); // 四扇門前面橫的路：y 3
+  g.many(',', [[2, 8], [17, 8], [5, 10], [14, 10], [6, 6], [13, 6]]);
+  return g;
+})();
+
 // ───────── 起始村 ─────────
 const village = (() => {
   const g = new Grid(28, 20, '.').border('#');
@@ -252,7 +261,23 @@ export const MAPS: Record<string, MapDef> = {
       { id: 'balloon_empty', kind: 'gimmick', x: 25, y: 17, sprite: 'balloon_empty', ability: 'sun', fx: 'sun', vanish: true, showIf: 'boss_z', lockText: ['一顆沒有氣的大氣球，軟軟地躺在地上。', '要是有大太陽，把裡面的空氣烤熱，它就會飛起來……'], hitText: ['夥伴舌頭一翹「ㄖ」，召來了大太陽，把氣球烤得熱熱的！', '氣球慢慢鼓起來了，可以搭乘了！'] },
       { id: 'balloon', kind: 'dock', vehicle: 'balloon', x: 25, y: 17, sprite: 'balloon', showIf: 'g:village:balloon_empty', dockTo: { map: 'sh', x: 4, y: 16 } },
       { id: 'balloon_sign', kind: 'sign', x: 24, y: 16, showIf: 'boss_z', text: ['熱氣球：通往雲上小鎮。', '氣球沒有氣的時候飛不起來，要用太陽把它烤熱。', '烤熱了就能搭乘，雲上小鎮那邊也有一顆氣球可以飛回來。'] },
+      // 打倒星空龍王後（endingSeen）出現：村子南邊的世界地圖，通往第二階段的大廳。選在路下方的空地：不壓既有物件；回程落在正上方的小路 (16,16)
+      { id: 'world_map', kind: 'stairs', x: 16, y: 17, sprite: 'world_map', to: { map: 'lobby', x: 9, y: 11 }, label: '世界地圖', showIf: 'endingSeen' },
+      { id: 'world_map_sign', kind: 'sign', x: 15, y: 17, showIf: 'endingSeen', text: ['世界地圖：通往第二階段。', '你已經學會全部的聲母了！', '地圖上還有更多新的世界，等著你去冒險。'] },
       ...villageGates,
+    ],
+  },
+  lobby: {
+    id: 'lobby', name: '世界地圖', w: 20, h: 14, tiles: lobby.rows(), theme: 'meadow',
+    start: { x: 9, y: 11 }, respawn: { x: 9, y: 11 },
+    objects: [
+      { id: 'back_village', kind: 'stairs', x: 9, y: 12, to: { map: 'village', x: 16, y: 16 }, label: '回起始村' },
+      // 第二階段四扇門：目前都還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
+      { id: 'gate7', kind: 'barrier', x: 4, y: 2, lockText: ['第七關「海底」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate8', kind: 'barrier', x: 7, y: 2, lockText: ['第八關「遊樂園」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate9', kind: 'barrier', x: 12, y: 2, lockText: ['第九關「古堡」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate10', kind: 'barrier', x: 15, y: 2, lockText: ['第十關「時鐘塔」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'sign_lobby', kind: 'sign', x: 8, y: 6, text: ['世界地圖：第二階段的入口。', '每一扇門通往一個新的世界，要一關一關通過喔。', '想回起始村，就走下面的樓梯。'] },
     ],
   },
 };

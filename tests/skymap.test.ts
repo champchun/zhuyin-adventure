@@ -66,8 +66,8 @@ describe('起始村的熱氣球', () => {
       'fog_a: 10,4', 'chest_fog: 10,2', 'trail_xh: 20,10', 'trail_sign_v: 19,10', 'desert_road: 26,6', 'desert_sign: 25,8', 'gate_b: 4,17', 'gate_p: 7,17'];
     const now = v.objects.map((o) => `${o.id}: ${o.x},${o.y}`);
     for (const l of before) expect(now, l).toContain(l);
-    expect(v.objects.map((o) => o.id).filter((id) => !before.some((l) => l.startsWith(id + ':'))).sort()).toEqual(['balloon', 'balloon_empty', 'balloon_sign']);
-    expect(v.objects).toHaveLength(before.length + 3);
+    expect(v.objects.map((o) => o.id).filter((id) => !before.some((l) => l.startsWith(id + ':'))).sort()).toEqual(['balloon', 'balloon_empty', 'balloon_sign', 'world_map', 'world_map_sign']); // world_map／world_map_sign 是第二階段入口（Task 3）
+    expect(v.objects).toHaveLength(before.length + 5);
   });
   it('沒氣的氣球與氣球同一格但 showIf 互斥；除此之外沒有物件重疊；告示牌與抵達格可走、不重疊', () => {
     const e = v.objects.find((o) => o.id === 'balloon_empty')!, b = v.objects.find((o) => o.id === 'balloon')!, sg = v.objects.find((o) => o.id === 'balloon_sign')!;
