@@ -342,6 +342,37 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'spark', 4, 30, 400);
         break;
       }
+      case 'glow': {
+        // 三圈淡黃白的光圈在對手身上擴散
+        audio.sfx('hint');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(3, 0xfff2a8).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 12, alpha: 0, duration: 450, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        await sleep(560);
+        this.burst(to.x, to.y, 'spark', 8, 30, 420);
+        break;
+      }
+      case 'jet': {
+        audio.sfx('splash');
+        for (let i = 0; i < 8; i++) {
+          const l = this.add.image(from.x, from.y - 14 + i * 4, 'windline').setDepth(40).setTint(0x4aa8f0);
+          this.tweens.add({ targets: l, x: to.x, duration: 300, delay: i * 35, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'drop', 10, 34, 420);
+        break;
+      }
+      case 'pop': {
+        audio.sfx('bubble');
+        for (let i = 0; i < 6; i++) {
+          const b = this.add.circle(from.x + 20, from.y - 6, 4 + (i % 3) * 2, 0xffd6f0, 0.6).setStrokeStyle(2, 0xffffff).setDepth(40);
+          this.tweens.add({ targets: b, x: to.x, y: to.y - 8 + (i - 3) * 5, duration: 450, delay: i * 80, onComplete: () => b.destroy() });
+        }
+        await sleep(750);
+        this.burst(to.x, to.y, 'puff', 8, 28, 380);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');

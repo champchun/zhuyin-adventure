@@ -980,6 +980,24 @@ export class WorldScene extends Phaser.Scene {
         const s = this.add.image(x - 16, y + (i - 3) * 3, 'windline').setDepth(9999).setTint(0xffffff);
         this.tweens.add({ targets: s, x: x + 20, alpha: 0, duration: 550, delay: i * 50, onComplete: () => s.destroy() });
       }
+    } else if (fx === 'glow') {
+      audio.sfx('hint');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xfff2a8).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 650, delay: i * 140, onComplete: () => c.destroy() });
+      }
+    } else if (fx === 'jet') {
+      audio.sfx('splash');
+      for (let i = 0; i < 10; i++) {
+        const s = this.add.image(x - 4 + (i % 3) * 4, y + 4, 'drop').setDepth(9999).setTint(0x4aa8f0);
+        this.tweens.add({ targets: s, x: s.x + (i - 4.5) * 2, y: y - 24 - (i % 4) * 3, alpha: 0, duration: 700, delay: i * 50, ease: 'Quad.out', onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'pop') {
+      audio.sfx('bubble');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 8 + i * 3, y + 4, 'puff').setDepth(9999).setTint(0xffd6f0);
+        this.tweens.add({ targets: s, y: y - 26 - i * 3, alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
     } else {
       audio.sfx('splash');
       for (let i = 0; i < 8; i++) {
