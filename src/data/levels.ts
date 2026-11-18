@@ -20,6 +20,7 @@ export const LEVELS: Record<string, LevelDef> = {
   s: { id: 's', symbol: 'ㄗㄘㄙ', name: '舌尖前音島（天空島）', open: true, mapId: 'sh', partner: '夥伴' },
   u: { id: 'u', symbol: 'ㄧㄨㄩ', name: '海底', open: true, mapId: 'uh', partner: '夥伴' },
   a: { id: 'a', symbol: 'ㄚㄛㄜㄝ', name: '遊樂園', open: true, mapId: 'ah', partner: '夥伴' },
+  c: { id: 'c', symbol: 'ㄞㄟㄠㄡ', name: '古堡', open: true, mapId: 'ch', partner: '夥伴' },
 };
 
 export interface RewardDef {

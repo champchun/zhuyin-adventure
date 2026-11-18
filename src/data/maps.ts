@@ -48,7 +48,7 @@ export interface MapObj {
   /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
   dockTo?: { map: string; x: number; y: number };
   /** dock：交通工具的種類。有設就不是船（熱氣球、雲朵小船），碼頭旁不必有水；沒設就是一般的船碼頭 */
-  vehicle?: 'balloon' | 'cloudboat' | 'seahorse' | 'train';
+  vehicle?: 'balloon' | 'cloudboat' | 'seahorse' | 'train' | 'broom';
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
   /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
@@ -281,7 +281,8 @@ export const MAPS: Record<string, MapDef> = {
       // gate8 與 gate8_open 同一格、互斥（比照起始村的 balloon_empty／balloon）：打倒大章魚（boss_u）後才換成通道
       { id: 'gate8', kind: 'barrier', x: 7, y: 2, hideIf: 'boss_u', lockText: ['第八關「遊樂園」的門。', '要先打倒第七關的大章魚，這扇門才會打開！'] },
       { id: 'gate8_open', kind: 'stairs', x: 7, y: 2, sprite: 'park_gate', to: { map: 'ah', x: 23, y: 16 }, label: '遊樂園', showIf: 'boss_u' },
-      { id: 'gate9', kind: 'barrier', x: 12, y: 2, lockText: ['第九關「古堡」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate9', kind: 'barrier', x: 12, y: 2, hideIf: 'boss_a', lockText: ['第九關「古堡」的門。', '要先打倒第八關的小丑魔術師，這扇門才會打開！'] },
+      { id: 'gate9_open', kind: 'stairs', x: 12, y: 2, sprite: 'haunt_gate', to: { map: 'ch', x: 4, y: 16 }, label: '古堡', showIf: 'boss_a' },
       { id: 'gate10', kind: 'barrier', x: 15, y: 2, lockText: ['第十關「時鐘塔」的門。', '門後面還在準備中，敬請期待！'] },
       { id: 'sign_lobby', kind: 'sign', x: 8, y: 6, text: ['世界地圖：第二階段的入口。', '每一扇門通往一個新的世界，要一關一關通過喔。', '想回起始村，就走下面的樓梯。'] },
     ],
@@ -1217,6 +1218,118 @@ MAPS.a = {
     { id: 'ferris', kind: 'gimmick', x: 8, y: 10, sprite: 'ferris_gap', sprite2: 'ferris_bridge', ability: 'honk', fx: 'honk', passable: true, lockText: ['水溝上缺了一塊，過不去。', '要是有一座摩天輪，把車廂排成橋就好了……'], hitText: ['夥伴嘴巴微微張開「ㄜ」，像鵝一樣叫了一聲！', '摩天輪轉了起來，車廂排成了一座橋，可以走到對岸了！'] },
     { id: 'chest_f1', kind: 'chest', x: 5, y: 10, item: 'bigpotion' },
     { id: 'chest_f2', kind: 'chest', x: 3, y: 5, item: 'berry' },
+  ],
+};
+
+// ───────── 南瓜鎮：第二階段第三關（友善鬼屋）的主島 ─────────
+// 從大廳的古堡大門進來，落在西南角；東邊的掃帚停靠處（broom）通往月光墓園島。旅館在北邊偏左、商店在北邊偏右，中間是紫色魔法池。
+const chGrid = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('i', 3, 2, 4, 1).rect('I', 3, 3, 4, 1).set(5, 3, 'D'); // 旅館：門在 (5,3)
+  g.rect('k', 21, 2, 4, 1).rect('K', 21, 3, 4, 1).set(23, 3, 'D'); // 商店：門在 (23,3)
+  g.rect('h', 20, 8, 4, 1).rect('H', 20, 9, 4, 1).rect('h', 20, 15, 4, 1).rect('H', 20, 16, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('O', 11, 7, 4, 4).many('R', [[10, 6], [15, 6], [10, 11], [15, 11]]); // 魔法池與四段鐵欄杆
+  g.rect('=', 5, 4, 1, 12).rect('=', 23, 4, 1, 6).rect('=', 5, 14, 20, 1); // 南瓜小徑（避開魔法池）
+  g.many(',', [[8, 5], [9, 16], [13, 16], [17, 5], [26, 12], [7, 9], [16, 14], [2, 9]]); // 暗草地
+  return g;
+})();
+MAPS.ch = {
+  id: 'ch', name: '南瓜鎮', w: 28, h: 20, tiles: chGrid.rows(), theme: 'island', skin: 'haunt',
+  start: { x: 4, y: 16 }, respawn: { x: 4, y: 15 },
+  hub: { dock: { x: 4, y: 16 } },
+  objects: [
+    { id: 'door_inn', kind: 'door', x: 5, y: 3, to: { map: 'ch_inn', x: 4, y: 6 } },
+    { id: 'door_shop', kind: 'door', x: 23, y: 3, to: { map: 'ch_shop', x: 4, y: 6 } },
+    // 西南角：古堡大門回大廳（gate9 正下方的小路）
+    { id: 'haunt_gate_back', kind: 'stairs', x: 3, y: 16, sprite: 'haunt_gate', to: { map: 'lobby', x: 12, y: 3 }, label: '回世界地圖' },
+    { id: 'gate_sign', kind: 'sign', x: 4, y: 17, text: ['古堡大門：回世界地圖。', '想去別的世界，就從這裡回去。'] },
+    // 東邊：掃帚通往月光墓園島，墓園島的 broom_back 飛回這裡 (24,10)
+    { id: 'broom', kind: 'dock', vehicle: 'broom', x: 25, y: 10, sprite: 'broom', dockTo: { map: 'c', x: 3, y: 17 } },
+    { id: 'broom_sign', kind: 'sign', x: 24, y: 11, text: ['掃帚停靠處：通往月光墓園島。', '掃帚是雙向的，墓園島那邊也有一支可以飛回來。'] },
+    { id: 'granny', kind: 'granny', x: 8, y: 12, label: '星星婆婆' }, // 魔法池西南邊
+    { id: 'giver', kind: 'giver', x: 17, y: 5, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'ghostkid', kind: 'npc', x: 9, y: 13, sprite: 'npc_kid', label: '小幽靈',
+      talk: [
+        { not: 'cEntered', lines: ['歡迎來到南瓜鎮！我是害羞的小幽靈，不用怕我喔。', '這裡的鬼都很友善，只愛玩躲貓貓。', '東邊有支掃帚，騎上去就是月光墓園島。島上有稻草人偶，先去練習看看吧！'] },
+        { not: 'cPractice', lines: ['稻草人偶可以讓夥伴練習新招式。', '練習完，島上的蜘蛛網和南瓜燈，就有辦法對付了。'] },
+        { not: 'boss_c', lines: ['墓園島上有一座古堡，聽說最深處住著幽靈伯爵。', '記得先在旅館睡一覺，再去找他。'] },
+        { lines: ['幽靈伯爵認輸了！太棒了！', '古堡裡的寶藏，你全都看過了嗎？'] },
+      ],
+    },
+    {
+      id: 'witch', kind: 'npc', x: 21, y: 12, sprite: 'npc_elder', label: '掃帚店的婆婆',
+      talk: [
+        { not: 'cPractice', lines: ['島上有一張大蜘蛛網，還有一盞暗暗的南瓜燈。', '它們旁邊好像藏著寶箱。'] },
+        { not: 'boss_c', lines: ['墓園島中間有一條護城河，吊橋壞了，一直放不下來。', '還有一扇緊閉的鬼門，怎麼敲都沒人應。', '等你打倒幽靈伯爵、學會新招式，再回來看看。'] },
+        { lines: ['吊橋放下來了嗎？', '鬼門打開了嗎？裡面一定有好東西！'] },
+      ],
+    },
+    {
+      id: 'pumpkingirl', kind: 'npc', x: 14, y: 15, sprite: 'npc_girl', label: '南瓜妹妹',
+      talk: [
+        { not: 'boss_c', lines: ['旅館住一晚 25 金幣，累了就來睡一覺。', '夥伴的體力和魔力，睡醒就都回來了。'] },
+        { lines: ['打倒幽靈伯爵的人，就是你！', '南瓜鎮永遠歡迎你。'] },
+      ],
+    },
+  ],
+};
+MAPS.ch_inn = {
+  id: 'ch_inn', name: '南瓜鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨南瓜鎮南瓜旅館！', '這裡的床是南瓜形狀的，蓋著軟軟的蜘蛛絲被子，一點都不可怕喔。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得好嗎？夥伴們都精神飽滿了！', '嘻嘻～歡迎再來住！'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'ch', x: 5, y: 4 } },
+  ],
+};
+MAPS.ch_shop = {
+  id: 'ch_shop', name: '南瓜鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨南瓜鎮南瓜雜貨店！', '這裡有藥水和魔力果，南瓜口味的最受歡迎。'],
+      doneText: ['謝謝光顧！', '南瓜鎮隨時歡迎你。'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'ch', x: 23, y: 4 } },
+  ],
+};
+
+// ───────── ㄞㄟㄠㄡ：月光墓園島 ─────────
+// 一條南北向的護城河（x=19）把島切成兩半：西岸是入口與機關，東岸要先在護城河中間唯一的缺口放下吊橋才過得去（ㄠ，打倒幽靈伯爵後才學到）。
+const graveIsle = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('~', 19, 1, 1, 18).set(19, 10, '.'); // 護城河與缺口那一格（吊橋）
+  g.many('R', [[22, 13], [11, 12], [17, 15]]); // 零星鐵欄杆（裝飾，不貼著任何物件）
+  g.many('#', [[24, 16], [16, 3], [5, 2], [2, 12], [5, 7]]).many(',', [[13, 12], [9, 5], [6, 14], [3, 9]]);
+  return g;
+})();
+MAPS.c = {
+  id: 'c', name: '月光墓園島（ㄞㄟㄠㄡ）', w: 28, h: 20, tiles: graveIsle.rows(), theme: 'meadow', skin: 'haunt',
+  start: { x: 3, y: 17 }, respawn: { x: 3, y: 17 },
+  objects: [
+    { id: 'broom_back', kind: 'dock', vehicle: 'broom', x: 2, y: 17, sprite: 'broom', dockTo: { map: 'ch', x: 24, y: 10 } }, // 回南瓜鎮的掃帚
+    { id: 'sign1', kind: 'sign', x: 4, y: 15, text: ['月光墓園島。', '這座島的注音，嘴巴都要擺出特別的形狀：ㄞ 張開再收，ㄟ 往兩邊拉，還有兩個要等你自己發現。', '島上有蜘蛛網、南瓜燈、護城河和鬼門，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 6, y: 17, battle: 'cpractice', hideIf: 'cPractice' },
+    { id: 'chest_1', kind: 'chest', x: 9, y: 17, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 12, y: 14, battle: 'c1', ai: 'patrol', patrol: [{ x: 11, y: 14 }, { x: 10, y: 14 }] },
+    { id: 'm2', kind: 'monster', x: 15, y: 9, battle: 'c2', ai: 'patrol', patrol: [{ x: 16, y: 9 }, { x: 17, y: 9 }] },
+    { id: 'm3', kind: 'monster', x: 16, y: 6, battle: 'c3', showIf: 'cPractice', ai: 'patrol', patrol: [{ x: 15, y: 6 }, { x: 14, y: 6 }] },
+    { id: 'web', kind: 'gimmick', x: 7, y: 12, sprite: 'spiderweb_thick', sprite2: 'spiderweb_clear', ability: 'chill', fx: 'chill', lockText: ['一張大大的蜘蛛網，上面趴著一隻小蜘蛛，把路邊的東西擋住了。', '嘴巴「ㄞ」地發出發抖的聲音，也許能把蜘蛛嚇跑……'], hitText: ['夥伴張開嘴「ㄞ」地發出抖抖的聲音，小蜘蛛嚇得溜走了！', '蜘蛛網破了，旁邊冒出了一個寶箱！'], doneText: ['蜘蛛網破了一個大洞。'] },
+    { id: 'chest_web', kind: 'chest', x: 8, y: 12, item: 'berry', showIf: 'g:c:web' },
+    { id: 'pumpkin', kind: 'gimmick', x: 13, y: 8, sprite: 'pumpkin_dark', sprite2: 'pumpkin_lit', ability: 'tickle', fx: 'tickle', lockText: ['一盞暗暗的南瓜燈，眼睛和嘴巴都沒亮。', '要是有人把它搔得咯咯笑，也許就會亮起來……'], hitText: ['夥伴嘴角一拉「ㄟ」，咯咯地笑了起來！', '南瓜燈亮了，旁邊冒出了一個寶箱！'], doneText: ['南瓜燈亮亮的，笑得好開心。'] },
+    { id: 'chest_pumpkin', kind: 'chest', x: 13, y: 9, item: 'potion', showIf: 'g:c:pumpkin' },
+    { id: 'ghostdoor', kind: 'gimmick', x: 14, y: 16, sprite: 'ghost_door', sprite2: 'ghost_door_open', ability: 'hoot', fx: 'hoot', lockText: ['一扇緊閉的紫色鬼門，怎麼敲都沒人應。', '要是學會貓頭鷹的叫聲，也許能把它叫開……'], hitText: ['夥伴嘴巴嘟起「ㄡ」，像貓頭鷹一樣叫了一聲！', '鬼門開了一條縫，小幽靈探出頭來，還留下了一個寶箱！'], doneText: ['鬼門開著，裡面傳來嘻嘻的笑聲。'] },
+    { id: 'chest_door', kind: 'chest', x: 14, y: 17, item: 'bigpotion', showIf: 'g:c:ghostdoor' },
+    { id: 'sign2', kind: 'sign', x: 8, y: 6, text: ['前面是古堡的方向。', '古堡裡又暗又大，很容易迷路，要先練習完再進去喔。'] },
+    // 吊橋：缺口那一格（護城河中間）。ㄠ 要打倒幽靈伯爵才學到，所以對岸的寶箱是幽靈伯爵之後才拿得到
+    { id: 'drawbridge', kind: 'gimmick', x: 19, y: 10, sprite: 'drawbridge_gap', sprite2: 'drawbridge', ability: 'howl', fx: 'howl', passable: true, lockText: ['護城河上的吊橋壞了，過不去。', '要是有人用長長的嗷嗚聲把它吹下來就好了……'], hitText: ['夥伴嘴巴圓圓往前「ㄠ」，像小狼一樣嗷了一聲！', '吊橋「喀啦喀啦」地放了下來，可以走到對岸了！'] },
+    { id: 'chest_d1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
+    { id: 'chest_d2', kind: 'chest', x: 24, y: 5, item: 'berry' },
   ],
 };
 

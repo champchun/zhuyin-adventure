@@ -25,7 +25,7 @@ describe('世界地圖大廳', () => {
     expect(walkable('village', 16, 16)).toBe(true);
     expect(freeOf('village', 16, 16)).toBe(true);
   });
-  it('gate7 是通往珊瑚港的 stairs；gate8 是 barrier（boss_u 之後隱藏）旁有同一格的 gate8_open（stairs）；gate9～gate10 是擋路的 barrier，各有鎖住的說明', () => {
+  it('gate7 是通往珊瑚港的 stairs；gate8 是 barrier（boss_u 之後隱藏）旁有同一格的 gate8_open（stairs）；gate9 是 barrier（boss_a 之後隱藏）旁有同一格的 gate9_open（stairs）；gate10 是擋路的 barrier，有鎖住的說明', () => {
     const g7 = lobby.objects.find((o) => o.id === 'gate7')!;
     expect(g7.kind).toBe('stairs');
     expect(g7.to!.map).toBe('uh');
@@ -34,19 +34,24 @@ describe('世界地圖大廳', () => {
     expect(g8.lockText!.length).toBeGreaterThan(0);
     expect(g8o).toMatchObject({ kind: 'stairs', showIf: 'boss_u' });
     expect(g8o.to!.map).toBe('ah');
-    for (const id of ['gate9', 'gate10']) {
-      const g = lobby.objects.find((o) => o.id === id)!;
-      expect(g, id).toBeDefined();
-      expect(g.kind).toBe('barrier');
-      expect(g.lockText!.length, id).toBeGreaterThan(0);
-    }
+    const g9 = lobby.objects.find((o) => o.id === 'gate9')!, g9o = lobby.objects.find((o) => o.id === 'gate9_open')!;
+    expect(g9).toMatchObject({ kind: 'barrier', hideIf: 'boss_a' });
+    expect(g9.lockText!.length).toBeGreaterThan(0);
+    expect(g9o).toMatchObject({ kind: 'stairs', showIf: 'boss_a' });
+    expect(g9o.to!.map).toBe('ch');
+    const g10 = lobby.objects.find((o) => o.id === 'gate10')!;
+    expect(g10, 'gate10').toBeDefined();
+    expect(g10.kind).toBe('barrier');
+    expect(g10.lockText!.length, 'gate10').toBeGreaterThan(0);
   });
   it('物件不重疊；起點、四扇門、告示牌、回起始村的樓梯從起點都走得到', () => {
-    // gate8（barrier，hideIf boss_u）與 gate8_open（stairs，showIf boss_u）同一格、互斥，所以只算一次
-    const keys = lobby.objects.filter((o) => o.id !== 'gate8_open').map((o) => `${o.x},${o.y}`);
+    // gate8／gate9（barrier，hideIf）與 gate8_open／gate9_open（stairs，showIf）同一格、互斥，所以只算一次
+    const keys = lobby.objects.filter((o) => o.id !== 'gate8_open' && o.id !== 'gate9_open').map((o) => `${o.x},${o.y}`);
     expect(new Set(keys).size).toBe(keys.length);
     const g8 = lobby.objects.find((o) => o.id === 'gate8')!, g8o = lobby.objects.find((o) => o.id === 'gate8_open')!;
     expect([g8o.x, g8o.y]).toEqual([g8.x, g8.y]);
+    const g9 = lobby.objects.find((o) => o.id === 'gate9')!, g9o = lobby.objects.find((o) => o.id === 'gate9_open')!;
+    expect([g9o.x, g9o.y]).toEqual([g9.x, g9.y]);
     const r = walkMap(lobby, {}, []);
     for (const id of ['back_village', 'sign_lobby', 'gate7', 'gate8', 'gate9', 'gate10']) expect(r.touched.has(id), id).toBe(true);
   });

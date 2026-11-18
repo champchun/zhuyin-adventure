@@ -3,7 +3,7 @@ import { STORY } from '../src/data/levels';
 import { MAPS } from '../src/data/maps';
 import { allVoiceLines } from '../src/data/voiceLines';
 
-const INNS: [string, string][] = [['dh_inn', '鼓聲港'], ['gh_inn', '蛙鳴灣'], ['xh_inn', '雪花鎮'], ['zh_inn', '綠洲鎮'], ['sh_inn', '雲上小鎮']];
+const INNS: [string, string][] = [['dh_inn', '鼓聲港'], ['gh_inn', '蛙鳴灣'], ['xh_inn', '雪花鎮'], ['zh_inn', '綠洲鎮'], ['sh_inn', '雲上小鎮'], ['ch_inn', '南瓜鎮']];
 const keeper = (id: string) => MAPS[id].objects.find((o) => o.kind === 'innkeeper')!;
 
 describe('旅館老闆的台詞：每間旅館各有自己的介紹', () => {
@@ -15,11 +15,11 @@ describe('旅館老闆的台詞：每間旅館各有自己的介紹', () => {
       for (const [other, otherPlace] of INNS) if (other !== id) expect(k.text!.join(''), `${id} 不該提到 ${otherPlace}`).not.toContain(otherPlace);
     }
   });
-  it('五間旅館的招呼、道別都各不相同', () => {
+  it('六間旅館的招呼、道別都各不相同', () => {
     const hellos = INNS.map(([id]) => keeper(id).text!.join('|'));
     const byes = INNS.map(([id]) => keeper(id).doneText!.join('|'));
-    expect(new Set(hellos).size).toBe(5);
-    expect(new Set(byes).size).toBe(5);
+    expect(new Set(hellos).size).toBe(INNS.length);
+    expect(new Set(byes).size).toBe(INNS.length);
     for (const [id] of INNS) expect(keeper(id).doneText!.length, id).toBeGreaterThan(0);
   });
   it('每一句都不是空字串，而且都有說「住一晚」的介紹', () => {

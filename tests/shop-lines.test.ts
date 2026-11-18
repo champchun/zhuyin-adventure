@@ -5,7 +5,7 @@ import { allVoiceLines } from '../src/data/voiceLines';
 
 const SHOPS: [string, string][] = [
   ['shop', '小福'], ['dh_shop', '鼓聲港'], ['gh_shop', '蛙鳴灣'], ['xh_shop', '雪花鎮'],
-  ['zh_shop', '綠洲鎮'], ['sh_shop', '雲上小鎮'], ['uh_shop', '珊瑚港'], ['ah_shop', '歡樂廣場'],
+  ['zh_shop', '綠洲鎮'], ['sh_shop', '雲上小鎮'], ['uh_shop', '珊瑚港'], ['ah_shop', '歡樂廣場'], ['ch_shop', '南瓜鎮'],
 ];
 const clerk = (id: string) => MAPS[id].objects.find((o) => o.id === 'clerk')!;
 
@@ -27,7 +27,7 @@ describe('商店店員的台詞：每間商店各有自己的招呼與道別', (
       for (const other of places) if (other !== place) expect(c.text!.join(''), `${id} 不該提到 ${other}`).not.toContain(other);
     }
   });
-  it('八間商店的招呼、道別都各不相同', () => {
+  it('九間商店的招呼、道別都各不相同', () => {
     expect(new Set(SHOPS.map(([id]) => clerk(id).text!.join('|'))).size).toBe(SHOPS.length);
     expect(new Set(SHOPS.map(([id]) => clerk(id).doneText!.join('|'))).size).toBe(SHOPS.length);
   });
