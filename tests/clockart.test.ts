@@ -37,13 +37,9 @@ describe('鐘塔圖樣', () => {
   it('齒輪橋缺口與齒輪橋畫滿 16×16（沒有透明角落）', () => {
     for (const k of FULL_TILE_OBJECTS) expect(tex[k].px.every((p) => p), `${k} 有透明格`).toBe(true);
   });
-  it('缺口與橋的接縫：缺口四邊、橋的上下兩側都和 t_clock_oil 一樣', () => {
+  it('缺口與橋的接縫：左 3 欄、右 3 欄都和 t_clock_oil 一樣（溝是橫向的，橋由上往下貫通）', () => {
     const oil = tex.t_clock_oil.px;
-    const at = (k: string, x: number, y: number) => tex[k].px[y * 16 + x];
-    for (let i = 0; i < 16; i++) {
-      for (const [x, y] of [[i, 0], [i, 15], [0, i], [15, i]]) expect(at('gearbridge_gap', x, y), `gap ${x},${y}`).toBe(oil[y * 16 + x]);
-      for (const y of [0, 1, 2, 3, 13, 14, 15]) expect(at('gearbridge', i, y), `bridge ${i},${y}`).toBe(oil[y * 16 + i]);
-    }
+    for (const k of FULL_TILE_OBJECTS) for (let y = 0; y < 16; y++) for (const x of [0, 1, 2, 13, 14, 15]) expect(tex[k].px[y * 16 + x], `${k} ${x},${y}`).toBe(oil[y * 16 + x]);
   });
   it('成對的物件畫得不一樣', () => {
     for (const [a, b] of [['gear_stuck', 'gear_turning'], ['musicbox_still', 'musicbox_play'], ['gearbridge_gap', 'gearbridge'], ['belldoor', 'belldoor_open'], ['keyhole', 'keyhole_open'], ['winder_off', 'winder_on']]) expect(tex[a].px.join('|'), `${a} vs ${b}`).not.toBe(tex[b].px.join('|'));
