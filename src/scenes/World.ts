@@ -1069,6 +1069,41 @@ export class WorldScene extends Phaser.Scene {
         const s = this.add.image(x + (i - 1.5) * 8, y - 4, 'drop').setDepth(9999).setTint(0xe8d6a0);
         this.tweens.add({ targets: s, y: y - 24 - i * 3, x: s.x + (i % 2 ? 6 : -6), alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
       }
+    } else if (fx === 'chime') {
+      audio.sfx('hint');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xd8a24a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 24, alpha: 0, duration: 650, delay: i * 130, onComplete: () => c.destroy() });
+      }
+    } else if (fx === 'crank') {
+      audio.sfx('drum');
+      for (let i = 0; i < 6; i++) {
+        const a0 = (i / 6) * Math.PI * 2;
+        const s = this.add.image(x + Math.cos(a0) * 8, y + Math.sin(a0) * 8, 'spark').setDepth(9999).setTint(0xb87333);
+        this.tweens.add({ targets: s, x: x + Math.cos(a0 + 2) * 14, y: y + Math.sin(a0 + 2) * 14, alpha: 0, duration: 700, delay: i * 40, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'bark') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xff9a4a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 26, alpha: 0, duration: 700, delay: i * 140, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(140, 0.003);
+    } else if (fx === 'rumble') {
+      audio.sfx('drum');
+      for (let i = 0; i < 2; i++) {
+        const c = this.add.circle(x, y, 5, 0xffffff, 0).setStrokeStyle(3, 0x6a86a8).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 28, alpha: 0, duration: 750, delay: i * 180, onComplete: () => c.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(200, 0.004);
+    } else if (fx === 'curl') {
+      audio.sfx('bubble');
+      for (let i = 0; i < 7; i++) {
+        const a0 = (i / 6) * Math.PI * 3;
+        const r = 4 + i * 2;
+        const s = this.add.image(x + Math.cos(a0) * r, y + Math.sin(a0) * r, 'spark').setDepth(9999).setTint(0xe8b34a);
+        this.tweens.add({ targets: s, y: s.y - 8, alpha: 0, duration: 700, delay: i * 50, onComplete: () => s.destroy() });
+      }
     } else {
       audio.sfx('splash');
       for (let i = 0; i < 8; i++) {

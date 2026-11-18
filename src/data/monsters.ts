@@ -4,7 +4,7 @@ export interface MoveDef {
   /** 魔法攻擊（聽聲音）時顯示的名字 */
   magicName: string;
   power: number;
-  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle' | 'glow' | 'jet' | 'pop' | 'shout' | 'inflate' | 'honk' | 'cheer' | 'chill' | 'tickle' | 'howl' | 'hoot';
+  fx: 'punch' | 'blast' | 'peck' | 'wind' | 'hum' | 'fog' | 'drum' | 'splash' | 'bubble' | 'stream' | 'croak' | 'knock' | 'breath' | 'snow' | 'slide' | 'freeze' | 'web' | 'gulp' | 'roar' | 'sun' | 'zip' | 'spike' | 'whistle' | 'glow' | 'jet' | 'pop' | 'shout' | 'inflate' | 'honk' | 'cheer' | 'chill' | 'tickle' | 'howl' | 'hoot' | 'chime' | 'crank' | 'bark' | 'rumble' | 'curl';
   /** 需要此能力旗標才可使用 */
   needAbility?: string;
   /** 綁定的注音符號：答對這個符號時自動使出這一招（沒綁定的是通用招式） */
@@ -90,22 +90,27 @@ export const MOVES: Record<string, MoveDef> = {
   tickle: { id: 'tickle', magicName: '搔癢魔法', symbol: 'ㄟ', name: '咯咯笑', power: 12, fx: 'tickle', needAbility: 'tickle', desc: '「ㄟ」嘴角往兩邊拉開，像癢得咯咯笑，聲音輕輕亮亮的，能把暗暗的南瓜燈笑到亮起來。' },
   howl: { id: 'howl', magicName: '嗷嗚魔法', symbol: 'ㄠ', name: '嗷嗚', power: 13, fx: 'howl', needAbility: 'howl', desc: '「ㄠ」嘴巴圓圓往前，像小狼「嗷～」地叫，聲音拉得長長的，能把壞掉的吊橋吹得放下來。' },
   hoot: { id: 'hoot', magicName: '貓頭鷹魔法', symbol: 'ㄡ', name: '呦呦叫', power: 13, fx: 'hoot', needAbility: 'hoot', desc: '「ㄡ」嘴巴嘟起來，像貓頭鷹「呦～」地叫，聲音圓圓的，能把緊閉的鬼門叫開。' },
+  chime: { id: 'chime', magicName: '鐘聲魔法', symbol: 'ㄢ', name: '噹噹響', power: 14, fx: 'chime', needAbility: 'chime', desc: '「ㄢ」嘴巴張開、舌尖輕輕頂住上牙，像說「安」，聲音圓圓亮亮的，像鐘「噹～」地響，能讓停擺的大齒輪轉起來。' },
+  crank: { id: 'crank', magicName: '發條魔法', symbol: 'ㄣ', name: '轉發條', power: 14, fx: 'crank', needAbility: 'crank', desc: '「ㄣ」嘴巴微微張開、舌尖輕輕頂住上牙，像說「恩」，聲音沉沉的，像在轉緊發條，能讓沒發條的八音盒響起來，也能轉動鐘塔裡的大發條。' },
+  bark: { id: 'bark', magicName: '昂叫魔法', symbol: 'ㄤ', name: '昂昂叫', power: 15, fx: 'bark', needAbility: 'bark', desc: '「ㄤ」嘴巴張得大大的，聲音往鼻子後面走，像說「昂」，拉得長長的，能讓壞掉的齒輪橋轉起來，架成一座橋。' },
+  rumble: { id: 'rumble', magicName: '轟鳴魔法', symbol: 'ㄥ', name: '轟轟響', power: 15, fx: 'rumble', needAbility: 'rumble', desc: '「ㄥ」嘴巴微微張開，聲音往鼻子後面走，像說「鞥」，低低的像遠遠的打雷，能把緊閉的鐘樓大門震開。' },
+  curl: { id: 'curl', magicName: '捲舌魔法', symbol: 'ㄦ', name: '捲舌', power: 16, fx: 'curl', needAbility: 'curl', desc: '「ㄦ」舌頭輕輕往後捲，像說「兒」，聲音捲捲的，能轉開轉不動的大鑰匙孔。' },
   gust: { id: 'gust', magicName: '噴風魔法', symbol: 'ㄆ', name: '噴風', power: 5, fx: 'wind', needAbility: 'gust', desc: '呼～吹出一陣風，能轉動風車、吹開落葉。' },
 };
 export const SPECIES: Record<string, SpeciesDef> = {
   bobo: {
     id: 'bobo', name: '波波', symbol: 'ㄅ', role: '平均型', sprites: ['mon_bobo', 'mon_bobo2'], baseHp: 14, baseMp: 5, atk: 0, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot], color: '#f59a3c',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot, MOVES.chime, MOVES.crank, MOVES.bark, MOVES.rumble, MOVES.curl], color: '#f59a3c',
     desc: '桃紅色的小惡魔，有紫色的小翅膀和尾巴。什麼都平均，最好上手。',
   },
   momo: {
     id: 'momo', name: '摸摸', symbol: 'ㄇ', role: '防禦型', sprites: ['mon_momo', 'mon_momo2'], baseHp: 18, baseMp: 5, atk: 0, guard: 1,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot], color: '#4fb3a4',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot, MOVES.chime, MOVES.crank, MOVES.bark, MOVES.rumble, MOVES.curl], color: '#4fb3a4',
     desc: '青綠色的果凍泡泡，裡面藏著一顆藍色的小核心。HP 很多，被打也比較不痛。',
   },
   popo: {
     id: 'popo', name: '坡坡', symbol: 'ㄆ', role: '攻擊型', sprites: ['mon_popo', 'mon_popo2'], baseHp: 11, baseMp: 5, atk: 1, guard: 0,
-    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot], color: '#ff8a3a',
+    moves: [MOVES.tap, MOVES.blast, MOVES.gust, MOVES.hum, MOVES.fog, MOVES.drum, MOVES.splash, MOVES.nasal, MOVES.stream, MOVES.croak, MOVES.knock, MOVES.breath, MOVES.snow, MOVES.slide, MOVES.freeze, MOVES.web, MOVES.gulp, MOVES.roar, MOVES.sun, MOVES.zip, MOVES.spike, MOVES.whistle, MOVES.glow, MOVES.jet, MOVES.pop, MOVES.shout, MOVES.inflate, MOVES.honk, MOVES.cheer, MOVES.chill, MOVES.tickle, MOVES.howl, MOVES.hoot, MOVES.chime, MOVES.crank, MOVES.bark, MOVES.rumble, MOVES.curl], color: '#ff8a3a',
     desc: '白色的小火焰貓，有桃紅色的鬃毛和金色的火苗。每一招都比較痛，不過 HP 比較少，要小心。',
   },
 };
@@ -161,6 +166,11 @@ export const ENEMIES: Record<string, EnemyDef> = {
   skeleton: { id: 'skeleton', name: '骷髏兵', sprite: 'en_skeleton', hp: 58, atk: 10, scale: 2.25, echo: true },
   ghostcount: { id: 'ghostcount', name: '幽靈伯爵', sprite: 'en_ghostcount', hp: 74, atk: 11, scale: 2.75 },
   scarecrowdummy: { id: 'scarecrowdummy', name: '稻草人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
+  gearbug: { id: 'gearbug', name: '齒輪怪', sprite: 'en_gearbug', hp: 60, atk: 10, scale: 2.25 },
+  windup: { id: 'windup', name: '發條兵', sprite: 'en_windup', hp: 62, atk: 10, scale: 2.25, echo: true },
+  alarmclock: { id: 'alarmclock', name: '鬧鐘怪', sprite: 'en_alarmclock', hp: 64, atk: 11, scale: 2.25, echo: true },
+  timekeeper: { id: 'timekeeper', name: '時光守護者', sprite: 'en_timekeeper', hp: 82, atk: 12, scale: 2.75 },
+  clockdummy: { id: 'clockdummy', name: '發條人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
   ballpuppet: { id: 'ballpuppet', name: '彩球人偶', sprite: 'en_dummy', hp: 8, atk: 1, scale: 2.25 },
   windking: { id: 'windking', name: '風車怪王', sprite: 'en_windking', hp: 16, atk: 3, scale: 2.75 },
 };

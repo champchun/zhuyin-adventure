@@ -484,6 +484,76 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'spark', 10, 34, 450);
         break;
       }
+      case 'chime': {
+        // 三圈金銅色的圈圈從對手身上由內而外擴散，像鐘聲一圈圈傳開
+        audio.sfx('hint');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(to.x, to.y - 4, 5, 0xffffff, 0).setStrokeStyle(3, 0xd8a24a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 10, alpha: 0, duration: 420, delay: i * 120, onComplete: () => ring.destroy() });
+        }
+        await sleep(500);
+        this.burst(to.x, to.y, 'spark', 8, 30, 420);
+        break;
+      }
+      case 'crank': {
+        // 一枚小齒輪（六顆小圓排成一圈）旋轉著飛向對手
+        audio.sfx('drum');
+        const gear = this.add.container(from.x + 14, from.y - 8).setDepth(40);
+        for (let i = 0; i < 6; i++) {
+          const a0 = (i / 6) * Math.PI * 2;
+          gear.add(this.add.circle(Math.cos(a0) * 6, Math.sin(a0) * 6, 3, 0xb87333, 1));
+        }
+        gear.add(this.add.circle(0, 0, 4, 0xb87333, 1));
+        this.tweens.add({
+          targets: gear, x: to.x, y: to.y - 6, angle: G.settings.reduceMotion ? 0 : 540, duration: 420, delay: 80, ease: 'Sine.inOut',
+          onComplete: () => gear.destroy(),
+        });
+        await sleep(520);
+        this.burst(to.x, to.y, 'puff', 8, 28, 400);
+        break;
+      }
+      case 'bark': {
+        // 三圈橘色的圈圈從自己身上擴散，接著五條橘色風線射向對手
+        audio.sfx('drum');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(from.x + 10, from.y - 6, 5, 0xffffff, 0).setStrokeStyle(3, 0xff9a4a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 10, alpha: 0, duration: 400, delay: i * 110, onComplete: () => ring.destroy() });
+        }
+        for (let i = 0; i < 5; i++) {
+          const l = this.add.image(from.x + 12, from.y - 16 + i * 5, 'windline').setDepth(40).setTint(0xff9a4a);
+          this.tweens.add({ targets: l, x: to.x, duration: 340, delay: 260 + i * 45, onComplete: () => l.destroy() });
+        }
+        await sleep(520);
+        this.burst(to.x, to.y, 'spark', 9, 32, 430);
+        break;
+      }
+      case 'rumble': {
+        // 對手周圍兩圈灰藍色的圈圈擴散，像遠遠的雷聲震動
+        audio.sfx('drum');
+        for (let i = 0; i < 2; i++) {
+          const ring = this.add.circle(to.x, to.y, 6, 0xffffff, 0).setStrokeStyle(4, 0x6a86a8).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 18 + i * 14, alpha: 0, duration: 480, delay: i * 160, onComplete: () => ring.destroy() });
+        }
+        if (!G.settings.reduceMotion && this.en) this.tweens.add({ targets: this.en, x: this.en.x + 3, duration: 45, yoyo: true, repeat: 5 });
+        await sleep(560);
+        this.burst(to.x, to.y, 'puff', 10, 34, 450);
+        break;
+      }
+      case 'curl': {
+        // 一條螺旋（七顆逐漸變大的銅黃圓）從自己捲向對手
+        audio.sfx('bubble');
+        for (let i = 0; i < 7; i++) {
+          const t = i / 6;
+          const a0 = t * Math.PI * 3;
+          const x0 = from.x + 12 + (to.x - from.x - 12) * t;
+          const y0 = from.y - 8 + (to.y - from.y) * t;
+          const c = this.add.circle(x0 + Math.cos(a0) * 8, y0 + Math.sin(a0) * 8, 2 + i * 0.5, 0xe8b34a, 1).setStrokeStyle(1, 0xffffff).setDepth(40).setAlpha(0);
+          this.tweens.add({ targets: c, alpha: 1, duration: 120, delay: i * 70, yoyo: true, hold: 160, onComplete: () => c.destroy() });
+        }
+        await sleep(620);
+        this.burst(to.x, to.y, 'spark', 10, 36, 450);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');

@@ -64,7 +64,8 @@ describe('戰鬥資料與護盾、回音怪', () => {
       'boss_s1', 'boss_s', 's1', 's2', 's3', 'sc1m', 'sc1m2', 'sc1m3', 'sc1m4', 'sc2m', 'sc2m2', 'sc2m3',
       'boss_u', 'u2', 'u3', 'uc1m', 'uc1m2', 'uc1m3', 'uc1m4', 'uc2m', 'uc2m2', 'uc2m3',
       'boss_a', 'a2', 'a3', 'ac1m', 'ac1m2', 'ac1m3', 'ac1m4', 'ac2m', 'ac2m2', 'ac2m3',
-      'boss_c', 'c2', 'c3', 'cc1m', 'cc1m2', 'cc1m3', 'cc1m4', 'cc2m', 'cc2m2', 'cc2m3']);
+      'boss_c', 'c2', 'c3', 'cc1m', 'cc1m2', 'cc1m3', 'cc1m4', 'cc2m', 'cc2m2', 'cc2m3',
+      'boss_t', 't2', 't3', 'tc1m', 'tc1m2', 'tc1m3', 'tc1m4', 'tc2m', 'tc2m2', 'tc2m3']);
     for (const b of Object.values(BATTLES)) {
       if (velar.has(b.id)) continue;
       expect(b.shield, `${b.id} 不該有護盾`).toBeFalsy();

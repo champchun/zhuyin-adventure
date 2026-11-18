@@ -322,8 +322,8 @@ describe('招式綁符號', () => {
   });
   it('每一招都有魔法版的名字', () => {
     expect(moveFor('bobo', 'ㄅ', () => true).magicName).toBe('爆破魔法');
-    // 沒有綁定招式的符號用通用的小魔法彈；用最後才會綁定招式的 ㄦ（第十關），之後每一關新增招式都不必再改這裡
-    expect(moveFor('bobo', 'ㄦ', () => true).magicName).toBe('小魔法彈');
+    // 沒有綁定招式的符號用通用的小魔法彈；37 個符號都已綁定招式，所以改用不在注音表內的字元
+    expect(moveFor('bobo', '?', () => true).magicName).toBe('小魔法彈');
   });
 });
 
