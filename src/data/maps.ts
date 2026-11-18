@@ -1441,6 +1441,7 @@ MAPS.t = {
     { id: 'chest_bell', kind: 'chest', x: 23, y: 8, item: 'bigpotion', showIf: 'g:t:belldoor' },
     { id: 'keyhole', kind: 'gimmick', x: 4, y: 8, sprite: 'keyhole', sprite2: 'keyhole_open', ability: 'curl', fx: 'curl', lockText: ['一個轉不動的大鑰匙孔，孔裡的小齒輪卡得緊緊的。', '要是有一個捲捲的聲音，也許能把它轉開……'], hitText: ['夥伴舌頭往後捲「ㄦ」，發出捲捲的聲音！', '鑰匙孔「喀」地轉開了，旁邊冒出了一個寶箱！'], doneText: ['鑰匙孔轉開了，裡面的小齒輪轉得好開心。'] },
     { id: 'chest_keyhole', kind: 'chest', x: 4, y: 7, item: 'bigpotion', showIf: 'g:t:keyhole' },
+    { id: 'cave', kind: 'stairs', x: 22, y: 3, to: { map: 'tc1', x: 2, y: 1 }, label: '鐘塔', showIf: 'tPractice' },
     { id: 'sign2', kind: 'sign', x: 19, y: 5, text: ['前面是鐘塔的方向。', '鐘塔裡又暗又大，很容易迷路，要先練習完再進去喔。'] },
     // 齒輪橋：缺口那一格（油溝中間）。ㄤ 要打倒時光守護者才學到，所以對岸的寶箱是時光守護者之後才拿得到
     { id: 'gearbridge', kind: 'gimmick', x: 14, y: 10, sprite: 'gearbridge_gap', sprite2: 'gearbridge', ability: 'bark', fx: 'bark', passable: true, lockText: ['油溝上缺了一塊，過不去。', '要是有一座齒輪橋，把齒輪排成橋就好了……'], hitText: ['夥伴嘴巴張大「ㄤ」，拉長了聲音叫了一聲！', '齒輪一個接一個轉了起來，排成了一座橋，可以走到對岸了！'] },
@@ -1450,16 +1451,16 @@ MAPS.t = {
 };
 
 // ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc、星塔 sc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
-type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2' | 'cc1' | 'cc2';
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2' | 'cc1' | 'cc2' | 'tc1' | 'tc2';
 /** 頭目後的回家魔法陣：洞窟 id 前綴 → 通往該關主島旅館門外一格（單向出口） */
 const CIRCLE_HOME: Record<string, NonNullable<MapObj['to']>> = {
-  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 }, uc: { map: 'uh', x: 19, y: 4 }, ac: { map: 'ah', x: 8, y: 4 }, cc: { map: 'ch', x: 5, y: 4 },
+  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 }, uc: { map: 'uh', x: 19, y: 4 }, ac: { map: 'ah', x: 8, y: 4 }, cc: { map: 'ch', x: 5, y: 4 }, tc: { map: 'th', x: 21, y: 4 },
 };
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
-  const theme: 'forest' | 'ice' | 'desert' | 'sky' | 'sea' | 'park' | 'haunt' = mapId.startsWith('c') ? 'haunt' : mapId.startsWith('a') ? 'park' : mapId.startsWith('u') ? 'sea' : mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
-  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s', sea: 'boss_u', park: 'boss_a', haunt: 'boss_c' }[theme];
+  const theme: 'forest' | 'ice' | 'desert' | 'sky' | 'sea' | 'park' | 'haunt' | 'clock' = mapId.startsWith('t') ? 'clock' : mapId.startsWith('c') ? 'haunt' : mapId.startsWith('a') ? 'park' : mapId.startsWith('u') ? 'sea' : mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
+  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s', sea: 'boss_u', park: 'boss_a', haunt: 'boss_c', clock: 'boss_t' }[theme];
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
@@ -1472,14 +1473,21 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
       case 'door': objs.push({ id: 'door', kind: 'lockdoor', ...at, lockText: ['門被鎖住了。', '要先找到小鑰匙。'] }); break;
       case 'barrier': objs.push({
         id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
-        lockText: theme === 'haunt' ? ['一面厚厚的古堡石牆擋住了路。', '好像有什麼機關可以打開它……']
+        lockText: theme === 'clock' ? ['一面厚厚的鐘塔石牆擋住了路。', '好像有什麼機關可以打開它……']
+          : theme === 'haunt' ? ['一面厚厚的古堡石牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'park' ? ['一面厚厚的鏡牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'sea' ? ['一道厚厚的珊瑚牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'sky' ? ['一道厚厚的雲牆擋住了路，牆上閃著星門的微光。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
-      case 'switch': objs.push(theme === 'haunt' ? {
+      case 'switch': objs.push(theme === 'clock' ? {
+        // 開關用 crank（ㄣ，練習戰的獎勵）；鐘塔入口 cave 要練習戰之後才出現，所以進得了鐘塔的人一定已經會 crank
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'winder_off', sprite2: 'winder_on', ability: 'crank', fx: 'crank',
+        lockText: ['一支好大的發條鑰匙，插在機器上，一動也不動。', '舌尖頂住上牙，用力轉一轉，也許能把它轉動……'],
+        hitText: ['夥伴舌尖頂住上牙「ㄣ」，用力轉動了大發條！', '遠處傳來「轟隆」一聲，好像有一面石牆打開了！'],
+        doneText: ['大發條穩穩地轉著，發出規律的聲音。'],
+      } : theme === 'haunt' ? {
         // 開關用 tickle（ㄟ，練習戰的獎勵）；古堡入口 cave 要練習戰之後才出現，所以進得了古堡的人一定已經會 tickle
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'pumpkin_dark', sprite2: 'pumpkin_lit', ability: 'tickle', fx: 'tickle',
         lockText: ['一盞暗暗的南瓜燈，掛在機關的架子上，一點光都沒有。', '把它搔得咯咯笑，也許能讓它亮起來……'],
@@ -1641,6 +1649,19 @@ MAPS.cc2 = {
   id: 'cc2', name: '古堡 2F', w: MAZES.cc2.w, h: MAZES.cc2.h, tiles: hauntRows(MAZES.cc2.rows), theme: 'valley', group: 'cc', skin: 'haunt',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('cc2', { map: 'cc1', x: MAZES.cc1.downArrive!.x, y: MAZES.cc1.downArrive!.y }, undefined),
+};
+
+// 鐘塔：地板用鐘塔地磚 f、牆用 W；出口回發條島鐘塔入口 cave (22,3) 的下方一格
+const clockRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'f').replace(/S/g, 'W'));
+MAPS.tc1 = {
+  id: 'tc1', name: '鐘塔 1F', w: MAZES.tc1.w, h: MAZES.tc1.h, tiles: clockRows(MAZES.tc1.rows), theme: 'valley', group: 'tc', skin: 'clock',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('tc1', { map: 't', x: 22, y: 4 }, { map: 'tc2', x: 2, y: 1 }),
+};
+MAPS.tc2 = {
+  id: 'tc2', name: '鐘塔 2F', w: MAZES.tc2.w, h: MAZES.tc2.h, tiles: clockRows(MAZES.tc2.rows), theme: 'valley', group: 'tc', skin: 'clock',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('tc2', { map: 'tc1', x: MAZES.tc1.downArrive!.x, y: MAZES.tc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {
