@@ -1436,3 +1436,12 @@ SKINS.park = {
   },
   blocked: new Set('#RO~hHiIkKDW'),
 };
+
+// 第九關（古堡）的外觀表：字元 → 貼圖 key；擋路的字元
+SKINS.haunt = {
+  key: {
+    '.': 't_haunt_stone', ',': 't_haunt_grass', '=': 't_haunt_path', f: 't_castle_floor', '#': 't_haunt_tree', R: 't_haunt_fence', '~': 't_haunt_moat', O: 't_haunt_pond',
+    h: 't_roof_pumpkin', H: 't_wall_pumpkin', i: 't_roof_inn_haunt', I: 't_wall_inn_haunt', k: 't_roof_shop_haunt', K: 't_wall_shop_haunt', D: 't_door', W: 't_castle_wall',
+  },
+  blocked: new Set('#RO~hHiIkKDW'),
+};
