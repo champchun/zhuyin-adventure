@@ -69,7 +69,7 @@
 
 ---
 
-## Task 1：五隻鐘塔敵人的像素圖
+## Task 1：四隻鐘塔敵人的像素圖
 
 **Files:** `src/gfx/monsterArt.ts`、`tests/clockenemyart.test.ts`（新）。
 
