@@ -1028,7 +1028,102 @@ function ghostcount(): Pix {
   return p;
 }
 
+// 齒輪怪：銅色圓齒輪身體（外圈小齒），中間是臉，下面四隻細細的小腳，友善
+const GBUG: Pal = { O: OUT, a: '#c98a3a', b: '#e8b45a', c: '#8f5a22', d: '#2a1a10', w: '#ffffff', p: '#ff9db8', k: '#6a4018' };
+function gearbug(): Pix {
+  const p = new Pix();
+  // 四隻細腳
+  for (const x of [8, 12, 18, 22]) { p.r(x, 22, 2, 5, 'c'); p.r(x - 1, 27, 4, 1, 'c'); }
+  // 外圈小齒（12 顆）
+  for (let i = 0; i < 12; i++) { const a = (i * Math.PI * 2) / 12; p.r(Math.round(15 + Math.cos(a) * 10.5), Math.round(13 + Math.sin(a) * 10.5), 3, 3, 'a'); }
+  ell(p, 16, 14, 9, 9, 'a');
+  // 內圈亮面與暗邊
+  ell(p, 16, 14, 7, 7, 'b'); p.r(9, 18, 14, 2, 'a'); p.r(11, 20, 10, 1, 'a');
+  // 臉：兩顆圓眼、腮紅、小笑嘴
+  p.r(11, 11, 3, 3, 'd'); p.r(18, 11, 3, 3, 'd'); p.r(11, 11, 1, 1, 'w'); p.r(18, 11, 1, 1, 'w');
+  p.r(9, 15, 2, 1, 'p'); p.r(21, 15, 2, 1, 'p');
+  p.r(13, 16, 6, 1, 'd'); p.r(12, 15, 1, 1, 'd'); p.r(19, 15, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 發條兵：鐵皮小兵，銅色身體、背後大發條鑰匙、紅臉頰、肩上扛小旗，站得直直的
+const WIND: Pal = { O: OUT, a: '#c98a3a', b: '#e8b45a', c: '#8f5a22', m: '#9aa4b4', n: '#6a7488', d: '#2a1a10', w: '#ffffff', p: '#ff7a7a', r: '#e8413a', y: '#ffd84a' };
+function windup(): Pix {
+  const p = new Pix();
+  // 背後發條鑰匙（左後方，兩個圓耳加把手）
+  p.r(4, 15, 6, 2, 'm'); p.r(2, 11, 4, 5, 'y'); p.r(2, 18, 4, 5, 'y'); p.r(3, 12, 2, 3, 'a'); p.r(3, 19, 2, 3, 'a');
+  p.r(5, 16, 1, 3, 'm');
+  // 腿與腳
+  p.r(11, 24, 3, 4, 'n'); p.r(18, 24, 3, 4, 'n'); p.r(10, 28, 5, 2, 'c'); p.r(17, 28, 5, 2, 'c');
+  // 身體
+  p.r(10, 15, 12, 9, 'a'); p.r(10, 15, 12, 2, 'b'); p.r(10, 22, 12, 2, 'c'); p.r(13, 18, 6, 3, 'b'); p.r(15, 19, 2, 1, 'c');
+  // 手臂（右手扛小旗）
+  p.r(8, 16, 2, 6, 'n'); p.r(22, 16, 2, 4, 'n');
+  p.r(25, 4, 1, 16, 'm'); p.t(26, 4, 26, 9, 29, 6, 'r');
+  // 頭（圓角鐵皮罐頭）
+  p.r(10, 5, 12, 10, 'm'); p.r(11, 4, 10, 1, 'm'); p.r(10, 5, 12, 2, 'w'); p.r(10, 13, 12, 2, 'n');
+  p.r(14, 2, 4, 2, 'r'); p.r(15, 1, 2, 1, 'r');
+  // 臉
+  p.r(12, 7, 2, 3, 'd'); p.r(18, 7, 2, 3, 'd'); p.r(12, 7, 1, 1, 'w'); p.r(18, 7, 1, 1, 'w');
+  p.r(10, 11, 3, 2, 'p'); p.r(19, 11, 3, 2, 'p'); p.r(14, 11, 4, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 鬧鐘怪：圓圓的紅色鬧鐘，頭頂兩顆小鈴鐺，白色鐘面當臉（指針是眼睛），兩隻小腳
+const ACLK: Pal = { O: OUT, a: '#e8413a', b: '#ff7a6a', c: '#a82230', w: '#ffffff', d: '#2a1a30', g: '#ffd84a', y: '#d8a82a', p: '#ff9db8' };
+function alarmclock(): Pix {
+  const p = new Pix();
+  // 小腳
+  p.r(9, 26, 4, 3, 'c'); p.r(19, 26, 4, 3, 'c'); p.r(8, 29, 6, 1, 'c'); p.r(18, 29, 6, 1, 'c');
+  // 頭頂兩顆小鈴鐺與小槌
+  ell(p, 9, 7, 3, 3, 'g'); ell(p, 23, 7, 3, 3, 'g'); p.r(8, 5, 2, 1, 'w'); p.r(22, 5, 2, 1, 'w'); p.r(6, 10, 6, 1, 'y'); p.r(20, 10, 6, 1, 'y');
+  p.r(15, 4, 2, 3, 'c'); p.r(13, 3, 6, 1, 'y');
+  // 紅色外殼與鐘面
+  ell(p, 16, 18, 10, 9, 'a'); ell(p, 16, 18, 8, 7, 'w');
+  p.r(7, 23, 3, 3, 'c'); p.r(22, 23, 3, 3, 'c'); p.r(9, 11, 4, 1, 'b');
+  // 鐘面刻度
+  for (const [x, y] of [[16, 12], [16, 24], [9, 18], [23, 18]]) p.r(x, y, 1, 1, 'd');
+  // 指針眼睛（兩顆圓眼，指針當瞳孔方向）、腮紅、微笑
+  p.r(11, 15, 3, 3, 'd'); p.r(18, 15, 3, 3, 'd'); p.r(12, 15, 1, 1, 'w'); p.r(19, 15, 1, 1, 'w');
+  p.r(10, 20, 3, 1, 'p'); p.r(20, 20, 3, 1, 'p');
+  p.r(14, 21, 4, 1, 'd'); p.r(13, 20, 1, 1, 'd'); p.r(18, 20, 1, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
+// 時光守護者（頭目）：高大的銅色鐘錶機器人，胸口大鐘（指針指十二點）、肩上兩個大齒輪、頭上小鐘罩、藍色發光眼睛、兩隻鐵手
+const TKEEP: Pal = { O: OUT, a: '#c98a3a', b: '#e8b45a', c: '#8f5a22', m: '#9aa4b4', n: '#6a7488', d: '#2a1a10', w: '#fbf6e8', u: '#4ab8ff', v: '#bfe8ff', g: '#ffd84a', r: '#e8413a' };
+function timekeeper(): Pix {
+  const p = new Pix();
+  // 雙腿與大腳
+  p.r(8, 23, 6, 4, 'n'); p.r(18, 23, 6, 4, 'n'); p.r(6, 27, 9, 3, 'c'); p.r(17, 27, 9, 3, 'c');
+  // 軀幹
+  p.r(7, 14, 18, 10, 'a'); p.r(7, 14, 18, 2, 'b'); p.r(7, 22, 18, 2, 'c'); p.r(8, 16, 2, 5, 'b'); p.r(22, 16, 2, 5, 'b'); p.r(5, 15, 2, 7, 'c'); p.r(25, 15, 2, 7, 'c');
+  // 肩上兩個大齒輪
+  for (const cx of [6, 25]) {
+    for (let i = 0; i < 8; i++) { const a = (i * Math.PI * 2) / 8; p.r(Math.round(cx - 1 + Math.cos(a) * 3), Math.round(14 + Math.sin(a) * 3), 3, 3, 'c'); }
+    ell(p, cx, 15, 3, 3, 'b'); ell(p, cx, 15, 1, 1, 'd');
+  }
+  // 兩隻鐵手（垂在身側）
+  p.r(2, 19, 4, 4, 'm'); ell(p, 4, 25, 3, 3, 'n'); p.r(26, 19, 4, 4, 'm'); ell(p, 27, 25, 3, 3, 'n');
+  // 胸口大鐘（指針指十二點）
+  ell(p, 16, 19, 4, 4, 'g'); ell(p, 16, 19, 3, 3, 'w');
+  p.r(16, 17, 1, 3, 'd'); p.r(16, 22, 1, 1, 'd'); p.r(13, 19, 1, 1, 'd'); p.r(19, 19, 1, 1, 'd');
+  // 頭（方圓機器人頭）
+  p.r(9, 5, 14, 9, 'm'); p.r(10, 4, 12, 1, 'm'); p.r(9, 5, 14, 2, 'w'); p.r(9, 12, 14, 2, 'n'); p.r(14, 13, 4, 2, 'n'); p.r(8, 7, 1, 5, 'n'); p.r(23, 7, 1, 5, 'n');
+  // 頭上小鐘罩
+  p.r(13, 1, 6, 3, 'v'); p.r(14, 0, 4, 1, 'v'); p.r(12, 3, 8, 1, 'g'); p.r(14, 1, 1, 1, 'w');
+  // 藍色發光眼睛與溫和嚴肅的嘴
+  p.r(12, 8, 3, 3, 'u'); p.r(17, 8, 3, 3, 'u'); p.r(12, 8, 1, 1, 'v'); p.r(17, 8, 1, 1, 'v');
+  p.r(11, 7, 5, 1, 'd'); p.r(16, 7, 5, 1, 'd'); p.r(14, 12, 4, 1, 'd');
+  p.outline('O');
+  return p;
+}
+
 export const MONSTER_ART: Record<string, { pix: () => Pix; pal: Pal }> = {
+  en_gearbug: { pix: gearbug, pal: GBUG }, en_windup: { pix: windup, pal: WIND }, en_alarmclock: { pix: alarmclock, pal: ACLK }, en_timekeeper: { pix: timekeeper, pal: TKEEP },
   en_batty: { pix: batty, pal: BATTY }, en_pumpkinmon: { pix: pumpkinmon, pal: PUMP }, en_skeleton: { pix: skeleton, pal: SKEL }, en_ghostcount: { pix: ghostcount, pal: GCNT },
   en_balloony: { pix: balloony, pal: BALN }, en_toysoldier: { pix: toysoldier, pal: TOYS }, en_jackbox: { pix: jackbox, pal: JACK }, en_clownking: { pix: clownking, pal: CKING },
   en_clownfish: { pix: clownfish, pal: CLOWN }, en_jellyfish: { pix: jellyfish, pal: JFISH }, en_urchin: { pix: urchin, pal: URCH }, en_octopus: { pix: octopus, pal: OCTO },
