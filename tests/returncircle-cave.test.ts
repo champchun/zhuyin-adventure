@@ -14,6 +14,7 @@ const CASES = [
   { f1: 'sc1', f2: 'sc2', flag: 'boss_s', at: [20, 16], to: { map: 'sh', x: 7, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle'] },
   { f1: 'uc1', f2: 'uc2', flag: 'boss_u', at: [6, 1], to: { map: 'uh', x: 19, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet'] },
   { f1: 'ac1', f2: 'ac2', flag: 'boss_a', at: [1, 20], to: { map: 'ah', x: 8, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet', 'shout', 'inflate'] },
+  { f1: 'cc1', f2: 'cc2', flag: 'boss_c', at: [2, 19], to: { map: 'ch', x: 5, y: 4 }, inn: 'door_inn', abilities: ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet', 'shout', 'inflate', 'chill', 'tickle'] },
 ] as const;
 
 // 魔法陣加進去之前的物件（id:x,y，產生順序）：circle 只能新增，其他一格都不能動
@@ -30,9 +31,11 @@ const BASE: Record<string, string[]> = {
   sc2: ['switch1:5,2', 'up:1,1', 'boss:19,16', 'chest_boss:20,17', 'rock_h:24,1', 'chest_h:23,2', 'barrier1:18,10', 'chest_1:11,11', 'chest_2:14,2', 'chest_3:14,17', 'mon1:23,5', 'mon2:11,14', 'mon3:26,14'],
   ac1: ['chest_key:11,11', 'up:1,1', 'down:20,5', 'rock_h:27,1', 'chest_h:26,2', 'door:21,16', 'chest_1:2,20', 'chest_2:26,8', 'chest_3:2,5', 'mon1:1,7', 'mon2:28,13', 'mon3:13,13', 'mon4:4,16'],
   ac2: ['switch1:23,2', 'up:1,1', 'boss:1,19', 'chest_boss:2,20', 'rock_h:27,1', 'chest_h:26,2', 'barrier1:10,12', 'chest_1:8,5', 'chest_2:2,5', 'chest_3:20,11', 'mon1:17,8', 'mon2:11,20', 'mon3:5,14'],
+  cc1: ['chest_key:20,5', 'up:1,1', 'down:2,11', 'rock_h:27,1', 'chest_h:26,2', 'door:25,18', 'chest_1:20,11', 'chest_2:29,17', 'chest_3:17,17', 'mon1:10,16', 'mon2:7,1', 'mon3:19,19', 'mon4:22,7'],
+  cc2: ['switch1:5,2', 'up:1,1', 'boss:1,19', 'chest_boss:2,20', 'rock_h:27,1', 'chest_h:26,2', 'barrier1:25,12', 'chest_1:2,8', 'chest_2:11,8', 'chest_3:23,2', 'mon1:17,8', 'mon2:8,17', 'mon3:23,14'],
 };
 
-describe('回家魔法陣：產生洞窟二樓（gc2／xc2／zc2／sc2／uc2／ac2）', () => {
+describe('回家魔法陣：產生洞窟二樓（gc2／xc2／zc2／sc2／uc2／ac2／cc2）', () => {
   for (const c of CASES) {
     const m = MAPS[c.f2];
     const circles = m.objects.filter((o) => o.id === 'circle');
@@ -85,12 +88,12 @@ describe('回家魔法陣：產生洞窟二樓（gc2／xc2／zc2／sc2／uc2／a
 });
 
 // 打倒頭目後的可達：孩子開打時站在頭目的某個鄰格，打贏後不能被魔法陣關在口袋裡
-describe('回家魔法陣：不封路（b、p、d、gc2、xc2、zc2、sc2、uc2、ac2）', () => {
+describe('回家魔法陣：不封路（b、p、d、gc2、xc2、zc2、sc2、uc2、ac2、cc2）', () => {
   const ABIL: Record<string, string[]> = {
     b: ['blast', 'gust'], p: ['blast', 'gust', 'hum', 'fog'], d: ['blast', 'gust', 'hum', 'fog', 'drum', 'splash'],
-    gc2: [...CASES[0].abilities], xc2: [...CASES[1].abilities], zc2: [...CASES[2].abilities], sc2: [...CASES[3].abilities], uc2: [...CASES[4].abilities], ac2: [...CASES[5].abilities],
+    gc2: [...CASES[0].abilities], xc2: [...CASES[1].abilities], zc2: [...CASES[2].abilities], sc2: [...CASES[3].abilities], uc2: [...CASES[4].abilities], ac2: [...CASES[5].abilities], cc2: [...CASES[6].abilities],
   };
-  const FLAG: Record<string, string> = { b: 'boss_b', p: 'boss_p', d: 'boss_d', gc2: 'boss_g', xc2: 'boss_x', zc2: 'boss_z', sc2: 'boss_s', uc2: 'boss_u', ac2: 'boss_a' };
+  const FLAG: Record<string, string> = { b: 'boss_b', p: 'boss_p', d: 'boss_d', gc2: 'boss_g', xc2: 'boss_x', zc2: 'boss_z', sc2: 'boss_s', uc2: 'boss_u', ac2: 'boss_a', cc2: 'boss_c' };
   for (const id of Object.keys(ABIL)) {
     const m = MAPS[id];
     const flags: Record<string, boolean> = { [FLAG[id]]: true, [`g:${id}:switch1`]: true };

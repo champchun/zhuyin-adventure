@@ -1326,6 +1326,7 @@ MAPS.c = {
     { id: 'ghostdoor', kind: 'gimmick', x: 14, y: 16, sprite: 'ghost_door', sprite2: 'ghost_door_open', ability: 'hoot', fx: 'hoot', lockText: ['一扇緊閉的紫色鬼門，怎麼敲都沒人應。', '要是學會貓頭鷹的叫聲，也許能把它叫開……'], hitText: ['夥伴嘴巴嘟起「ㄡ」，像貓頭鷹一樣叫了一聲！', '鬼門開了一條縫，小幽靈探出頭來，還留下了一個寶箱！'], doneText: ['鬼門開著，裡面傳來嘻嘻的笑聲。'] },
     { id: 'chest_door', kind: 'chest', x: 14, y: 17, item: 'bigpotion', showIf: 'g:c:ghostdoor' },
     { id: 'sign2', kind: 'sign', x: 8, y: 6, text: ['前面是古堡的方向。', '古堡裡又暗又大，很容易迷路，要先練習完再進去喔。'] },
+    { id: 'cave', kind: 'stairs', x: 10, y: 3, to: { map: 'cc1', x: 2, y: 1 }, label: '古堡', showIf: 'cPractice' },
     // 吊橋：缺口那一格（護城河中間）。ㄠ 要打倒幽靈伯爵才學到，所以對岸的寶箱是幽靈伯爵之後才拿得到
     { id: 'drawbridge', kind: 'gimmick', x: 19, y: 10, sprite: 'drawbridge_gap', sprite2: 'drawbridge', ability: 'howl', fx: 'howl', passable: true, lockText: ['護城河上的吊橋壞了，過不去。', '要是有人用長長的嗷嗚聲把它吹下來就好了……'], hitText: ['夥伴嘴巴圓圓往前「ㄠ」，像小狼一樣嗷了一聲！', '吊橋「喀啦喀啦」地放了下來，可以走到對岸了！'] },
     { id: 'chest_d1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
@@ -1334,16 +1335,16 @@ MAPS.c = {
 };
 
 // ───────── 迷宮洞窟（回音洞窟 gc、冰晶洞窟 xc、熔岩洞窟 zc、星塔 sc）：由 tools/gen-dungeon.mjs 產生（兩層，每層 31×22）─────────
-type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2';
+type MazeId = 'gc1' | 'gc2' | 'xc1' | 'xc2' | 'zc1' | 'zc2' | 'sc1' | 'sc2' | 'uc1' | 'uc2' | 'ac1' | 'ac2' | 'cc1' | 'cc2';
 /** 頭目後的回家魔法陣：洞窟 id 前綴 → 通往該關主島旅館門外一格（單向出口） */
 const CIRCLE_HOME: Record<string, NonNullable<MapObj['to']>> = {
-  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 }, uc: { map: 'uh', x: 19, y: 4 }, ac: { map: 'ah', x: 8, y: 4 },
+  gc: { map: 'gh', x: 6, y: 4 }, xc: { map: 'xh', x: 6, y: 7 }, zc: { map: 'zh', x: 5, y: 5 }, sc: { map: 'sh', x: 7, y: 4 }, uc: { map: 'uh', x: 19, y: 4 }, ac: { map: 'ah', x: 8, y: 4 }, cc: { map: 'ch', x: 5, y: 4 },
 };
 /** 把產生器輸出的物件角色換成遊戲裡的物件定義 */
 function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undefined): MapObj[] {
   const f = MAZES[mapId];
-  const theme: 'forest' | 'ice' | 'desert' | 'sky' | 'sea' | 'park' = mapId.startsWith('a') ? 'park' : mapId.startsWith('u') ? 'sea' : mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
-  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s', sea: 'boss_u', park: 'boss_a' }[theme];
+  const theme: 'forest' | 'ice' | 'desert' | 'sky' | 'sea' | 'park' | 'haunt' = mapId.startsWith('c') ? 'haunt' : mapId.startsWith('a') ? 'park' : mapId.startsWith('u') ? 'sea' : mapId.startsWith('x') ? 'ice' : mapId.startsWith('z') ? 'desert' : mapId.startsWith('s') ? 'sky' : 'forest';
+  const boss = { forest: 'boss_g', ice: 'boss_x', desert: 'boss_z', sky: 'boss_s', sea: 'boss_u', park: 'boss_a', haunt: 'boss_c' }[theme];
   const objs: MapObj[] = [];
   const counter: Record<string, number> = {};
   const nth = (r: string) => (counter[r] = (counter[r] ?? 0) + 1);
@@ -1356,13 +1357,20 @@ function mazeObjects(mapId: MazeId, up: MapObj['to'], down: MapObj['to'] | undef
       case 'door': objs.push({ id: 'door', kind: 'lockdoor', ...at, lockText: ['門被鎖住了。', '要先找到小鑰匙。'] }); break;
       case 'barrier': objs.push({
         id: 'barrier1', kind: 'barrier', ...at, hideIf: `g:${mapId}:switch1`,
-        lockText: theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
+        lockText: theme === 'haunt' ? ['一面厚厚的古堡石牆擋住了路。', '好像有什麼機關可以打開它……']
+          : theme === 'ice' ? ['一道厚厚的冰牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'desert' ? ['一道熔岩閘門擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'park' ? ['一面厚厚的鏡牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'sea' ? ['一道厚厚的珊瑚牆擋住了路。', '好像有什麼機關可以打開它……']
           : theme === 'sky' ? ['一道厚厚的雲牆擋住了路，牆上閃著星門的微光。', '好像有什麼機關可以打開它……'] : ['一道石牆擋住了路。', '好像有什麼機關可以打開它……'],
       }); break;
-      case 'switch': objs.push(theme === 'park' ? {
+      case 'switch': objs.push(theme === 'haunt' ? {
+        // 開關用 tickle（ㄟ，練習戰的獎勵）；古堡入口 cave 要練習戰之後才出現，所以進得了古堡的人一定已經會 tickle
+        id: 'switch1', kind: 'gimmick', ...at, sprite: 'pumpkin_dark', sprite2: 'pumpkin_lit', ability: 'tickle', fx: 'tickle',
+        lockText: ['一盞暗暗的南瓜燈，掛在機關的架子上，一點光都沒有。', '把它搔得咯咯笑，也許能讓它亮起來……'],
+        hitText: ['夥伴嘴角一拉「ㄟ」，咯咯地笑了起來，南瓜燈亮了！', '遠處傳來「轟隆」一聲，好像有一面石牆打開了！'],
+        doneText: ['南瓜燈亮亮的，笑得好開心。'],
+      } : theme === 'park' ? {
         // 開關用 shout（ㄚ，練習戰的獎勵）；鏡子迷宮入口 cave 要練習戰之後才出現，所以進得了迷宮的人一定已經會 shout
         id: 'switch1', kind: 'gimmick', ...at, sprite: 'gong', sprite2: 'gong_hit', ability: 'shout', fx: 'shout',
         lockText: ['一面大銅鑼，掛在機關的架子上，鑼面靜靜的。', '張大嘴巴大喊一聲，也許能把它震響……'],
@@ -1505,6 +1513,19 @@ MAPS.ac2 = {
   id: 'ac2', name: '鏡子迷宮 2F', w: MAZES.ac2.w, h: MAZES.ac2.h, tiles: parkRows(MAZES.ac2.rows), theme: 'valley', group: 'ac', skin: 'park',
   start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
   objects: mazeObjects('ac2', { map: 'ac1', x: MAZES.ac1.downArrive!.x, y: MAZES.ac1.downArrive!.y }, undefined),
+};
+
+// 古堡：地板用古堡地磚 f、牆用 W；出口回月光墓園島古堡入口 cave (10,3) 的下方一格
+const hauntRows = (rows: string[]) => rows.map((r) => r.replace(/:/g, 'f').replace(/S/g, 'W'));
+MAPS.cc1 = {
+  id: 'cc1', name: '古堡 1F', w: MAZES.cc1.w, h: MAZES.cc1.h, tiles: hauntRows(MAZES.cc1.rows), theme: 'valley', group: 'cc', skin: 'haunt',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('cc1', { map: 'c', x: 10, y: 4 }, { map: 'cc2', x: 2, y: 1 }),
+};
+MAPS.cc2 = {
+  id: 'cc2', name: '古堡 2F', w: MAZES.cc2.w, h: MAZES.cc2.h, tiles: hauntRows(MAZES.cc2.rows), theme: 'valley', group: 'cc', skin: 'haunt',
+  start: { x: 2, y: 1 }, respawn: { x: 2, y: 1 },
+  objects: mazeObjects('cc2', { map: 'cc1', x: MAZES.cc1.downArrive!.x, y: MAZES.cc1.downArrive!.y }, undefined),
 };
 
 export const TILE_KEY: Record<string, string> = {

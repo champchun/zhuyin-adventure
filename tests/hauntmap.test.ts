@@ -3,6 +3,7 @@ import { BATTLES, LEVELS } from '../src/data/levels';
 import { MAPS, isBlockedTile, objectDepth, TERRAIN_DEPTH } from '../src/data/maps';
 import type { MapObj } from '../src/data/maps';
 import { reachReport } from '../src/core/dungeon';
+import { MAZES } from '../src/data/mazes';
 import { GIVER_HUBS } from '../src/core/giver';
 import { defeatSpot, markArrival } from '../src/core/travel';
 import { HAUNT_TEXTURES } from '../src/gfx/hauntArt';
@@ -178,5 +179,78 @@ describe('月光墓園島 c', () => {
   it('被打倒送回南瓜鎮：掃帚只通南瓜鎮', () => {
     expect(c.objects.filter((o) => o.kind === 'dock').map((o) => o.dockTo!.map)).toEqual(['ch']);
     expect(defeatSpot('ch')).toEqual({ map: 'ch', x: ch.respawn.x, y: ch.respawn.y });
+  });
+});
+
+describe('古堡（產生的迷宮）', () => {
+  const cc1 = MAPS.cc1, cc2 = MAPS.cc2;
+  // 練習戰（cpractice）之後的能力；howl、hoot 要到 boss_c 之後才有，所以古堡裡不能依賴它們
+  const afterPractice = ['blast', 'gust', 'hum', 'fog', 'web', 'gulp', 'roar', 'sun', 'zip', 'spike', 'whistle', 'glow', 'jet', 'pop', 'shout', 'inflate', 'honk', 'cheer', 'drum', 'splash', 'nasal', 'stream', 'croak', 'knock', 'breath', 'snow', 'slide', 'freeze', 'chill', 'tickle'];
+  const beforePractice = afterPractice.filter((x) => x !== 'chill' && x !== 'tickle');
+  const start = { map: 'cc1', x: 2, y: 1 };
+  it('兩層一起走：用練習戰之後的能力，沒有走不到的地板與物件（含頭目），鑰匙剛好用完；不含 howl、hoot', () => {
+    const r = reachReport([cc1, cc2], start, afterPractice);
+    expect(r.unreachableFloor, '有走不到的地板').toEqual([]);
+    expect(r.unreachableObjects, '有走不到的物件').toEqual([]);
+    expect(r.keysLeft).toBe(0);
+    expect(afterPractice).not.toContain('howl');
+    expect(afterPractice).not.toContain('hoot');
+  });
+  it('沒有 tickle：二樓石牆後（含頭目與頭目寶箱）走不到；沒有 blast：隱藏小密室走不到', () => {
+    const noTickle = reachReport([cc1, cc2], start, afterPractice.filter((x) => x !== 'tickle'));
+    const bossAt = cc2.objects.find((o) => o.id === 'boss')!, chestAt = cc2.objects.find((o) => o.id === 'chest_boss')!;
+    expect(noTickle.unreachableFloor).toContain(`cc2:${bossAt.x},${bossAt.y}`);
+    expect(noTickle.unreachableFloor).toContain(`cc2:${chestAt.x},${chestAt.y}`);
+    expect(reachReport([cc1, cc2], start, afterPractice.filter((x) => x !== 'blast')).unreachableFloor.length).toBeGreaterThan(0);
+  });
+  it('守門（避免死結）：tickle 只來自練習戰；boss_c 的獎勵 howl、hoot 不是通往 boss_c 之路所需；cave 要練習戰之後才出現', () => {
+    expect(BATTLES.cpractice.reward.abilities).toContain('tickle');
+    const bossAt = cc2.objects.find((o) => o.id === 'boss')!;
+    const bossCell = `cc2:${bossAt.x},${bossAt.y}`;
+    expect(reachReport([cc1, cc2], start, beforePractice).unreachableFloor).toContain(bossCell);
+    expect(reachReport([cc1, cc2], start, afterPractice).unreachableFloor).not.toContain(bossCell);
+    const cave = c.objects.find((o) => o.id === 'cave')!;
+    expect(cave).toMatchObject({ kind: 'stairs', x: 10, y: 3, label: '古堡', showIf: 'cPractice' });
+    expect(cave.to).toEqual({ map: 'cc1', x: 2, y: 1 });
+    for (const m of Object.values(MAPS)) for (const o of m.objects) if (o.to?.map === 'cc1' && m.id !== 'cc2') expect(o.showIf, `${m.id}/${o.id}`).toBe('cPractice');
+  });
+  it('出口落在 cave 下方一格（可走、沒有物件）；兩層共用 group cc；31×22；用 haunt skin 與古堡地形', () => {
+    const exit = cc1.objects.find((o) => o.id === 'up')!.to!;
+    expect(exit).toEqual({ map: 'c', x: 10, y: 4 });
+    expect(walk(c, exit.x, exit.y)).toBe(true);
+    expect(c.objects.some((o) => o.x === exit.x && o.y === exit.y)).toBe(false);
+    expect(walk(c, 10, 3)).toBe(true);
+    expect(MAZES.cc1.w).toBe(31);
+    for (const m of [cc1, cc2]) {
+      expect([m.w, m.h, m.group, m.skin]).toEqual([31, 22, 'cc', 'haunt']);
+      const t = m.tiles.join('');
+      expect(t).toMatch(/f/); expect(t).toMatch(/W/); expect(t).not.toMatch(/[:S]/);
+    }
+    expect(cc1.objects.find((o) => o.id === 'down')!.to!.map).toBe('cc2');
+    expect(cc2.objects.find((o) => o.id === 'up')!.to!.map).toBe('cc1');
+  });
+  it('二樓機關：南瓜燈 tickle（ㄟ）；頭目 boss_c；頭目寶箱 showIf boss_c；回家魔法陣回南瓜鎮旅館門外', () => {
+    const sw = cc2.objects.find((o) => o.id === 'switch1')!;
+    expect(sw).toMatchObject({ kind: 'gimmick', ability: 'tickle', fx: 'tickle', sprite: 'pumpkin_dark', sprite2: 'pumpkin_lit' });
+    expect(cc2.objects.find((o) => o.id === 'barrier1')!.hideIf).toBe('g:cc2:switch1');
+    const boss = cc2.objects.find((o) => o.id === 'boss')!;
+    expect(boss).toMatchObject({ battle: 'boss_c', hideIf: 'boss_c' });
+    expect(cc2.objects.find((o) => o.id === 'chest_boss')!.showIf).toBe('boss_c');
+    const circle = cc2.objects.find((o) => o.id === 'circle')!;
+    expect(circle).toMatchObject({ kind: 'stairs', sprite: 'magic_circle', showIf: 'boss_c' });
+    const inn = ch.objects.find((o) => o.id === 'door_inn')!;
+    expect(circle.to).toEqual({ map: 'ch', x: inn.x, y: inn.y + 1 });
+    expect(walk(ch, circle.to!.x, circle.to!.y)).toBe(true);
+  });
+  it('怪物 id 不和獎勵旗標撞名，戰鬥存在且數量對得上，用古堡怪', () => {
+    const names: string[] = [];
+    for (const m of [cc1, cc2]) for (const o of m.objects.filter((p) => p.kind === 'monster' && p.id !== 'boss')) {
+      expect(o.id).toMatch(/^mon[0-9]+$/);
+      expect(BATTLES[o.battle!], o.battle).toBeDefined();
+      expect(BATTLES[o.battle!].reward.flag).toBe(`m:${m.id}:${o.id}`);
+      expect(['batty', 'pumpkinmon', 'skeleton']).toContain(BATTLES[o.battle!].enemy);
+      names.push(o.battle!);
+    }
+    expect(names.sort()).toEqual(['cc1m', 'cc1m2', 'cc1m3', 'cc1m4', 'cc2m', 'cc2m2', 'cc2m3']);
   });
 });
