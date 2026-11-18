@@ -80,7 +80,7 @@
 
 ## 最終關收尾
 
-- 打倒 `boss_t` 後自動給免費稱號 `title_master`「注音大師」（`RewardDef.free`，不在星星婆婆的兌換清單），設為目前稱號（最高成就，覆蓋原本稱號），並播第二階段結局台詞 `ENDING2_LINES`，旗標 `ending2Seen`。
+- 打倒 `boss_t` 後自動給免費稱號 `title_zhuyin_master`「注音大師」（`RewardDef.free`，不在星星婆婆的兌換清單），設為目前稱號（最高成就，覆蓋原本稱號），並播第二階段結局台詞 `ENDING2_LINES`，旗標 `ending2Seen`。
 - 純邏輯放新檔 `src/core/ending2.ts`（`ENDING2_TITLE_ID`、`needsEnding2`、`grantEnding2`，比照 `ending.ts`，含存檔中途關閉的補發）；World 在頭目獎勵結束後呼叫，並在載入存檔時補發（比照 `needsEnding` 的處理方式）。
 - 結局台詞（草稿，使用者潤飾）：全部 37 個注音都認識了、夥伴們的祝賀、「注音大師」的頒發，語氣溫暖；不說「所有的注音」以外的不實內容（本關是最終關，可以說全部學會了；其他關卡的台詞仍不得這樣說）。
 - 結局後回到大廳，沒有新內容；之後仍可重玩各關。
@@ -98,7 +98,7 @@
 ## 資料與程式
 
 - `maps.ts`：新增 `th`、`th_inn`、`th_shop`、`t`、`tc1`、`tc2`；大廳 `gate10` 拆成 barrier＋stairs；`SKINS.clock`；`CIRCLE_HOME` 加 `tc`；`MazeId` 加 `tc1`／`tc2`；`MapObj.vehicle` 加 `'cablecar'`；`MapObj.fx` 與 `MoveDef.fx` 加五個新特效。
-- `monsters.ts`：五個招式（三隻初始夥伴的 `moves` 都加）、五種敵人。`levels.ts`：`LEVELS.t`、新戰鬥、`ENDING2_LINES`、故事台詞。`rewards.ts`：`title_master`。
+- `monsters.ts`：五個招式（三隻初始夥伴的 `moves` 都加）、五種敵人。`levels.ts`：`LEVELS.t`、新戰鬥、`ENDING2_LINES`、故事台詞。`rewards.ts`：`title_zhuyin_master`。
 - `src/core/giver.ts`：`GIVER_HUBS` 加 `'th'`；`tests/giver.test.ts`、`tests/granny.test.ts` 同步。
 - `src/gfx`：新檔 `clockArt.ts`（比照 `hauntArt.ts`）：地形、物件圖樣（齒輪停／轉、八音盒靜／響、齒輪橋缺口／橋、鐘樓大門關／開、鑰匙孔鎖／轉開、大發條 暗／亮、纜車、鐘塔大門）、五隻敵人像素圖（含 `en_` 圖並在 `monsterArt.ts` 註冊）。缺口與橋的圖樣畫滿整格。
 - `tools/gen-dungeon.mjs`（及 `.d.mts`）：新增 `tc1`／`tc2`（種子 107、109）。
@@ -107,8 +107,8 @@
 
 ## 測試
 
-- **單元**：比照第九關；加上 `tests/ending2.test.ts`（`needsEnding2`／`grantEnding2`：沒打倒頭目不發、發一次、稱號設為目前稱號、已發過不重發、存檔補發）；`title_master` 是免費稱號且不在星星婆婆的兌換清單；`boss_t` 的出題範圍涵蓋全部 16 個韻母；大廳 `gate10` 有無 `boss_c` 時的可見性；`tPractice` 之前台詞、告示牌與機關提示不出現 ㄤㄥㄦ；`strokes.test.ts` 的 EXPECTED 與互動物件數同步。
-- **端對端**：新增 `lv10` 段（`SECTION=lv10`），比照 `lv9`，打完頭目後斷言 `ending2Seen`、稱號 `title_master`；`e2e.yml` 矩陣加 `lv10`；不併入 `all`。不在本機跑，只做 `node --check`。
+- **單元**：比照第九關；加上 `tests/ending2.test.ts`（`needsEnding2`／`grantEnding2`：沒打倒頭目不發、發一次、稱號設為目前稱號、已發過不重發、存檔補發）；`title_zhuyin_master` 是免費稱號且不在星星婆婆的兌換清單；`boss_t` 的出題範圍涵蓋全部 16 個韻母；大廳 `gate10` 有無 `boss_c` 時的可見性；`tPractice` 之前台詞、告示牌與機關提示不出現 ㄤㄥㄦ；`strokes.test.ts` 的 EXPECTED 與互動物件數同步。
+- **端對端**：新增 `lv10` 段（`SECTION=lv10`），比照 `lv9`，打完頭目後斷言 `ending2Seen`、稱號 `title_zhuyin_master`；`e2e.yml` 矩陣加 `lv10`；不併入 `all`。不在本機跑，只做 `node --check`。
 - **手動確認**：新美術、迷宮、結局台詞、招式動畫，交給使用者實際玩過後回饋。
 
 ## 風險

@@ -14,7 +14,7 @@
 - 不得改變第 0～9 關任何地圖的地形、物件、行為，唯一例外是大廳 `gate10`（barrier 拆成 barrier＋stairs）；`dc1`／`dc2` 完全不動；既有十四個迷宮（gc／xc／zc／sc／uc／ac／cc）在 `src/data/mazes.ts` 的內容一格都不能變（重新產生後 `git diff src/data/mazes.ts` 只能新增 `tc1`、`tc2` 與型別宣告）。`mazes.ts` 只能由 `node tools/gen-dungeon.mjs` 產生，不手改。
 - **不得再往預設 skin 的 `TILE_KEY`／`BLOCKED_TILES` 加字元**；本關新地圖（`th`、`t`、`tc1`、`tc2`）都設 `skin: 'clock'`（室內 `th_inn`／`th_shop` 沿用預設室內地形、不設 skin）。查地形一律用 `tileKeyOf(map, ch)`／`isBlockedTile(map, ch)`。
 - **不要留下「暫時略過」的測試**：任何既有測試因新資料失敗，就依它自己的規則補資料，不放寬規則、不加暫時 `continue`。
-- 開工前先 `grep` 確認下列 id 在 repo 裡都還沒被用過：地圖 `th`／`t`／`tc1`／`tc2`／`th_inn`／`th_shop`、招式與能力 `chime`／`crank`／`bark`／`rumble`／`curl`、戰鬥 `tpractice`／`t1`～`t3`／`boss_t`、敵人 `gearbug`／`windup`／`alarmclock`／`timekeeper`／`clockdummy`、`LEVELS` 鍵 `t`、稱號 `title_master`、貼圖 key。若撞名，停下來回報。
+- 開工前先 `grep` 確認下列 id 在 repo 裡都還沒被用過：地圖 `th`／`t`／`tc1`／`tc2`／`th_inn`／`th_shop`、招式與能力 `chime`／`crank`／`bark`／`rumble`／`curl`、戰鬥 `tpractice`／`t1`～`t3`／`boss_t`、敵人 `gearbug`／`windup`／`alarmclock`／`timekeeper`／`clockdummy`、`LEVELS` 鍵 `t`、稱號 `title_zhuyin_master`、貼圖 key。若撞名，停下來回報。
 - 不要在本機跑端對端（只能 `node --check tests/e2e/play.mjs`）。vitest 偶爾出現「Unhandled Error」且測試數變少，重跑即可（最多三次）。
 - 任何 `say()`／modal 要保證 `ui.blocking` 成對；`say([])` 不可為空。
 - 不得把未驗證的 TTS 當標準注音單音；沒有音檔時 tier 2／3 降級成看符號配對。
@@ -65,7 +65,7 @@
 | `W` | `t_tower_wall` | 鐘塔石牆 | 是 |
 
 - 物件貼圖 key：`gear_stuck`、`gear_turning`（大齒輪 停／轉）、`musicbox_still`、`musicbox_play`（八音盒 靜／響）、`gearbridge_gap`、`gearbridge`（水溝缺口／齒輪橋，**畫滿整格**）、`belldoor`、`belldoor_open`（鐘樓大門 關／開）、`keyhole`、`keyhole_open`（鑰匙孔 鎖住／轉開）、`winder_off`、`winder_on`（大發條 停／轉，鐘塔二樓開關用）、`cablecar`（熱氣纜車，纜車站用）、`clock_gate`（鐘塔大門，大廳與主島通道）。
-- 最終關：稱號 `title_master`（`RewardDef`：`{ id: 'title_master', type: 'title', cost: 0, name: '注音大師', icon: '👑', free: true }`）、旗標 `ending2Seen`。
+- 最終關：稱號 `title_zhuyin_master`（注意：`title_master` 已是星星婆婆商店的「注音小達人」，不得動它；`RewardDef`：`{ id: 'title_zhuyin_master', type: 'title', cost: 0, name: '注音大師', icon: '👑', free: true }`）、旗標 `ending2Seen`。
 
 ---
 
@@ -300,16 +300,16 @@ const clockIsle = (() => {
 
 **Files:** `src/core/ending2.ts`（新）、`src/data/rewards.ts`、`src/data/levels.ts`（`ENDING2_LINES`）、`src/scenes/World.ts`、`tests/ending2.test.ts`（新）、`tests/rewards.test.ts`／`tests/granny.test.ts` 等涉及稱號清單的既有測試（依各自規則調整，不放寬）。
 
-**Interfaces:** Produces：`ENDING2_TITLE_ID = 'title_master'`、`needsEnding2(s)`、`grantEnding2(s)`（簽名比照 `src/core/ending.ts`：`needsEnding2` 在 `flags.boss_t` 為真且 `flags.ending2Seen` 不為真時回傳 true；`grantEnding2` 回傳 `{ granted: boolean }`，發放時把 `title_master` 加進 `titles`（沒有才加）、`title` 設為 `title_master`、`flags.ending2Seen = true`）；`RewardDef` `title_master`；`ENDING2_LINES: { who: string; text: string }[]`。
+**Interfaces:** Produces：`ENDING2_TITLE_ID = 'title_zhuyin_master'`、`needsEnding2(s)`、`grantEnding2(s)`（簽名比照 `src/core/ending.ts`：`needsEnding2` 在 `flags.boss_t` 為真且 `flags.ending2Seen` 不為真時回傳 true；`grantEnding2` 回傳 `{ granted: boolean }`，發放時把 `title_zhuyin_master` 加進 `titles`（沒有才加）、`title` 設為 `title_zhuyin_master`、`flags.ending2Seen = true`）；`RewardDef` `title_zhuyin_master`；`ENDING2_LINES: { who: string; text: string }[]`。
 
 - [ ] **Step 1：寫測試（先看它失敗）**
-  - `tests/ending2.test.ts`：照抄 `tests/ending.test.ts`（若存在；沒有就依 `src/core/ending.ts` 自行寫）的結構：沒打倒 `boss_t` 時 `needsEnding2` 為 false、`grantEnding2` 不發（`granted: false`、`titles`／`title` 不變）；打倒後 `needsEnding2` 為 true，`grantEnding2` 回傳 `granted: true`、`titles` 含 `title_master`、`title === 'title_master'`、`flags.ending2Seen === true`；再呼叫一次 `granted: false` 且 `titles` 沒有重複；已經有別的稱號（含 `title_hero`）時，發放後目前稱號被覆蓋為 `title_master` 但 `title_hero` 仍在 `titles`；`titles` 為 `undefined` 的舊存檔不會丟例外；`boss_s` 與 `endingSeen` 的第一階段結局完全不受影響（`grantEnding` 的既有測試不得改）。
-  - 稱號資料：`REWARDS` 含 `title_master`（`type: 'title'`、`cost: 0`、`free: true`、`name: '注音大師'`、`icon: '👑'`），且**不在星星婆婆的兌換清單**（比照 `title_hero` 的既有測試規則）。
+  - `tests/ending2.test.ts`：照抄 `tests/ending.test.ts`（若存在；沒有就依 `src/core/ending.ts` 自行寫）的結構：沒打倒 `boss_t` 時 `needsEnding2` 為 false、`grantEnding2` 不發（`granted: false`、`titles`／`title` 不變）；打倒後 `needsEnding2` 為 true，`grantEnding2` 回傳 `granted: true`、`titles` 含 `title_zhuyin_master`、`title === 'title_zhuyin_master'`、`flags.ending2Seen === true`；再呼叫一次 `granted: false` 且 `titles` 沒有重複；已經有別的稱號（含 `title_hero`）時，發放後目前稱號被覆蓋為 `title_zhuyin_master` 但 `title_hero` 仍在 `titles`；`titles` 為 `undefined` 的舊存檔不會丟例外；`boss_s` 與 `endingSeen` 的第一階段結局完全不受影響（`grantEnding` 的既有測試不得改）。
+  - 稱號資料：`REWARDS` 含 `title_zhuyin_master`（`type: 'title'`、`cost: 0`、`free: true`、`name: '注音大師'`、`icon: '👑'`），且**不在星星婆婆的兌換清單**（比照 `title_hero` 的既有測試規則）。
   - `ENDING2_LINES`：至少 6 句、每句有 `who` 與非空 `text`；其中一句提到「注音大師」；最後一句是 `who: '旁白'`；**不得提到「世界地圖」或「新的冒險」之類暗示還有下一階段的話**（這是最終結局）。
   執行 `npx vitest run tests/ending2.test.ts`，預期失敗。
 - [ ] **Step 2：實作**
   - `src/core/ending2.ts`：比照 `ending.ts`（純函式、不依賴 Phaser、`EndingSave` 型別相同）。
-  - `src/data/rewards.ts`：在 `title_hero` 旁加 `{ id: 'title_master', type: 'title', cost: 0, name: '注音大師', icon: '👑', free: true }`。
+  - `src/data/rewards.ts`：在 `title_hero` 旁加 `{ id: 'title_zhuyin_master', type: 'title', cost: 0, name: '注音大師', icon: '👑', free: true }`。
   - `src/data/levels.ts`：在 `ENDING_LINES` 之後加（台詞草稿，使用者之後潤飾）：
 
 ```ts
@@ -336,8 +336,8 @@ export const ENDING2_LINES: { who: string; text: string }[] = [
 
 **Files:** `tests/e2e/play.mjs`、`.github/workflows/e2e.yml`、`AGENTS.md`、`README.md`。
 
-- [ ] **Step 1：端對端 `lv10` 段** 在 `tests/e2e/play.mjs` 比照 **`lv9`** 新增 `SECTION=lv10`（**不併入 `all`**）：更新檔頭註解；「分段」補進度的區塊：`lv10` 要補齊 `lv9` 的全部進度再加第九關結果（`cEntered`、`cPractice`、`boss_c`、`visited:ch`、`visited:c`、能力 `chill`／`tickle`／`howl`／`hoot`）；然後新增 `lv10` 段：從起始村走到 `world_map`、大廳、`gate10_open`（沒有 `boss_c` 時是擋路的 barrier，所以進度一定要補 `boss_c`）、齒輪鎮、搭熱氣纜車（`cablecar`，選「出發」，比照 `lv9` 的掃帚）、發條島（發條人偶練習戰、大齒輪 `chime`、八音盒 `crank`、拿兩個寶箱）、`cave`（`tPractice` 之後才出現）、鐘塔（鎖門、裂石 `rock_h`、二樓大發條 `switch1`，用 `lv9` 同一組走迷宮的 helper）、時光守護者護盾戰（`boss`）；斷言旗標 `tEntered`、`tPractice`、`boss_t`、`ending2Seen`，能力 `chime`／`crank`／`bark`／`rumble`／`curl`，稱號 `title_master` 為目前稱號（`G.save.title`），拿頭目寶箱，踩 `circle` 後落在 `th` 旅館門外 `(21,4)`，並走完齒輪橋（`gearbridge`，`bark`）、鐘樓大門（`belldoor`，`rumble`）與鑰匙孔（`keyhole`，`curl`）。結局台詞（`say`）有多句，pump 要能逐句點過。pump 的聽音題選項判斷要涵蓋齒輪怪／發條兵／鬧鐘怪／時光守護者的名稱。`e2e.yml` 的矩陣與手動執行說明加 `lv10`。只做 `node --check tests/e2e/play.mjs`，**不要執行**。
-- [ ] **Step 2：文件** `AGENTS.md`：「指令」的端對端分段加 `lv10`（並更新「`all` 不含 `lv7`～`lv9`」的說明）；迷宮種子清單加 `tc1`／`tc2` 種子 107、109；「第二階段」那一條補第十關的實際資料（地圖 id、旗標、五招與嘴型、敵人、鐘塔種子 107／109、`SKINS.clock` 與地形字元、`cablecar` 交通工具、大廳 `gate10` 的 barrier＋stairs 切換（`boss_c`）、`GIVER_HUBS` 加 `th`、沒有小王、二樓大發條用 `crank`、齒輪橋（`bark`）、鐘樓大門（`rumble`）與鑰匙孔（`curl`）只在頭目之後解得開、`cave` 在練習戰之後出現、最終頭目 `boss_t` 考全部 16 個韻母、打倒後的 `title_master`「注音大師」與 `ending2Seen`、純邏輯 `src/core/ending2.ts`、`title_master` 是免費稱號不在婆婆的兌換清單）；並把「第二階段（韻母，地基、第七關與第八關已完成…）」之類過時的進度敘述改成「第二階段全部完成」；修正因本關而變成錯的描述（主島數量、交通工具清單、大廳門的狀態、魔法陣數量與目的地、金幣爺爺／星星婆婆的主島清單、`vehicle` 清單、筆順清單現有 ㄢㄣㄤㄥㄦ 等）。`README.md`：第二階段進度改為全部完成（沿用 README 的編號說法），補第十關的簡介與「注音大師」稱號。
+- [ ] **Step 1：端對端 `lv10` 段** 在 `tests/e2e/play.mjs` 比照 **`lv9`** 新增 `SECTION=lv10`（**不併入 `all`**）：更新檔頭註解；「分段」補進度的區塊：`lv10` 要補齊 `lv9` 的全部進度再加第九關結果（`cEntered`、`cPractice`、`boss_c`、`visited:ch`、`visited:c`、能力 `chill`／`tickle`／`howl`／`hoot`）；然後新增 `lv10` 段：從起始村走到 `world_map`、大廳、`gate10_open`（沒有 `boss_c` 時是擋路的 barrier，所以進度一定要補 `boss_c`）、齒輪鎮、搭熱氣纜車（`cablecar`，選「出發」，比照 `lv9` 的掃帚）、發條島（發條人偶練習戰、大齒輪 `chime`、八音盒 `crank`、拿兩個寶箱）、`cave`（`tPractice` 之後才出現）、鐘塔（鎖門、裂石 `rock_h`、二樓大發條 `switch1`，用 `lv9` 同一組走迷宮的 helper）、時光守護者護盾戰（`boss`）；斷言旗標 `tEntered`、`tPractice`、`boss_t`、`ending2Seen`，能力 `chime`／`crank`／`bark`／`rumble`／`curl`，稱號 `title_zhuyin_master` 為目前稱號（`G.save.title`），拿頭目寶箱，踩 `circle` 後落在 `th` 旅館門外 `(21,4)`，並走完齒輪橋（`gearbridge`，`bark`）、鐘樓大門（`belldoor`，`rumble`）與鑰匙孔（`keyhole`，`curl`）。結局台詞（`say`）有多句，pump 要能逐句點過。pump 的聽音題選項判斷要涵蓋齒輪怪／發條兵／鬧鐘怪／時光守護者的名稱。`e2e.yml` 的矩陣與手動執行說明加 `lv10`。只做 `node --check tests/e2e/play.mjs`，**不要執行**。
+- [ ] **Step 2：文件** `AGENTS.md`：「指令」的端對端分段加 `lv10`（並更新「`all` 不含 `lv7`～`lv9`」的說明）；迷宮種子清單加 `tc1`／`tc2` 種子 107、109；「第二階段」那一條補第十關的實際資料（地圖 id、旗標、五招與嘴型、敵人、鐘塔種子 107／109、`SKINS.clock` 與地形字元、`cablecar` 交通工具、大廳 `gate10` 的 barrier＋stairs 切換（`boss_c`）、`GIVER_HUBS` 加 `th`、沒有小王、二樓大發條用 `crank`、齒輪橋（`bark`）、鐘樓大門（`rumble`）與鑰匙孔（`curl`）只在頭目之後解得開、`cave` 在練習戰之後出現、最終頭目 `boss_t` 考全部 16 個韻母、打倒後的 `title_zhuyin_master`「注音大師」與 `ending2Seen`、純邏輯 `src/core/ending2.ts`、`title_zhuyin_master` 是免費稱號不在婆婆的兌換清單）；並把「第二階段（韻母，地基、第七關與第八關已完成…）」之類過時的進度敘述改成「第二階段全部完成」；修正因本關而變成錯的描述（主島數量、交通工具清單、大廳門的狀態、魔法陣數量與目的地、金幣爺爺／星星婆婆的主島清單、`vehicle` 清單、筆順清單現有 ㄢㄣㄤㄥㄦ 等）。`README.md`：第二階段進度改為全部完成（沿用 README 的編號說法），補第十關的簡介與「注音大師」稱號。
 - [ ] **Step 3：驗證** `npx tsc --noEmit`、`npx vitest run` 全過；`node --check tests/e2e/play.mjs` 通過。
 - [ ] **Step 4：commit**：「第十關：端對端 lv10 與文件」。
 
