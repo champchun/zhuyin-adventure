@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { VIEW_H, VIEW_W, view } from '../core/view';
 import { MAPS, abilityOf, isBlockedTile, objectDepth, tileKeyOf } from '../data/maps';
 import type { MapDef, MapObj } from '../data/maps';
-import { BATTLES, ENDING_LINES, LEVELS, STORY } from '../data/levels';
+import { BATTLES, ENDING_LINES, ENDING2_LINES, LEVELS, STORY } from '../data/levels';
 import type { BattleDef } from '../data/levels';
 import { ENEMIES, ITEMS, SPECIES, castSymbol } from '../data/monsters';
 import { STROKES } from '../data/strokes';
@@ -16,6 +16,7 @@ import { defeatSpot, markArrival, respawnMapIds, shouldRespawn } from '../core/t
 import { stayOutcome } from '../core/inn';
 import { starDoorOpen } from '../core/stars';
 import { grantEnding, needsEnding } from '../core/ending';
+import { grantEnding2, needsEnding2 } from '../core/ending2';
 import { STAR_DOOR_NEED } from '../data/rewards';
 import { accOffset, accTexture } from '../gfx/accessory';
 import { FROG_REWARD, FROG_ROUNDS, makeFrogRound } from '../core/frogquiz';
@@ -96,6 +97,10 @@ export class WorldScene extends Phaser.Scene {
     if (needsEnding(G.save)) {
       this.busy = true;
       try { await this.playEnding(); } finally { this.busy = false; }
+    }
+    if (needsEnding2(G.save)) {
+      this.busy = true;
+      try { await this.playEnding2(); } finally { this.busy = false; }
     }
   }
 
@@ -1200,6 +1205,14 @@ export class WorldScene extends Phaser.Scene {
     await this.applyReward(def, o);
     // 結算與獎勵說完後才播結尾（只播一次：grantEnding 以 endingSeen 判斷）
     if (def.id === 'boss_s') await this.playEnding();
+    if (def.id === 'boss_t') await this.playEnding2();
+  }
+
+  /** 第二階段結尾：發「注音大師」、立刻存檔、播結尾；以 ending2Seen 判斷，只播一次。 */
+  private async playEnding2() {
+    if (!grantEnding2(G.save).granted) return;
+    saveGame();
+    await say(ENDING2_LINES);
   }
 
   /** 發免費稱號、立刻存檔、播結尾；只有 grantEnding 回傳 granted 才播，所以只會播一次。 */
