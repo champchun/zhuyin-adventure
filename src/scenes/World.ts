@@ -1033,6 +1033,40 @@ export class WorldScene extends Phaser.Scene {
         const s = this.add.image(x, y, 'spark').setDepth(9999).setTint(cols[i % 4]);
         this.tweens.add({ targets: s, x: x + Math.cos(a) * 24, y: y + Math.sin(a) * 24 - 6, alpha: 0, duration: 700, delay: i * 40, onComplete: () => s.destroy() });
       }
+    } else if (fx === 'chill') {
+      audio.sfx('hint');
+      for (let i = 0; i < 6; i++) {
+        const s = this.add.image(x - 16, y + (i - 3) * 4, 'windline').setDepth(9999).setTint(0x9fd8ff);
+        this.tweens.add({ targets: s, x: x + 20, alpha: 0, duration: 550, delay: i * 50, onComplete: () => s.destroy() });
+      }
+      for (let i = 0; i < 4; i++) {
+        const s = this.add.image(x + (i - 1.5) * 8, y - 4, 'spark').setDepth(9999).setTint(0xcdeeff);
+        this.tweens.add({ targets: s, y: y - 22 - i * 3, alpha: 0, duration: 700, delay: i * 60, onComplete: () => s.destroy() });
+      }
+      if (!calm) this.cameras.main.shake(140, 0.003);
+    } else if (fx === 'tickle') {
+      audio.sfx('hint');
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 5) * Math.PI - Math.PI; // 向上散開的半圈
+        const s = this.add.image(x, y, 'spark').setDepth(9999).setTint(0xff9fd0);
+        this.tweens.add({ targets: s, x: x + Math.cos(a) * 22, y: y + Math.sin(a) * 22 - 6, alpha: 0, duration: 700, delay: i * 40, onComplete: () => s.destroy() });
+      }
+    } else if (fx === 'howl') {
+      audio.sfx('drum');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xb48aff).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 26, alpha: 0, duration: 700, delay: i * 140, onComplete: () => c.destroy() });
+      }
+    } else if (fx === 'hoot') {
+      audio.sfx('bubble');
+      for (let i = 0; i < 3; i++) {
+        const c = this.add.circle(x, y, 4, 0xffffff, 0).setStrokeStyle(2, 0xffd84a).setDepth(9999);
+        this.tweens.add({ targets: c, radius: 22, alpha: 0, duration: 650, delay: i * 130, onComplete: () => c.destroy() });
+      }
+      for (let i = 0; i < 4; i++) {
+        const s = this.add.image(x + (i - 1.5) * 8, y - 4, 'drop').setDepth(9999).setTint(0xe8d6a0);
+        this.tweens.add({ targets: s, y: y - 24 - i * 3, x: s.x + (i % 2 ? 6 : -6), alpha: 0, duration: 800, delay: i * 70, onComplete: () => s.destroy() });
+      }
     } else {
       audio.sfx('splash');
       for (let i = 0; i < 8; i++) {

@@ -11,6 +11,7 @@ const LEVELS: { name: string; smalls: string[]; boss: string }[] = [
   { name: '第 5 關（天空島）', smalls: ['cloudy', 'sprite', 'comet'], boss: 'skydragon' },
   { name: '第 6 關（海底）', smalls: ['clownfish', 'jellyfish', 'urchin'], boss: 'octopus' },
   { name: '第 7 關（遊樂園）', smalls: ['balloony', 'toysoldier', 'jackbox'], boss: 'clownking' },
+  { name: '第 9 關（古堡）', smalls: ['batty', 'pumpkinmon', 'skeleton'], boss: 'ghostcount' },
 ];
 const range = (ids: string[], k: 'hp' | 'atk') => ({ min: Math.min(...ids.map((i) => ENEMIES[i][k])), max: Math.max(...ids.map((i) => ENEMIES[i][k])) });
 

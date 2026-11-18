@@ -427,6 +427,63 @@ export class BattleScene extends Phaser.Scene {
         this.burst(to.x, to.y, 'spark', 10, 36, 450);
         break;
       }
+      case 'chill': {
+        // 六條青藍色的冷風射向對手，對手冒出小冰晶並微微發抖
+        audio.sfx('hint');
+        for (let i = 0; i < 6; i++) {
+          const l = this.add.image(from.x + 14, from.y - 12 + i * 5, 'windline').setDepth(40).setTint(0x9fd8ff);
+          this.tweens.add({ targets: l, x: to.x, duration: 340, delay: i * 45, onComplete: () => l.destroy() });
+        }
+        await sleep(480);
+        this.burst(to.x, to.y, 'spark', 8, 30, 420);
+        if (!G.settings.reduceMotion && this.en) this.tweens.add({ targets: this.en, x: this.en.x + 4, duration: 50, yoyo: true, repeat: 4 });
+        break;
+      }
+      case 'tickle': {
+        // 六顆粉色小圓在對手周圍彈跳旋轉，像在搔癢
+        audio.sfx('hint');
+        for (let i = 0; i < 6; i++) {
+          const a0 = (i / 6) * Math.PI * 2;
+          const c = this.add.circle(to.x + Math.cos(a0) * 22, to.y + Math.sin(a0) * 16, 3, 0xff9fd0, 1).setStrokeStyle(1, 0xffffff).setDepth(40);
+          this.tweens.add({
+            targets: c, x: to.x + Math.cos(a0 + 1.6) * 22, y: to.y + Math.sin(a0 + 1.6) * 16 - 8, duration: 500, delay: i * 40, yoyo: true, ease: 'Sine.inOut',
+            onComplete: () => c.destroy(),
+          });
+        }
+        await sleep(600);
+        this.burst(to.x, to.y, 'spark', 8, 32, 400);
+        break;
+      }
+      case 'howl': {
+        // 三圈紫色的圈圈從自己身上擴散，接著一道月牙飛向對手
+        audio.sfx('drum');
+        for (let i = 0; i < 3; i++) {
+          const ring = this.add.circle(from.x + 10, from.y - 6, 5, 0xffffff, 0).setStrokeStyle(3, 0xb48aff).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 14 + i * 10, alpha: 0, duration: 400, delay: i * 110, onComplete: () => ring.destroy() });
+        }
+        const moon = this.add.circle(from.x + 20, from.y - 8, 9, 0xffe066, 1).setDepth(40);
+        const cut = this.add.circle(from.x + 24, from.y - 8, 8, 0x1b1530, 1).setDepth(41);
+        this.tweens.add({ targets: moon, x: to.x, y: to.y - 8, duration: 360, delay: 300, onComplete: () => moon.destroy() });
+        this.tweens.add({ targets: cut, x: to.x + 4, y: to.y - 8, duration: 360, delay: 300, onComplete: () => cut.destroy() });
+        await sleep(520);
+        this.burst(to.x, to.y, 'puff', 8, 30, 420);
+        break;
+      }
+      case 'hoot': {
+        // 四圈金黃色的圈圈擴散，兩片羽毛飄向對手
+        audio.sfx('bubble');
+        for (let i = 0; i < 4; i++) {
+          const ring = this.add.circle(from.x + 10, from.y - 6, 4, 0xffffff, 0).setStrokeStyle(3, 0xffd84a).setDepth(40);
+          this.tweens.add({ targets: ring, radius: 12 + i * 8, alpha: 0, duration: 420, delay: i * 100, onComplete: () => ring.destroy() });
+        }
+        for (let i = 0; i < 2; i++) {
+          const f = this.add.image(from.x + 16, from.y - 10 + i * 8, 'drop').setDepth(40).setTint(0xe8d6a0);
+          this.tweens.add({ targets: f, x: to.x, y: to.y - 6 + i * 10, angle: 40, duration: 500, delay: 200 + i * 120, ease: 'Sine.inOut', onComplete: () => f.destroy() });
+        }
+        await sleep(650);
+        this.burst(to.x, to.y, 'spark', 10, 34, 450);
+        break;
+      }
       case 'fog':
       case 'wind': {
         audio.sfx('wind');
