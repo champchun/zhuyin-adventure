@@ -10,6 +10,7 @@ import { drawSkyTextures } from './skyArt';
 import { drawSeaTextures } from './seaArt';
 import { drawParkTextures } from './parkArt';
 import { drawHauntTextures } from './hauntArt';
+import { drawClockTextures } from './clockArt';
 import { drawStarTextures } from './starArt';
 
 export const TILE = 16;
@@ -432,6 +433,7 @@ export function generateTextures(scene: Phaser.Scene) {
   drawSeaTextures(make as unknown as Parameters<typeof drawSeaTextures>[0], px as unknown as Parameters<typeof drawSeaTextures>[1]);
   drawParkTextures(make as unknown as Parameters<typeof drawParkTextures>[0], px as unknown as Parameters<typeof drawParkTextures>[1]); // 第八關（遊樂園）
   drawHauntTextures(make as unknown as Parameters<typeof drawHauntTextures>[0], px as unknown as Parameters<typeof drawHauntTextures>[1]); // 第九關（古堡）
+  drawClockTextures(make as unknown as Parameters<typeof drawClockTextures>[0], px as unknown as Parameters<typeof drawClockTextures>[1]); // 第十關（鐘塔）
   // 星星婆婆、飾品、星光門
   drawStarTextures(make as unknown as Parameters<typeof drawStarTextures>[0], px as unknown as Parameters<typeof drawStarTextures>[1]);
 }

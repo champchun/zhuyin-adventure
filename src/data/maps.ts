@@ -1579,3 +1579,12 @@ SKINS.haunt = {
   },
   blocked: new Set('#RO~hHiIkKDW'),
 };
+
+// 第十關（齒輪鐘塔城）的外觀表：字元 → 貼圖 key；擋路的字元
+SKINS.clock = {
+  key: {
+    '.': 't_clock_floor', ',': 't_clock_moss', '=': 't_clock_path', f: 't_tower_floor', '#': 't_clock_gear', R: 't_clock_fence', '~': 't_clock_oil', O: 't_clock_steam',
+    h: 't_roof_gear', H: 't_wall_gear', i: 't_roof_inn_clock', I: 't_wall_inn_clock', k: 't_roof_shop_clock', K: 't_wall_shop_clock', D: 't_door', W: 't_tower_wall',
+  },
+  blocked: new Set('#RO~hHiIkKDW'),
+};
