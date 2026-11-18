@@ -19,7 +19,7 @@
 | 學習節奏 | 2 + 2：進墓園島先教 ㄞㄟ，打完練習戰學會 ㄞㄟ 的招式並開始教 ㄠㄡ，打倒頭目學會 ㄠㄡ 的招式 |
 | 小王 | 不加 |
 | 頭目 | 幽靈伯爵（護盾） |
-| 筆順 | ㄞㄟㄠㄡ 尚無教育部步驟圖，**先不加進 `STROKES`**（沒有筆順的符號寫字施法直接通過）；使用者之後提供圖再補，不憑印象估 |
+| 筆順 | ㄞㄟㄠㄡ 尚無教育部步驟圖，**先不加進 `STROKES`**（沒有筆順的符號寫字施法直接通過）；使用者之後提供圖再補，不憑印象估（已被取代：ㄞㄟㄠㄡ 筆順已依使用者提供的教育部步驟圖加入 STROKES，tests/strokes.test.ts 的 EXPECTED 與互動物件數同步更新） |
 
 ## 學習流程與招式
 
@@ -60,7 +60,7 @@
 
 - 兩層，固定種子 **101、103**（避開既有 11、23、37、41、53、59、67、71、79、83、89、97），31×22；`tools/gen-dungeon.mjs` 新增 `cc1`／`cc2`，輸出 `src/data/mazes.ts`；既有十二個迷宮內容一格都不能變（重新產生後 `git diff` 只能新增 `cc1`、`cc2` 與型別宣告）。
 - 結構與前面一致：樓梯、鑰匙、鎖門、隱藏房間（裂石）、二樓機關、擋路牆、巡邏／追擊怪、頭目與頭目寶箱、回家魔法陣。
-- `mazeObjects` 主題判斷擴充（`mapId.startsWith('c')` → `'haunt'`；注意 `cc1`／`cc2` 以 `cc` 開頭，不能與其他主題前綴衝突）：牆、機關台詞、機關貼圖；二樓開關是**南瓜燈**（`gimmick`，貼圖 `lantern_off`／`lantern_on`，`ability: 'tickle'`，`fx: 'tickle'`，打開後 `barrier1` 消失）。迷宮地形由 `hauntRows` 把原始格子轉成 `haunt` skin 的字元（牆擋路、地板可走）。
+- `mazeObjects` 主題判斷擴充（`mapId.startsWith('c')` → `'haunt'`；注意 `cc1`／`cc2` 以 `cc` 開頭，不能與其他主題前綴衝突）：牆、機關台詞、機關貼圖；二樓開關是**南瓜燈**（`gimmick`，貼圖 `pumpkin_dark`／`pumpkin_lit`，`ability: 'tickle'`，`fx: 'tickle'`，打開後 `barrier1` 消失）。迷宮地形由 `hauntRows` 把原始格子轉成 `haunt` skin 的字元（牆擋路、地板可走）。
 - 兩層共用 `group: 'cc'`；怪物 id 用 `mon1`…；回家魔法陣 `CIRCLE_HOME.cc` → 南瓜鎮旅館門外一格，`showIf: 'boss_c'`。
 
 ## 戰鬥
@@ -101,7 +101,7 @@
 
 ## 測試
 
-- **單元**：比照第八關：新地圖資料完整性（尺寸、起點可走、物件不重疊、抵達格可走、寶箱不被圍住）；掃帚雙向；大廳 `gate9` 有無 `boss_a` 時的 `barrier`／`gate9_open` 可見性；`reachReport` 對 `cc1`／`cc2` 為綠，用練習戰之後的能力（含 `chill`、`tickle`，不含 `howl`、`hoot`）頭目可達，沒有 `tickle` 時二樓開關後的路不可達；吊橋對岸寶箱沒有 `howl` 走不到；新招式、敵人、`LEVELS` 與 `difficulty.test.ts`；`mazegen.test.ts` 同步且既有迷宮內容不變；`haunt` skin 每個字元有貼圖、擋路符合預期；迷宮原始格子擋路與 `isBlockedTile` 一致；`GIVER_HUBS` 含 `ch`；旅館與商店台詞各有南瓜鎮特色且納入 `allVoiceLines`；ㄠㄡ 學會（`cPractice`）之前，台詞、告示牌與機關提示不出現 ㄠㄡ；`strokes.test.ts` 不變（本關沒有新筆順）。
+- **單元**：比照第八關：新地圖資料完整性（尺寸、起點可走、物件不重疊、抵達格可走、寶箱不被圍住）；掃帚雙向；大廳 `gate9` 有無 `boss_a` 時的 `barrier`／`gate9_open` 可見性；`reachReport` 對 `cc1`／`cc2` 為綠，用練習戰之後的能力（含 `chill`、`tickle`，不含 `howl`、`hoot`）頭目可達，沒有 `tickle` 時二樓開關後的路不可達；吊橋對岸寶箱沒有 `howl` 走不到；新招式、敵人、`LEVELS` 與 `difficulty.test.ts`；`mazegen.test.ts` 同步且既有迷宮內容不變；`haunt` skin 每個字元有貼圖、擋路符合預期；迷宮原始格子擋路與 `isBlockedTile` 一致；`GIVER_HUBS` 含 `ch`；旅館與商店台詞各有南瓜鎮特色且納入 `allVoiceLines`；ㄠㄡ 學會（`cPractice`）之前，台詞、告示牌與機關提示不出現 ㄠㄡ；`strokes.test.ts` 不變（本關沒有新筆順）（已被取代：ㄞㄟㄠㄡ 筆順已依使用者提供的教育部步驟圖加入 STROKES，tests/strokes.test.ts 的 EXPECTED 與互動物件數同步更新）。
 - **端對端**：新增 `lv9` 段（`SECTION=lv9`），比照 `lv8`；`e2e.yml` 矩陣加 `lv9`；不併入 `all`。不在本機跑，只做 `node --check`。
 - **手動確認**：新美術、迷宮、招式動畫的感覺，交給使用者實際玩過後回饋。
 

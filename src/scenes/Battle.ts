@@ -462,7 +462,7 @@ export class BattleScene extends Phaser.Scene {
           this.tweens.add({ targets: ring, radius: 14 + i * 10, alpha: 0, duration: 400, delay: i * 110, onComplete: () => ring.destroy() });
         }
         const moon = this.add.circle(from.x + 20, from.y - 8, 9, 0xffe066, 1).setDepth(40);
-        const cut = this.add.circle(from.x + 24, from.y - 8, 8, 0x1b1530, 1).setDepth(41);
+        const cut = this.add.circle(from.x + 24, from.y - 8, 8, 0xfff3b0, 1).setDepth(41);
         this.tweens.add({ targets: moon, x: to.x, y: to.y - 8, duration: 360, delay: 300, onComplete: () => moon.destroy() });
         this.tweens.add({ targets: cut, x: to.x + 4, y: to.y - 8, duration: 360, delay: 300, onComplete: () => cut.destroy() });
         await sleep(520);
