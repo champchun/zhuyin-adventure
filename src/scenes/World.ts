@@ -147,6 +147,7 @@ export class WorldScene extends Phaser.Scene {
     if (m.id === 'u' && !flag('uEntered')) setFlag('uEntered'); // 進到海藻森林：開始教 ㄧㄨㄩ
     if (m.id === 'a' && !flag('aEntered')) setFlag('aEntered'); // 進到歡樂島：開始教 ㄚㄛㄜㄝ
     if (m.id === 'c' && !flag('cEntered')) setFlag('cEntered'); // 進到月光墓園島：開始教 ㄞㄟㄠㄡ
+    if (m.id === 't' && !flag('tEntered')) setFlag('tEntered'); // 進到發條島：開始教 ㄢㄣㄤㄥㄦ
     markArrival(G.save, m); // 進到主島：記下「去過」，並當成最近的主島（被打倒時送回這裡）
   }
 
@@ -618,6 +619,7 @@ export class WorldScene extends Phaser.Scene {
       : d.vehicle === 'seahorse' ? { ask: `騎海馬去${name}？`, go: '出發 🌊', note: '騎海馬不用錢。' }
       : d.vehicle === 'train' ? { ask: `搭小火車去${name}？`, go: '出發 🚂', note: '搭小火車不用錢。' }
       : d.vehicle === 'broom' ? { ask: `騎掃帚去${name}？`, go: '起飛 🧹', note: '騎掃帚不用錢。' }
+      : d.vehicle === 'cablecar' ? { ask: `搭熱氣纜車去${name}？`, go: '出發 🚠', note: '搭纜車不用錢。' }
       : d.vehicle === 'cloudboat' ? { ask: `搭雲朵小船去${name}？`, go: '出發 ☁️', note: '搭小船不用錢。' }
       : { ask: `搭船去${name}？`, go: '出發 ⛵', note: '搭船不用錢。' };
     const i = await choose(how.ask, how.note, [how.go, '先不要']);

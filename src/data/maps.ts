@@ -48,7 +48,7 @@ export interface MapObj {
   /** dock：這個碼頭只通往一個地方（to 是抵達的位置），所以每個目的地各有自己的碼頭 */
   dockTo?: { map: string; x: number; y: number };
   /** dock：交通工具的種類。有設就不是船（熱氣球、雲朵小船），碼頭旁不必有水；沒設就是一般的船碼頭 */
-  vehicle?: 'balloon' | 'cloudboat' | 'seahorse' | 'train' | 'broom';
+  vehicle?: 'balloon' | 'cloudboat' | 'seahorse' | 'train' | 'broom' | 'cablecar';
   /** innkeeper：住一晚要多少金幣 */
   price?: number;
   /** chest：打開後除了星星還會得到的一組道具（id → 數量） */
@@ -276,14 +276,15 @@ export const MAPS: Record<string, MapDef> = {
     start: { x: 9, y: 11 }, respawn: { x: 9, y: 11 },
     objects: [
       { id: 'back_village', kind: 'stairs', x: 9, y: 12, to: { map: 'village', x: 16, y: 16 }, label: '回起始村' },
-      // 第二階段四扇門：第七關（gate7）已是通道、第八關（gate8）打倒大章魚後才開；gate9、gate10 還在準備中。每一關的計畫會把對應的 barrier 換成通往該關主島的 stairs（並用 hideIf／showIf 切換）
+      // 第二階段四扇門：gate7～gate10 都已是通道；第七關（gate7）直接開放，第八～十關（gate8～gate10）各是同一格互斥的 barrier（hideIf）與 stairs（showIf），打倒前一關的頭目後才打開
       { id: 'gate7', kind: 'stairs', x: 4, y: 2, sprite: 'bubble_gate', to: { map: 'uh', x: 4, y: 16 }, label: '海底' },
       // gate8 與 gate8_open 同一格、互斥（比照起始村的 balloon_empty／balloon）：打倒大章魚（boss_u）後才換成通道
       { id: 'gate8', kind: 'barrier', x: 7, y: 2, hideIf: 'boss_u', lockText: ['第八關「遊樂園」的門。', '要先打倒第七關的大章魚，這扇門才會打開！'] },
       { id: 'gate8_open', kind: 'stairs', x: 7, y: 2, sprite: 'park_gate', to: { map: 'ah', x: 23, y: 16 }, label: '遊樂園', showIf: 'boss_u' },
       { id: 'gate9', kind: 'barrier', x: 12, y: 2, hideIf: 'boss_a', lockText: ['第九關「古堡」的門。', '要先打倒第八關的小丑魔術師，這扇門才會打開！'] },
       { id: 'gate9_open', kind: 'stairs', x: 12, y: 2, sprite: 'haunt_gate', to: { map: 'ch', x: 4, y: 16 }, label: '古堡', showIf: 'boss_a' },
-      { id: 'gate10', kind: 'barrier', x: 15, y: 2, lockText: ['第十關「時鐘塔」的門。', '門後面還在準備中，敬請期待！'] },
+      { id: 'gate10', kind: 'barrier', x: 15, y: 2, hideIf: 'boss_c', lockText: ['第十關「時鐘塔」的門。', '要先打倒第九關的幽靈伯爵，這扇門才會打開！'] },
+      { id: 'gate10_open', kind: 'stairs', x: 15, y: 2, sprite: 'clock_gate', to: { map: 'th', x: 14, y: 17 }, label: '時鐘塔', showIf: 'boss_c' },
       { id: 'sign_lobby', kind: 'sign', x: 8, y: 6, text: ['世界地圖：第二階段的入口。', '每一扇門通往一個新的世界，要一關一關通過喔。', '想回起始村，就走下面的樓梯。'] },
     ],
   },
@@ -1331,6 +1332,120 @@ MAPS.c = {
     { id: 'drawbridge', kind: 'gimmick', x: 19, y: 10, sprite: 'drawbridge_gap', sprite2: 'drawbridge', ability: 'howl', fx: 'howl', passable: true, lockText: ['護城河上的吊橋壞了，過不去。', '要是有人用長長的嗷嗚聲把它吹下來就好了……'], hitText: ['夥伴嘴巴圓圓往前「ㄠ」，像小狼一樣嗷了一聲！', '吊橋「喀啦喀啦」地放了下來，可以走到對岸了！'] },
     { id: 'chest_d1', kind: 'chest', x: 22, y: 10, item: 'bigpotion' },
     { id: 'chest_d2', kind: 'chest', x: 24, y: 5, item: 'berry' },
+  ],
+};
+
+// ───────── 齒輪鎮：第二階段最終關（齒輪鐘塔城）的主島 ─────────
+// 從大廳的鐘塔大門進來，落在南邊中間；東北邊的熱氣纜車站（cablecar）通往發條島。商店在北邊偏左、旅館在北邊偏右，中間是蒸氣池。
+const thGrid = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('k', 4, 2, 4, 1).rect('K', 4, 3, 4, 1).set(6, 3, 'D'); // 商店：門在 (6,3)
+  g.rect('i', 19, 2, 4, 1).rect('I', 19, 3, 4, 1).set(21, 3, 'D'); // 旅館：門在 (21,3)
+  g.rect('h', 3, 8, 4, 1).rect('H', 3, 9, 4, 1).rect('h', 21, 14, 4, 1).rect('H', 21, 15, 4, 1); // 兩間民宅（只是裝飾）
+  g.rect('O', 12, 8, 4, 3).many('R', [[11, 7], [16, 7], [11, 11], [16, 11]]); // 蒸氣池與四段黃銅欄杆
+  g.rect('=', 6, 4, 1, 9).rect('=', 21, 4, 1, 8).rect('=', 6, 12, 16, 1).rect('=', 14, 13, 1, 5); // 銅管小徑（避開蒸氣池）
+  g.many(',', [[9, 6], [17, 5], [3, 12], [24, 9], [10, 15], [18, 16], [25, 17], [8, 17]]); // 青銅苔
+  return g;
+})();
+MAPS.th = {
+  id: 'th', name: '齒輪鎮', w: 28, h: 20, tiles: thGrid.rows(), theme: 'island', skin: 'clock',
+  start: { x: 14, y: 17 }, respawn: { x: 14, y: 16 },
+  hub: { dock: { x: 14, y: 17 } },
+  objects: [
+    { id: 'door_shop', kind: 'door', x: 6, y: 3, to: { map: 'th_shop', x: 4, y: 6 } },
+    { id: 'door_inn', kind: 'door', x: 21, y: 3, to: { map: 'th_inn', x: 4, y: 6 } },
+    // 南邊中間：鐘塔大門回大廳（gate10 正下方的小路）
+    { id: 'clock_gate_back', kind: 'stairs', x: 13, y: 17, sprite: 'clock_gate', to: { map: 'lobby', x: 15, y: 3 }, label: '回世界地圖' },
+    { id: 'gate_sign', kind: 'sign', x: 15, y: 17, text: ['鐘塔大門：回世界地圖。', '想去別的世界，就從這裡回去。'] },
+    // 東北邊：熱氣纜車通往發條島，發條島的 cablecar_back 開回這裡 (24,5)
+    { id: 'cablecar', kind: 'dock', vehicle: 'cablecar', x: 25, y: 5, sprite: 'cablecar', dockTo: { map: 't', x: 3, y: 3 } },
+    { id: 'cablecar_sign', kind: 'sign', x: 24, y: 6, text: ['熱氣纜車站：通往發條島。', '纜車是雙向的，發條島那邊也有一台可以開回來。'] },
+    { id: 'granny', kind: 'granny', x: 9, y: 13, label: '星星婆婆' }, // 蒸氣池西南邊
+    { id: 'giver', kind: 'giver', x: 17, y: 5, label: '金幣爺爺' }, // 北邊空地（窮才出現）
+    {
+      id: 'gearkid', kind: 'npc', x: 10, y: 14, sprite: 'npc_kid', label: '小齒輪',
+      talk: [
+        { not: 'tEntered', lines: ['歡迎來到齒輪鎮！我是小齒輪，鎮上每個人都靠發條過日子。', '這裡是最後的冒險地點，連鐘塔上的大鐘，都在等你。', '東北邊有台纜車，坐上去就是發條島。島上有發條人偶，先去練習看看吧！'] },
+        { not: 'tPractice', lines: ['發條人偶可以讓夥伴練習新招式。', '練習完，島上的大齒輪和八音盒，就有辦法對付了。'] },
+        { not: 'boss_t', lines: ['發條島上有一座鐘塔，聽說最深處住著時光守護者。', '記得先在旅館睡一覺，再去找他。'] },
+        { lines: ['時光守護者認輸了！太棒了！', '鐘塔裡的寶藏，你全都看過了嗎？'] },
+      ],
+    },
+    {
+      id: 'clockmaker', kind: 'npc', x: 22, y: 11, sprite: 'npc_elder', label: '修鐘的爺爺',
+      talk: [
+        { not: 'tPractice', lines: ['島上有一個卡住的大齒輪，還有一個沒上發條的八音盒。', '它們旁邊好像藏著寶箱。'] },
+        { not: 'boss_t', lines: ['發條島中間有一條油溝，溝上缺了一塊，只差一座齒輪橋。', '還有一扇緊閉的鐘樓大門，和一個轉不動的大鑰匙孔。', '等你打倒時光守護者、學會新招式，再回來看看。'] },
+        { lines: ['齒輪橋轉起來了嗎？', '鐘樓大門開了嗎？鑰匙孔轉開了嗎？裡面一定有好東西！'] },
+      ],
+    },
+    {
+      id: 'gearsister', kind: 'npc', x: 18, y: 14, sprite: 'npc_girl', label: '螺絲妹妹',
+      talk: [
+        { not: 'boss_t', lines: ['旅館住一晚 25 金幣，累了就來睡一覺。', '夥伴的體力和魔力，睡醒就都回來了。'] },
+        { lines: ['打倒時光守護者的人，就是你！', '齒輪鎮永遠歡迎你。'] },
+      ],
+    },
+  ],
+};
+MAPS.th_inn = {
+  id: 'th_inn', name: '齒輪鎮旅館', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'keeper', kind: 'innkeeper', x: 6, y: 3, sprite: 'npc_clerk', label: '旅館老闆', price: 25,
+      text: ['歡迎光臨齒輪鎮發條旅館！', '這裡的床底下藏著小發條，睡著了還會輕輕地滴答滴答響，很好睡喔。', '住一晚，夥伴的體力和魔力就會全部回來，我還會幫你存檔。'],
+      doneText: ['睡得好嗎？夥伴們的發條都上緊了，精神飽滿！', '滴答滴答～歡迎再來住！'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'th', x: 21, y: 4 } },
+  ],
+};
+MAPS.th_shop = {
+  id: 'th_shop', name: '齒輪鎮商店', w: 10, h: 8, tiles: shop.rows(), theme: 'village',
+  start: { x: 4, y: 6 }, respawn: { x: 4, y: 6 },
+  objects: [
+    {
+      id: 'clerk', kind: 'npc', x: 6, y: 3, sprite: 'npc_clerk', label: '店員小福',
+      text: ['歡迎光臨齒輪鎮發條雜貨店！', '這裡有藥水和魔力果，旋轉的貨架一次就能挑好。'],
+      doneText: ['謝謝光顧！', '齒輪鎮隨時歡迎你。'],
+    },
+    { id: 'door', kind: 'door', x: 4, y: 7, to: { map: 'th', x: 6, y: 4 } },
+  ],
+};
+
+// ───────── ㄢㄣㄤㄥㄦ：發條島 ─────────
+// 一條東西向的油溝（y=10）把島切成南北兩半：北岸是入口與機關，南岸要先在油溝中間唯一的缺口架起齒輪橋才過得去（ㄤ，打倒時光守護者後才學到）。
+const clockIsle = (() => {
+  const g = new Grid(28, 20, '.').border('#');
+  g.rect('~', 1, 10, 26, 1).set(14, 10, '.'); // 橫向油溝與缺口那一格（齒輪橋）
+  g.many('R', [[22, 14], [11, 14], [17, 17]]); // 南側零星黃銅欄杆（裝飾，不貼著任何物件）
+  g.many('#', [[24, 12], [16, 3], [5, 2], [2, 6], [6, 18]]).many(',', [[13, 14], [9, 6], [6, 15], [3, 12]]);
+  return g;
+})();
+MAPS.t = {
+  id: 't', name: '發條島（ㄢㄣㄤㄥㄦ）', w: 28, h: 20, tiles: clockIsle.rows(), theme: 'meadow', skin: 'clock',
+  start: { x: 3, y: 3 }, respawn: { x: 3, y: 3 },
+  objects: [
+    { id: 'cablecar_back', kind: 'dock', vehicle: 'cablecar', x: 2, y: 3, sprite: 'cablecar', dockTo: { map: 'th', x: 24, y: 5 } }, // 回齒輪鎮的纜車
+    { id: 'sign1', kind: 'sign', x: 4, y: 5, text: ['發條島。', '這座島的注音，嘴巴都要擺出特別的形狀：ㄢ 和 ㄣ 的舌尖要輕輕頂住上牙，還有三個要等你自己發現。', '島上有大齒輪、八音盒、油溝和鐘樓大門，學會新招式，也許就能通過它們！'] },
+    { id: 'dummy', kind: 'monster', x: 7, y: 5, battle: 'tpractice', hideIf: 'tPractice' },
+    { id: 'chest_1', kind: 'chest', x: 10, y: 4, item: 'potion' },
+    { id: 'm1', kind: 'monster', x: 12, y: 5, battle: 't1', ai: 'patrol', patrol: [{ x: 13, y: 5 }, { x: 14, y: 5 }] },
+    { id: 'm2', kind: 'monster', x: 19, y: 8, battle: 't2', ai: 'patrol', patrol: [{ x: 20, y: 8 }, { x: 21, y: 8 }] },
+    { id: 'm3', kind: 'monster', x: 12, y: 8, battle: 't3', showIf: 'tPractice', ai: 'patrol', patrol: [{ x: 13, y: 8 }, { x: 14, y: 8 }] },
+    { id: 'gear', kind: 'gimmick', x: 8, y: 8, sprite: 'gear_stuck', sprite2: 'gear_turning', ability: 'chime', fx: 'chime', lockText: ['一個卡住的大齒輪，怎麼推都不動，把旁邊的東西擋住了。', '要是有一聲清脆的鐘響，也許能把它震得轉起來……'], hitText: ['夥伴嘴巴張開，舌尖頂住上牙「ㄢ」，像鐘「噹～」地響了一聲！', '大齒輪「喀啦喀啦」地轉了起來，旁邊冒出了一個寶箱！'], doneText: ['大齒輪轉得好順，發出規律的聲音。'] },
+    { id: 'chest_gear', kind: 'chest', x: 9, y: 8, item: 'berry', showIf: 'g:t:gear' },
+    { id: 'musicbox', kind: 'gimmick', x: 16, y: 7, sprite: 'musicbox_still', sprite2: 'musicbox_play', ability: 'crank', fx: 'crank', lockText: ['一個八音盒，發條鬆鬆的，一點聲音都沒有。', '要是有人幫它轉緊發條，也許就會唱歌……'], hitText: ['夥伴舌尖頂住上牙「ㄣ」，像在轉發條一樣用力！', '八音盒唱起歌來，旁邊冒出了一個寶箱！'], doneText: ['八音盒輕輕唱著好聽的歌。'] },
+    { id: 'chest_musicbox', kind: 'chest', x: 17, y: 7, item: 'potion', showIf: 'g:t:musicbox' },
+    { id: 'belldoor', kind: 'gimmick', x: 24, y: 8, sprite: 'belldoor', sprite2: 'belldoor_open', ability: 'rumble', fx: 'rumble', lockText: ['一扇緊閉的鐘樓大門，又厚又重，怎麼推都推不開。', '要是有一聲低低的轟隆聲，也許能把它震開……'], hitText: ['夥伴嘴巴微開「ㄥ」，發出低低的轟隆聲！', '鐘樓大門被震開了一條縫，露出了一個寶箱！'], doneText: ['鐘樓大門開著，裡面透出暖暖的光。'] },
+    { id: 'chest_bell', kind: 'chest', x: 23, y: 8, item: 'bigpotion', showIf: 'g:t:belldoor' },
+    { id: 'keyhole', kind: 'gimmick', x: 4, y: 8, sprite: 'keyhole', sprite2: 'keyhole_open', ability: 'curl', fx: 'curl', lockText: ['一個轉不動的大鑰匙孔，孔裡的小齒輪卡得緊緊的。', '要是有一個捲捲的聲音，也許能把它轉開……'], hitText: ['夥伴舌頭往後捲「ㄦ」，發出捲捲的聲音！', '鑰匙孔「喀」地轉開了，旁邊冒出了一個寶箱！'], doneText: ['鑰匙孔轉開了，裡面的小齒輪轉得好開心。'] },
+    { id: 'chest_keyhole', kind: 'chest', x: 4, y: 7, item: 'bigpotion', showIf: 'g:t:keyhole' },
+    { id: 'sign2', kind: 'sign', x: 19, y: 5, text: ['前面是鐘塔的方向。', '鐘塔裡又暗又大，很容易迷路，要先練習完再進去喔。'] },
+    // 齒輪橋：缺口那一格（油溝中間）。ㄤ 要打倒時光守護者才學到，所以對岸的寶箱是時光守護者之後才拿得到
+    { id: 'gearbridge', kind: 'gimmick', x: 14, y: 10, sprite: 'gearbridge_gap', sprite2: 'gearbridge', ability: 'bark', fx: 'bark', passable: true, lockText: ['油溝上缺了一塊，過不去。', '要是有一座齒輪橋，把齒輪排成橋就好了……'], hitText: ['夥伴嘴巴張大「ㄤ」，拉長了聲音叫了一聲！', '齒輪一個接一個轉了起來，排成了一座橋，可以走到對岸了！'] },
+    { id: 'chest_g1', kind: 'chest', x: 10, y: 15, item: 'bigpotion' },
+    { id: 'chest_g2', kind: 'chest', x: 22, y: 16, item: 'berry' },
   ],
 };
 
